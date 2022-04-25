@@ -2,44 +2,31 @@ package ru.nsu.ccfit.zuev.osu.online;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.util.Log;
-
-import com.google.firebase.analytics.FirebaseAnalytics;
 
 import okhttp3.OkHttpClient;
 
-import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.util.Debug;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
-import ru.nsu.ccfit.zuev.osu.BeatmapInfo;
 import ru.nsu.ccfit.zuev.osu.Config;
-import ru.nsu.ccfit.zuev.osu.GlobalManager;
-import ru.nsu.ccfit.zuev.osu.MainActivity;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
-import ru.nsu.ccfit.zuev.osu.TrackInfo;
 import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 
 public class OnlineManager {
-    public static final String hostname = "osudroid.moe";
-    public static final String endpoint = "https://" + hostname + "/api/";
+    public static final String hostname = "134.209.97.255:8000";
+    public static final String endpoint = "http://" + hostname + "/api/";
     private static final String onlineVersion = "29";
 
     public static final OkHttpClient client = new OkHttpClient();
 
     private static OnlineManager instance = null;
-    private Context context;
     private String failMessage = "";
 
     private boolean stayOnline = true;
-    private String ssid = "";
     private String userId = "";
-    private String playID = "";
 
     private String username = "";
     private String password = "";
@@ -49,7 +36,6 @@ public class OnlineManager {
     private float accuracy = 0;
     private String avatarURL = "";
     private int mapRank;
-    private int replayID = 0;
 
     public static OnlineManager getInstance() {
         if (instance == null) {
@@ -67,7 +53,6 @@ public class OnlineManager {
         this.username = Config.getOnlineUsername();
         this.password = Config.getOnlinePassword();
         this.deviceID = Config.getOnlineDeviceID();
-        this.context = context;
     }
 
     private ArrayList<String> sendRequest(PostBuilder post, String url) throws OnlineManagerException {
@@ -125,7 +110,7 @@ public class OnlineManager {
         post.addParam("password", MD5Calcuator.getStringMD5(password + "taikotaiko"));
         post.addParam("version", onlineVersion);
 
-        ArrayList<String> response = sendRequest(post, endpoint + "login.php");
+        ArrayList<String> response = sendRequest(post, endpoint + "login");
 
         if (response == null) {
             return false;
@@ -136,138 +121,41 @@ public class OnlineManager {
         }
 
         String[] params = response.get(1).split("\\s+");
-        if (params.length < 6) {
+        if (params.length < 5) {
             failMessage = "Invalid server response";
             return false;
         }
         userId = params[0];
-        ssid = params[1];
-        rank = Integer.parseInt(params[2]);
-        score = Long.parseLong(params[3]);
-        accuracy = Integer.parseInt(params[4]) / 100000f;
-        this.username = params[5];
-        if (params.length >= 7) {
-            avatarURL = params[6];
+        rank = Integer.parseInt(params[1]);
+        score = Long.parseLong(params[2]);
+        accuracy = Integer.parseInt(params[3]) / 100000f;
+        this.username = params[4];
+        if (params.length >= 6) {
+            avatarURL = params[5];
         } else {
             avatarURL = "";
         }
 
-        Bundle bParams = new Bundle();
-        bParams.putString(FirebaseAnalytics.Param.METHOD, "ingame");
-        GlobalManager.getInstance().getMainActivity().getAnalytics().logEvent(FirebaseAnalytics.Event.LOGIN,
-            bParams);
-
         return true;
     }
 
-    boolean tryToLogIn() throws OnlineManagerException {
-        if (logIn(username, password) == false) {
-            stayOnline = false;
-            return false;
-        }
-        return true;
-    }
-
-    public boolean register(final String username, final String password, final String email,
-                            final String deviceID) throws OnlineManagerException {
-        PostBuilder post = new PostBuilder();
-        post.addParam("username", username);
-        post.addParam("password", MD5Calcuator.getStringMD5(password + "taikotaiko"));
-        post.addParam("email", email);
-        post.addParam("deviceID", deviceID);
-
-        ArrayList<String> response = sendRequest(post, endpoint + "register.php");
-
-        Bundle params = new Bundle();
-        params.putString(FirebaseAnalytics.Param.METHOD, "ingame");
-        GlobalManager.getInstance().getMainActivity().getAnalytics().logEvent(FirebaseAnalytics.Event.SIGN_UP,
-            params);
-
-        return (response != null);
-    }
-
-    public void startPlay(final TrackInfo track, final String hash) throws OnlineManagerException {
-        Debug.i("Starting play...");
-        playID = null;
-        final BeatmapInfo beatmap = track.getBeatmap();
-        if (beatmap == null) return;
-
-        File trackfile = new File(track.getFilename());
-        trackfile.getParentFile().getName();
-        String osuID = trackfile.getParentFile().getName();
-        Debug.i("osuid = " + osuID);
-        if (osuID.matches("^[0-9]+ .*"))
-            osuID = osuID.substring(0, osuID.indexOf(' '));
-        else
-            osuID = null;
-
-        PostBuilder post = new PostBuilder();
-        post.addParam("userID", userId);
-        post.addParam("ssid", ssid);
-        post.addParam("filename", trackfile.getName());
-        post.addParam("hash", hash);
-        post.addParam("songTitle", beatmap.getTitle());
-        post.addParam("songArtist", beatmap.getArtist());
-        post.addParam("songCreator", beatmap.getCreator());
-        if (osuID != null)
-            post.addParam("songID", osuID);
-
-        ArrayList<String> response = sendRequest(post, endpoint + "submit.php");
-
-        if (response == null) {
-            if (failMessage.equals("Cannot log in") && stayOnline) {
-                if (tryToLogIn()) {
-                    startPlay(track, hash);
-                }
-            }
-            return;
-        }
-
-        if (response.size() < 2) {
-            failMessage = "Invalid server response";
-            return;
-        }
-
-        String[] resp = response.get(1).split("\\s+");
-        if (resp.length < 2) {
-            failMessage = "Invalid server response";
-            return;
-        }
-
-        if (!resp[0].equals("1")) {
-            return;
-        }
-
-        playID = resp[1];
-        Debug.i("Getting play ID = " + playID);
-    }
-
-    public boolean sendRecord(String data) throws OnlineManagerException {
-        if (playID == null || playID.length() == 0) {
-            failMessage = "I don't have play ID";
-            return false;
-        }
-
+    public boolean sendRecord(String data, String mapMD5, long completeTime) throws OnlineManagerException {
         Debug.i("Sending record...");
 
         PostBuilder post = new PostBuilder();
         post.addParam("userID", userId);
-        post.addParam("playID", playID);
         post.addParam("data", data);
+        post.addParam("hash", mapMD5);
+        post.addParam("completeTime", String.valueOf(completeTime));
 
-        ArrayList<String> response = sendRequest(post, endpoint + "submit.php");
+        ArrayList<String> response = sendRequest(post, endpoint + "submit");
 
         if (response == null) {
             return false;
         }
 
-        if (failMessage.equals("Invalid record data"))
+        if (failMessage.equals("Invalid record data") || response.size() < 2)
             return false;
-
-        if (response.size() < 2) {
-            failMessage = "Invalid server response";
-            return false;
-        }
 
         String[] resp = response.get(1).split("\\s+");
         if (resp.length < 4) {
@@ -275,16 +163,10 @@ public class OnlineManager {
             return false;
         }
 
-
         rank = Integer.parseInt(resp[0]);
         score = Long.parseLong(resp[1]);
         accuracy = Integer.parseInt(resp[2]) / 100000f;
         mapRank = Integer.parseInt(resp[3]);
-
-        if (resp.length >= 5) {
-            replayID = Integer.parseInt(resp[4]);
-        } else
-            replayID = 0;
 
         return true;
     }
@@ -294,15 +176,7 @@ public class OnlineManager {
         post.addParam("filename", trackFile.getName());
         post.addParam("hash", hash);
 
-        ArrayList<String> response = sendRequest(post, endpoint + "getrank.php");
-
-        if (response == null) {
-            return new ArrayList<String>();
-        }
-
-        response.remove(0);
-
-        return response;
+        return new ArrayList<>();
     }
 
     public boolean loadAvatarToTextureManager() {
@@ -346,12 +220,6 @@ public class OnlineManager {
 
         Debug.i("Success!");
         return false;
-    }
-
-    public void sendReplay(String filename) {
-        if (replayID <= 0) return;
-        Debug.i("Sending replay '" + filename + "' for id = " + replayID);
-        OnlineFileOperator.sendFile(endpoint + "upload.php", filename, String.valueOf(replayID));
     }
 
     public String getScorePack(int playid) throws OnlineManagerException {
@@ -409,10 +277,6 @@ public class OnlineManager {
 
     public void setStayOnline(boolean stayOnline) {
         this.stayOnline = stayOnline;
-    }
-
-    public boolean isReadyToSend() {
-        return (playID != null);
     }
 
     public int getMapRank() {

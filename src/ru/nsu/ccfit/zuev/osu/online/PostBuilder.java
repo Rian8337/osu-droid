@@ -37,11 +37,7 @@ public class PostBuilder {
 
     public ArrayList<String> requestWithAttempts(final String scriptUrl, int attempts) throws RequestException {
         ArrayList<String> response = null;
-        String signature = SecurityUtils.signRequest(values.toString());
 
-        if (signature != null) {
-            addParam("sign", signature);
-        }
         for (int i = 0; i < attempts; i++) {
             try {
                 response = request(scriptUrl);

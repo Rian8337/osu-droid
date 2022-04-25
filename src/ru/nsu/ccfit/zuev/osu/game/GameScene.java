@@ -620,10 +620,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         //TODO fix replays ^^
         // replay = null;
 
-        //TODO online
-        if (!replaying)
-            OnlineScoring.getInstance().startPlay(track, trackMD5);
-
         if (Config.isEnableStoryboard()) {
             storyboardSprite.loadStoryboard(track.getFilename());
         }
@@ -1493,20 +1489,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 rate = 1 + drain / (2f * distToNextObject);
             }
             stat.changeHp(-rate * 0.01f * dt);
-            if (stat.getHp() <= 0
-                    && stat.getMod().contains(GameMod.MOD_NOFAIL) == false
-                    && stat.getMod().contains(GameMod.MOD_RELAX) == false
-                    && stat.getMod().contains(GameMod.MOD_AUTOPILOT) == false
-                    && stat.getMod().contains(GameMod.MOD_AUTO) == false) {
-                if (stat.getMod().contains(GameMod.MOD_EASY) && failcount < 3) {
-                    failcount++;
-                    stat.changeHp(1f);
-                }
-                else {
-                    gameover();
-                }
-                return;
-            }
         }
 
         if (hitErrorMeter != null) {
@@ -2486,12 +2468,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         scene.getChildScene().back();
         paused = false;
-        if (stat.getHp() <= 0 && stat.getMod().contains(GameMod.MOD_NOFAIL) == false
-                && stat.getMod().contains(GameMod.MOD_RELAX) == false
-                && stat.getMod().contains(GameMod.MOD_AUTOPILOT) == false) {
-            quit();
-            return;
-        }
         /*if (music != null && music.getStatus() != Status.PLAYING && secPassed > 0) {
             music.play();
             music.setVolume(Config.getBgmVolume());

@@ -10,7 +10,6 @@ import android.util.DisplayMetrics;
 import androidx.preference.PreferenceManager;
 
 import com.edlplan.favorite.FavoriteLibrary;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.File;
 import java.util.HashMap;
@@ -222,12 +221,6 @@ public class Config {
         hideInGameUI = prefs.getBoolean("hideInGameUI", false);
         receiveAnnouncements = prefs.getBoolean("receiveAnnouncements", true);
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
-
-        if(receiveAnnouncements) {
-            FirebaseMessaging.getInstance().subscribeToTopic("announcements");
-        }else {
-            FirebaseMessaging.getInstance().unsubscribeFromTopic("announcements"); 
-        }
 
         //Init
         onlineDeviceID = prefs.getString("installID", null);
@@ -516,7 +509,7 @@ public class Config {
     }
 
     public static boolean isStayOnline() {
-        return stayOnline && BuildType.hasOnlineAccess();
+        return stayOnline;
     }
 
     public static void setStayOnline(boolean stayOnline) {
