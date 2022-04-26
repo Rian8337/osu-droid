@@ -27,7 +27,7 @@ public class OnlineManager {
 
     private boolean stayOnline = true;
     private String userId = "";
-
+    private String sessionId = "";
     private String username = "";
     private String password = "";
     private String deviceID = "";
@@ -56,7 +56,10 @@ public class OnlineManager {
     }
 
     private ArrayList<String> sendRequest(PostBuilder post, String url) throws OnlineManagerException {
+        post.addParam("sessionId", sessionId);
+
         ArrayList<String> response;
+
         try {
             response = post.requestWithAttempts(url, 3);
         } catch (RequestException e) {
@@ -126,12 +129,13 @@ public class OnlineManager {
             return false;
         }
         userId = params[0];
-        rank = Integer.parseInt(params[1]);
-        score = Long.parseLong(params[2]);
-        accuracy = Integer.parseInt(params[3]) / 100000f;
-        this.username = params[4];
-        if (params.length >= 6) {
-            avatarURL = params[5];
+        sessionId = params[1];
+        rank = Integer.parseInt(params[2]);
+        score = Long.parseLong(params[3]);
+        accuracy = Integer.parseInt(params[4]) / 100000f;
+        this.username = params[5];
+        if (params.length >= 7) {
+            avatarURL = params[6];
         } else {
             avatarURL = "";
         }
