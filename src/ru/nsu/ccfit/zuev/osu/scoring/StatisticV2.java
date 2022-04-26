@@ -621,9 +621,7 @@ public class StatisticV2 implements Serializable {
         builder.append(' ');
         builder.append(getTime());
         builder.append(' ');
-        builder.append(isPerfect() ? 1 : 0);
-        builder.append(' ');
-        builder.append(getPlayerName());
+        builder.append(getUnstableRate());
         return builder.toString();
     }
 
