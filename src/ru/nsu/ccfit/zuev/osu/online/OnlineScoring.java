@@ -137,7 +137,7 @@ public class OnlineScoring {
                         }
 
                         try {
-                            success = OnlineManager.getInstance().sendRecord(recordData, mapMD5, record.getTime());
+                            success = OnlineManager.getInstance().sendRecord(recordData, mapMD5);
                         } catch (OnlineManagerException e) {
                             Debug.e("Login error: " + e.getMessage());
                             success = false;

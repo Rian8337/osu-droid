@@ -139,14 +139,13 @@ public class OnlineManager {
         return true;
     }
 
-    public boolean sendRecord(String data, String mapMD5, long completeTime) throws OnlineManagerException {
+    public boolean sendRecord(String data, String mapMD5) throws OnlineManagerException {
         Debug.i("Sending record...");
 
         PostBuilder post = new PostBuilder();
         post.addParam("userID", userId);
         post.addParam("data", data);
         post.addParam("hash", mapMD5);
-        post.addParam("completeTime", String.valueOf(completeTime));
 
         ArrayList<String> response = sendRequest(post, endpoint + "submit");
 
