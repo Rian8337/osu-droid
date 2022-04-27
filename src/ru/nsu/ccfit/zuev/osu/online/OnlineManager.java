@@ -27,7 +27,6 @@ public class OnlineManager {
 
     private boolean stayOnline = true;
     private String userId = "";
-    private String sessionId = "";
     private String username = "";
     private String password = "";
     private String deviceID = "";
@@ -56,8 +55,6 @@ public class OnlineManager {
     }
 
     private ArrayList<String> sendRequest(PostBuilder post, String url) throws OnlineManagerException {
-        post.addParam("sessionId", sessionId);
-
         ArrayList<String> response;
 
         try {
@@ -129,7 +126,6 @@ public class OnlineManager {
             return false;
         }
         userId = params[0];
-        sessionId = params[1];
         rank = Integer.parseInt(params[2]);
         score = Long.parseLong(params[3]);
         accuracy = Integer.parseInt(params[4]) / 100000f;
