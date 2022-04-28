@@ -16,6 +16,7 @@ import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 
 public class OnlineManager {
+    public static final String mainHostname = "osudroid.moe";
     public static final String hostname = "droidppboard.herokuapp.com";
     public static final String endpoint = "https://" + hostname + "/api/droid/";
     private static final String onlineVersion = "29";
