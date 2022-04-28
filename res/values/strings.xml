@@ -48,7 +48,7 @@
 	<string name="dialog_dither_confirm">Restart to apply changes.</string>
 
 	<string name="dialog_visit_osu_website_message">Do you want to visit the official osu! website?</string>
-	<string name="dialog_visit_osudroid_website_message">Do you want to visit the official osu!droid website?</string>
+	<string name="dialog_visit_osudroid_website_message">Do you want to visit the droid pp website?</string>
 
     <string name="dialog_visit_profile_page">Do you want to visit your profile page?</string>
 
