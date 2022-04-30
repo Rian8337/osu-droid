@@ -333,7 +333,7 @@ public class MainScene implements IUpdateHandler {
 
         final Text yasonline = new Text(720, 530, ResourceManager
                 .getInstance().getFont("font"),
-                "  Multiplayer Server\n   Provided by Rian8337") {
+                "  Multiplayer Server\n  Provided by Rian8337") {
 
             @Override
             public boolean onAreaTouched(final TouchEvent pSceneTouchEvent,
