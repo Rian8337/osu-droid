@@ -653,7 +653,7 @@ public class MainActivity extends BaseGameActivity implements
         if (GlobalManager.getInstance().getEngine() != null && GlobalManager.getInstance().getGameScene() != null
                 && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
             SpritePool.getInstance().purge();
-            GlobalManager.getInstance().getGameScene().pause();
+            GlobalManager.getInstance().getGameScene().quit();
         }
         if (GlobalManager.getInstance().getMainScene() != null) {
             BeatmapInfo beatmapInfo = GlobalManager.getInstance().getMainScene().beatmapInfo;
@@ -703,9 +703,7 @@ public class MainActivity extends BaseGameActivity implements
                 && GlobalManager.getInstance().getGameScene() != null
                 && !hasFocus
                 && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
-            if (!GlobalManager.getInstance().getGameScene().isPaused()) {
-                GlobalManager.getInstance().getGameScene().pause();
-            }
+                GlobalManager.getInstance().getGameScene().quit();
         }
         if (hasFocus && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && Config.isHideNaviBar()) {
             getWindow().getDecorView().setSystemUiVisibility(
@@ -754,11 +752,7 @@ public class MainActivity extends BaseGameActivity implements
         if (GlobalManager.getInstance().getGameScene() != null
                 && (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU)
                 && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
-            if (GlobalManager.getInstance().getGameScene().isPaused()) {
-                GlobalManager.getInstance().getGameScene().resume();
-            } else {
-                GlobalManager.getInstance().getGameScene().pause();
-            }
+            GlobalManager.getInstance().getGameScene().quit();
             return true;
         }
         if (GlobalManager.getInstance().getScoring() != null && keyCode == KeyEvent.KEYCODE_BACK
