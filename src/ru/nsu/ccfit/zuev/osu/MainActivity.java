@@ -104,6 +104,14 @@ public class MainActivity extends BaseGameActivity implements
     private boolean willReplay = false;
     private static boolean activityVisible = true;
     private boolean autoclickerDialogShown = false;
+    private boolean doubleBackToExitPressedOnce = false;
+
+    private final Runnable doubleBackToExitRunnable = new Runnable() {
+        @Override
+        public void run() {
+            doubleBackToExitPressedOnce = false;
+        }
+    };
 
     @Override
     public Engine onLoadEngine() {
@@ -729,6 +737,13 @@ public class MainActivity extends BaseGameActivity implements
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        handler.removeCallbacks(doubleBackToExitRunnable);
+    }
+
+    @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent event) {
         if (this.mEngine == null) {
             return false;
@@ -752,7 +767,17 @@ public class MainActivity extends BaseGameActivity implements
         if (GlobalManager.getInstance().getGameScene() != null
                 && (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU)
                 && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
-            GlobalManager.getInstance().getGameScene().quit();
+            if (doubleBackToExitPressedOnce) {
+                GlobalManager.getInstance().getGameScene().quit();
+
+                return true;
+            }
+
+            doubleBackToExitPressedOnce = true;
+            ToastLogger.showText(StringTable.get(R.string.message_press_again_to_exit), true);
+
+            handler.postDelayed(doubleBackToExitRunnable, 2000);
+
             return true;
         }
         if (GlobalManager.getInstance().getScoring() != null && keyCode == KeyEvent.KEYCODE_BACK
