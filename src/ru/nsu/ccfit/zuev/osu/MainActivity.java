@@ -707,12 +707,6 @@ public class MainActivity extends BaseGameActivity implements
         if (this.mEngine == null) {
             return;
         }
-        if (GlobalManager.getInstance().getEngine() != null
-                && GlobalManager.getInstance().getGameScene() != null
-                && !hasFocus
-                && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
-                GlobalManager.getInstance().getGameScene().quit();
-        }
         if (hasFocus && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && Config.isHideNaviBar()) {
             getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
