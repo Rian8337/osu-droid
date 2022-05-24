@@ -488,7 +488,7 @@ public class ScoringScene {
             if (stat.getModifiedTotalScore() > 0 && OnlineManager.getInstance().isStayOnline()) {
                 boolean hasUnrankedMod = SmartIterator.wrap(stat.getMod().iterator())
                     .applyFilter(m -> m.unranked).hasNext();
-                if (hasUnrankedMod || Config.isRemoveSliderLock()) {
+                if (hasUnrankedMod) {
                     return;
                 }
 
