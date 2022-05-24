@@ -622,6 +622,8 @@ public class StatisticV2 implements Serializable {
         builder.append(getTime());
         builder.append(' ');
         builder.append(getUnstableRate());
+        builder.append(' ');
+        builder.append(Config.isRemoveSliderLock() ? '1' : '0');
         return builder.toString();
     }
 
