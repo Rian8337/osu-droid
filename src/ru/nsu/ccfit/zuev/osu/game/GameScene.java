@@ -1916,6 +1916,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                     }
                     ResourceManager.getInstance().getSound("menuhit").play();
                     final float difference = skipTime - 0.5f - secPassed;
+                    stat.setSkippedTime(difference);
                     for (final GameObject obj : passiveObjects) {
                         obj.update(difference);
                     }

@@ -52,6 +52,7 @@ public class StatisticV2 implements Serializable {
     private int negativeTotalOffsetSum;
     private float negativeHitOffsetSum;
     private float unstableRate;
+    private float skippedTime;
 
     public StatisticV2() {
         random = new Random();
@@ -624,6 +625,8 @@ public class StatisticV2 implements Serializable {
         builder.append(getUnstableRate());
         builder.append(' ');
         builder.append(Config.isRemoveSliderLock() ? '1' : '0');
+        builder.append(' ');
+        builder.append(skippedTime);
         return builder.toString();
     }
 
@@ -695,6 +698,14 @@ public class StatisticV2 implements Serializable {
                     (msAccuracy - avgOffset / totalOffsetSum) * (msAccuracy - (avgOffset - msAccuracy) / (totalOffsetSum - 1))) / totalOffsetSum
             );
         }
+    }
+
+    public float getSkippedTime() {
+        return skippedTime;
+    }
+
+    public void setSkippedTime(float time) {
+        skippedTime = time;
     }
     
     public float getNegativeHitError() {
