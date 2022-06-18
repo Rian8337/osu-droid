@@ -761,6 +761,16 @@ public class MainActivity extends BaseGameActivity implements
         if (GlobalManager.getInstance().getGameScene() != null
                 && (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU)
                 && GlobalManager.getInstance().getEngine().getScene() == GlobalManager.getInstance().getGameScene().getScene()) {
+            if (GlobalManager.getInstance().getGameScene().getReplaying()) {
+                if (GlobalManager.getInstance().getGameScene().isPaused()) {
+                    GlobalManager.getInstance().getGameScene().resume();
+                } else {
+                    GlobalManager.getInstance().getGameScene().pause();
+                }
+
+                return true;
+            }
+
             if (doubleBackToExitPressedOnce) {
                 GlobalManager.getInstance().getGameScene().quit();
 
