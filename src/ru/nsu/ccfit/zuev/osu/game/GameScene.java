@@ -2555,7 +2555,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     }
 
     private void createBurstEffect(final PointF pos, final RGBColor color) {
-        if (!Config.isComplexAnimations() || !Config.isBurstEffects()) return;
+        if (!Config.isComplexAnimations() || !Config.isBurstEffects() || stat.getMod().contains(GameMod.MOD_HIDDEN))
+            return;
         final GameEffect burst1 = GameObjectPool.getInstance().getEffect("hitcircle");
         burst1.init(mgScene, pos, scale,
                 ModifierFactory.newScaleModifier(0.25f, scale, 1.5f * scale),
@@ -2572,7 +2573,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     }
 
     private void createBurstEffectSliderStart(final PointF pos, final RGBColor color) {
-        if (!Config.isComplexAnimations() || !Config.isBurstEffects()) return;
+        if (!Config.isComplexAnimations() || !Config.isBurstEffects() || stat.getMod().contains(GameMod.MOD_HIDDEN))
+            return;
         final GameEffect burst1 = GameObjectPool.getInstance().getEffect("sliderstartcircle");
         burst1.init(mgScene, pos, scale,
                 ModifierFactory.newScaleModifier(0.25f, scale, 1.5f * scale),
@@ -2589,7 +2591,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     }
 
     private void createBurstEffectSliderEnd(final PointF pos, final RGBColor color) {
-        if (!Config.isComplexAnimations() || !Config.isBurstEffects()) return;
+        if (!Config.isComplexAnimations() || !Config.isBurstEffects() || stat.getMod().contains(GameMod.MOD_HIDDEN))
+            return;
         final GameEffect burst1 = GameObjectPool.getInstance().getEffect("sliderendcircle");
         burst1.init(mgScene, pos, scale,
                 ModifierFactory.newScaleModifier(0.25f, scale, 1.5f * scale),
@@ -2606,7 +2609,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     }
 
     private void createBurstEffectSliderReverse(final PointF pos, float ang, final RGBColor color) {
-        if (!Config.isComplexAnimations() || !Config.isBurstEffects()) return;
+        if (!Config.isComplexAnimations() || !Config.isBurstEffects() || stat.getMod().contains(GameMod.MOD_HIDDEN)) 
+            return;
         final GameEffect burst1 = GameObjectPool.getInstance().getEffect("reversearrow");
         burst1.hit.setRotation(ang);
         burst1.init(mgScene, pos, scale,
