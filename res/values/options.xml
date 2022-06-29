@@ -190,7 +190,7 @@
     <string name="opt_login_summary">Your online name</string>
 
     <string name="opt_password_title">Password</string>
-    <string name="opt_password_summary">Password of your account</string>
+    <string name="opt_password_summary">Password of your account (use your registration email)</string>
 
     <string name="opt_register_title">Register</string>
     <string name="opt_register_summary">Register a new account</string>
