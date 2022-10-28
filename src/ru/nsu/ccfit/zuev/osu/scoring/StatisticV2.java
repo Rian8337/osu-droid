@@ -26,7 +26,8 @@ public class StatisticV2 implements Serializable {
     private boolean perfect = false;
     private int currentCombo = 0;
     private int scoreHash = 0;
-    private int totalScore;
+    private int totalScoreV1;
+    private int totalScoreV2;
     private int possibleScore = 0;
     private int realScore = 0;
     private float hp = 1;
@@ -77,7 +78,7 @@ public class StatisticV2 implements Serializable {
         misses = stat.misses;
         maxCombo = stat.maxCombo;
         currentCombo = stat.currentCombo;
-        totalScore = stat.totalScore;
+        totalScoreV1 = stat.totalScore;
         possibleScore = stat.possibleScore;
         realScore = stat.realScore;
         hp = stat.hp;
@@ -127,7 +128,7 @@ public class StatisticV2 implements Serializable {
     }
 
     public int getTotalScore() {
-        return totalScore;
+        return mod.contains(GameMod.MOD_SCOREV2) ? totalScoreV2 : totalScoreV1;
     }
 
     public int getModifiedTotalScore() {
@@ -140,6 +141,7 @@ public class StatisticV2 implements Serializable {
         if (changeSpeed != 1.0f){
             mult *= getSpeedChangeScoreMultiplier();
         }
+        int totalScore = mod.contains(GameMod.MOD_SCOREV2) ? totalScoreV2 : totalScoreV1;
         return (int) (totalScore * mult);
     }
 
@@ -154,7 +156,21 @@ public class StatisticV2 implements Serializable {
         if (changeSpeed != 1.0f){
             mult *= getSpeedChangeScoreMultiplier();
         }
+        int totalScore = mod.contains(GameMod.MOD_SCOREV2) ? totalScoreV2 : totalScoreV1;
         return (int) (totalScore * mult);
+    }
+
+    private int getCompiledTotalScore() {
+        if (forcedScore > 0)
+            return forcedScore;
+        float mult = 1;
+        for (GameMod m : mod) {
+            mult *= m.scoreMultiplier;
+        }
+        if (changeSpeed != 1.0f){
+            mult *= getSpeedChangeScoreMultiplier();
+        }
+        return (int) (totalScoreV1 * mult);
     }
 
     public void registerSpinnerHit() {
@@ -269,26 +285,29 @@ public class StatisticV2 implements Serializable {
                         break;
                 }
             }
-            totalScore = (int)(MAX_SCORE * (ACC_PORTION * Math.pow(acc , 10) * percentage
+            totalScoreV2 = (int)(MAX_SCORE * (ACC_PORTION * Math.pow(acc , 10) * percentage
                     + COMBO_PORTION * maxcb / maxHighestCombo) + bonusScore);
-        } else if (amount + amount * currentCombo * diffModifier / 25 > 0) {
+        }
+
+        if (amount + amount * currentCombo * diffModifier / 25 > 0) {
             // It is possible for score addition to be a negative number due to
             // difficulty modifier, hence the prior check.
             //
             // In that case, just skip score addition to ensure score is always positive.
 
             //如果分数溢出或分数满了
-            if (totalScore + (amount * currentCombo * diffModifier) / 25 + amount < 0 || totalScore == Integer.MAX_VALUE){
-                totalScore = Integer.MAX_VALUE;
+            if (totalScoreV1 + (amount * currentCombo * diffModifier) / 25 + amount < 0 || totalScoreV1 == Integer.MAX_VALUE){
+                totalScoreV1 = Integer.MAX_VALUE;
             }
             else{
-                totalScore += amount;
+                totalScoreV1 += amount;
                 if (combo) {
-                    totalScore += (amount * currentCombo * diffModifier) / 25;
+                    totalScoreV1 += (amount * currentCombo * diffModifier) / 25;
                 }
             }
         }
-        scoreHash = SecurityUtils.getHigh16Bits(totalScore);
+
+        scoreHash = SecurityUtils.getHigh16Bits(mod.contains(GameMod.MOD_SCOREV2) ? totalScoreV2 : totalScoreV1);
     }
 
     public String getMark() {
@@ -578,7 +597,11 @@ public class StatisticV2 implements Serializable {
 
     public void setForcedScore(int forcedScore) {
         this.forcedScore = forcedScore;
-        totalScore = forcedScore;
+        if (mod.contains(GameMod.MOD_SCOREV2)) {
+            totalScoreV2 = forcedScore;
+        } else {
+            totalScoreV1 = forcedScore;
+        }
     }
 
     public String getFileName() {
@@ -590,7 +613,7 @@ public class StatisticV2 implements Serializable {
     }
 
     public final boolean isScoreValid() {
-        return SecurityUtils.getHigh16Bits(totalScore) == scoreHash;
+        return SecurityUtils.getHigh16Bits(mod.contains(GameMod.MOD_SCOREV2) ? totalScoreV2 : totalScoreV1) == scoreHash;
     }
 
     public String compile() {
@@ -600,7 +623,7 @@ public class StatisticV2 implements Serializable {
             mstring = "-";
         builder.append(mstring);
         builder.append(' ');
-        builder.append(getModifiedTotalScore());
+        builder.append(getCompiledTotalScore());
         builder.append(' ');
         builder.append(getMaxCombo());
         builder.append(' ');
