@@ -21,7 +21,7 @@ public enum GameMod {
     MOD_PRECISE("pr", 1.06f),
     MOD_SMALLCIRCLE("sc", 1.06f),
     MOD_REALLYEASY("re", 0.5f),
-    MOD_SCOREV2("v2", 1, true),
+    MOD_SCOREV2("v2", 1),
     MOD_SPEEDUP("su", 1.06f, true);
 
     public final String shortName;
