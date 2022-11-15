@@ -649,6 +649,8 @@ public class StatisticV2 implements Serializable {
         builder.append(' ');
         builder.append(Config.isRemoveSliderLock() ? '1' : '0');
         builder.append(' ');
+        builder.append(Config.isUseSliderAccuracy() ? '1' : '0');
+        builder.append(' ');
         builder.append(skippedTime);
         return builder.toString();
     }

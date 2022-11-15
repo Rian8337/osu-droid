@@ -33,7 +33,6 @@ import ru.nsu.ccfit.zuev.osuplus.R;
 public class Replay {
     public static EnumSet<GameMod> mod = EnumSet.noneOf(GameMod.class);
     public static EnumSet<GameMod> oldMod = EnumSet.noneOf(GameMod.class);
-    protected int pointsSkipped = 0;
     public ArrayList<MoveArray> cursorMoves = new ArrayList<>();
     public int[] cursorIndex;
     public int[] lastMoveIndex;
@@ -95,13 +94,13 @@ public class Replay {
     public void addPress(final float time, final PointF pos, final int pid) {
         if (pid > GameScene.CursorCount) return;
         int itime = Math.max(0, (int) (time * 1000));
-        cursorMoves.get(pid).pushBack(this, itime, pos.x, pos.y, TouchType.DOWN);
+        cursorMoves.get(pid).pushBack(itime, pos.x, pos.y, TouchType.DOWN);
     }
 
     public void addMove(final float time, final PointF pos, final int pid) {
         if (pid > GameScene.CursorCount) return;
         int itime = Math.max(0, (int) (time * 1000));
-        cursorMoves.get(pid).pushBack(this, itime, pos.x, pos.y, TouchType.MOVE);
+        cursorMoves.get(pid).pushBack(itime, pos.x, pos.y, TouchType.MOVE);
     }
 
     public void addUp(final float time, final int pid) {
@@ -113,7 +112,6 @@ public class Replay {
     public void save(final String filename) {
         for (int i = 0; i < cursorMoves.size(); i++)
             Debug.i("Replay contains " + cursorMoves.get(i).size + " moves for finger " + i);
-        Debug.i("Skipped " + pointsSkipped + " points");
         Debug.i("Replay contains " + objectData.length + " objects");
         ObjectOutputStream os;
         ZipOutputStream zip;
@@ -492,11 +490,10 @@ public class Replay {
             return (Utils.sqr(previousMovement.point.x - tx) + Utils.sqr(previousMovement.point.y - ty)) <= 25;
         }
 
-        public void pushBack(Replay replay, int time, float x, float y, TouchType touchType) {
+        public void pushBack(int time, float x, float y, TouchType touchType) {
             int idx = size;
             if (touchType == TouchType.MOVE && checkNewPoint(x, y)) {
                 idx = size - 1;
-                replay.pointsSkipped++;
             } else {
                 if (size + 1 >= allocated) {
                     reallocate((allocated * 3) / 2);

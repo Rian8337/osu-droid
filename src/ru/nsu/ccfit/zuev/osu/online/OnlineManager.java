@@ -2,6 +2,7 @@ package ru.nsu.ccfit.zuev.osu.online;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 import okhttp3.OkHttpClient;
 
@@ -14,10 +15,10 @@ import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
 import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
+import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
 
 public class OnlineManager {
-    public static final String mainHostname = "osudroid.moe";
-    public static final String hostname = "droidppboard.herokuapp.com";
+    public static final String hostname = "droidpp.osudroid.moe";
     public static final String endpoint = "https://" + hostname + "/api/droid/";
     private static final String onlineVersion = "29";
 
@@ -173,6 +174,33 @@ public class OnlineManager {
         mapRank = Integer.parseInt(resp[3]);
 
         return true;
+    }
+
+    public String sendSpectatorData(byte[] data) throws OnlineManagerException {
+        System.out.println("Data length: " + data.length);
+
+        PostBuilder post = new PostBuilder();
+        post.addParam("userID", userId);
+        post.addParam("data", Base64.encodeToString(data, Base64.URL_SAFE));
+
+        ArrayList<String> response = sendRequest(post, endpoint + "spectatorData");
+
+        if (response == null || response.size() == 0) {
+            return "FAILED";
+        }
+
+        return response.get(0);
+    }
+
+    public boolean sendPlaySettings(StatisticV2 stat, final String hash) throws OnlineManagerException {
+        PostBuilder post = new PostBuilder();
+        post.addParam("uid", userId);
+        post.addParam("modstring", stat.getModString());
+        post.addParam("hash", hash);
+
+        ArrayList<String> response = sendRequest(post, endpoint + "spectatorPlayerSettings");
+
+        return response != null && response.size() > 0 && response.get(0).equals("SUCCESS");
     }
 
     public ArrayList<String> getTop(final File trackFile, final String hash) throws OnlineManagerException {

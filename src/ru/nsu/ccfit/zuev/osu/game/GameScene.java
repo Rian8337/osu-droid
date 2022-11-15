@@ -65,6 +65,8 @@ import ru.nsu.ccfit.zuev.osu.PropertiesLibrary;
 import ru.nsu.ccfit.zuev.osu.RGBAColor;
 import ru.nsu.ccfit.zuev.osu.RGBColor;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
+import ru.nsu.ccfit.zuev.osu.online.OnlineManager;
+import ru.nsu.ccfit.zuev.osu.spectator.SpectatorDataManager;
 import ru.nsu.ccfit.zuev.skins.OsuSkin;
 import ru.nsu.ccfit.zuev.skins.SkinManager;
 import ru.nsu.ccfit.zuev.osu.ToastLogger;
@@ -88,7 +90,6 @@ import ru.nsu.ccfit.zuev.osu.menu.LoadingScreen;
 import ru.nsu.ccfit.zuev.osu.menu.ModMenu;
 import ru.nsu.ccfit.zuev.osu.menu.PauseMenu;
 import ru.nsu.ccfit.zuev.osu.online.OnlineFileOperator;
-import ru.nsu.ccfit.zuev.osu.online.OnlineScoring;
 import ru.nsu.ccfit.zuev.osu.scoring.Replay;
 import ru.nsu.ccfit.zuev.osu.scoring.ResultType;
 import ru.nsu.ccfit.zuev.osu.scoring.TouchType;
@@ -184,6 +185,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     private ProxySprite storyboardOverlayProxy;
 
     private DifficultyHelper difficultyHelper = DifficultyHelper.StdDifficulty;
+    private SpectatorDataManager spectatorDataManager;
 
     private long previousFrameTime;
 
@@ -643,6 +645,43 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         paused = false;
         gameStarted = false;
 
+        stat = new StatisticV2();
+        stat.setMod(ModMenu.getInstance().getMod());
+        float multiplier = 1 + rawDifficulty / 10f + rawDrain / 10f;
+        multiplier += (Float.parseFloat(beatmapData.getData("Difficulty",
+                "CircleSize")) - 3) / 4f;
+
+        stat.setDiffModifier(multiplier);
+        stat.setMaxObjectsCount(lastTrack.getTotalHitObjectCount());
+        stat.setMaxHighestCombo(lastTrack.getMaxCombo());
+        stat.setEnableForceAR(ModMenu.getInstance().isEnableForceAR());
+        stat.setForceAR(ModMenu.getInstance().getForceAR());
+        stat.setChangeSpeed(ModMenu.getInstance().getChangeSpeed());
+        stat.setFLFollowDelay(ModMenu.getInstance().getFLfollowDelay());
+
+        if (!replaying && OnlineManager.getInstance().isStayOnline() && replay != null) {
+            boolean requestSuccess = false;
+
+            try {
+                requestSuccess = OnlineManager.getInstance().sendPlaySettings(stat, trackMD5);
+            } catch (OnlineManager.OnlineManagerException e) {
+                e.printStackTrace();
+            } finally {
+                if (requestSuccess) {
+                    spectatorDataManager = new SpectatorDataManager(this, replay, stat);
+                } else {
+                    ToastLogger.showText(
+                        StringTable.get(R.string.message_spec_player_data_req_failed),
+                        true
+                    );
+
+                    spectatorDataManager = null;
+                }
+            }
+        } else {
+            spectatorDataManager = null;
+        }
+
         return true;
     }
 
@@ -775,20 +814,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 }
             });
         }
-
-        stat = new StatisticV2();
-        stat.setMod(ModMenu.getInstance().getMod());
-        float multiplier = 1 + rawDifficulty / 10f + rawDrain / 10f;
-        multiplier += (Float.parseFloat(beatmapData.getData("Difficulty",
-                "CircleSize")) - 3) / 4f;
-
-        stat.setDiffModifier(multiplier);
-        stat.setMaxObjectsCount(lastTrack.getTotalHitObjectCount());
-        stat.setMaxHighestCombo(lastTrack.getMaxCombo());
-        stat.setEnableForceAR(ModMenu.getInstance().isEnableForceAR());
-        stat.setForceAR(ModMenu.getInstance().getForceAR());
-        stat.setChangeSpeed(ModMenu.getInstance().getChangeSpeed());
-        stat.setFLFollowDelay(ModMenu.getInstance().getFLfollowDelay());
 
         GameHelper.setHardrock(stat.getMod().contains(GameMod.MOD_HARDROCK));
         GameHelper.setDoubleTime(stat.getMod().contains(GameMod.MOD_DOUBLETIME));
@@ -1963,6 +1988,11 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         breakPeriods.clear();
         cursorSprites = null;
 
+        if (spectatorDataManager != null) {
+            spectatorDataManager.pauseTimer();
+            spectatorDataManager = null;
+        }
+
         if (GlobalManager.getInstance().getSongService() != null) {
             GlobalManager.getInstance().getSongService().stop();
             GlobalManager.getInstance().getSongService().preLoad(filePath);
@@ -2026,6 +2056,9 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             comboWasMissed = true;
             stat.registerHit(0, false, false);
             if (writeReplay) replay.addObjectScore(objectId, ResultType.MISS);
+            if (spectatorDataManager != null) {
+                spectatorDataManager.addObjectData(objectId);
+            }
             if(GameHelper.isPerfect()){
                 gameover();
                 restartGame();
@@ -2072,6 +2105,10 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 stat.registerHit(300, false, false);
                 scoreName = "hit300";
             }
+        }
+
+        if (spectatorDataManager != null) {
+            spectatorDataManager.addObjectData(objectId);
         }
 
         if (endCombo) {
@@ -2128,8 +2165,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         createBurstEffect(pos, color);
         createHitEffect(pos, scoreName, color);
-
-
     }
 
     public void onSliderReverse(PointF pos, float ang, RGBColor color) {
@@ -2438,6 +2473,9 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             GlobalManager.getInstance().getSongService().pause();
         }
         paused = true;
+        if (spectatorDataManager != null) {
+            spectatorDataManager.pauseTimer();
+        }
         scene.setChildScene(menu.getScene(), false, true, true);
     }
 
@@ -2468,6 +2506,9 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         scene.getChildScene().back();
         paused = false;
+        if (spectatorDataManager != null) {
+            spectatorDataManager.resumeTimer((long) (secPassed % 5) * 1000);
+        }
         /*if (music != null && music.getStatus() != Status.PLAYING && secPassed > 0) {
             music.play();
             music.setVolume(Config.getBgmVolume());
@@ -2803,5 +2844,18 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             ToastLogger.showText(StringTable.get(R.string.message_save_replay_failed), true);
             return false;
         }
+    }
+
+    public void stopSpectatorDataSubmission() {
+        if (spectatorDataManager == null) {
+            return;
+        }
+
+        spectatorDataManager.pauseTimer();
+        spectatorDataManager = null;
+    }
+
+    public float getSecPassed() {
+        return secPassed;
     }
 }

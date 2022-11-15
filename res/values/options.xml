@@ -335,4 +335,7 @@
 
     <string name="opt_safe_beatmap_bg_title">Safe beatmap background</string>
     <string name="opt_safe_beatmap_bg_summary">Change all of the beatmaps\' background to the menu-background image from your skin</string>
+
+    <string name="opt_enable_slider_accuracy_title">Enable slider accuracy</string>
+    <string name="opt_enable_slider_accuracy_summary">Enables slider accuracy similar to osu!standard ScoreV2 mod.</string>
 </resources>

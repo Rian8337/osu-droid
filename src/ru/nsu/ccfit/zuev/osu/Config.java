@@ -74,7 +74,8 @@ public class Config {
         useSuperSlider,
         enableStoryboard,
         safeBeatmapBg,
-        trianglesAnimation;
+        trianglesAnimation,
+        useSliderAccuracy;
 
     private static int RES_WIDTH,
         RES_HEIGHT,
@@ -221,6 +222,7 @@ public class Config {
         hideInGameUI = prefs.getBoolean("hideInGameUI", false);
         receiveAnnouncements = prefs.getBoolean("receiveAnnouncements", true);
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
+        useSliderAccuracy = prefs.getBoolean("sliderAccuracy", false);
 
         //Init
         onlineDeviceID = prefs.getString("installID", null);
@@ -282,6 +284,10 @@ public class Config {
 
     public static boolean isRemoveSliderLock() {
         return removeSliderLock;
+    }
+
+    public static boolean isUseSliderAccuracy() {
+        return useSliderAccuracy;
     }
 
     public static boolean isCalculateSliderPathInGameStart() {

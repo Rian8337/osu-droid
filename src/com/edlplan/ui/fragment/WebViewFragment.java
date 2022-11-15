@@ -23,8 +23,8 @@ import ru.nsu.ccfit.zuev.osuplus.R;
 
 public class WebViewFragment extends BaseFragment {
 
-    public static final String REGISTER_URL = "https://" + OnlineManager.mainHostname + "/user/?action=register";
-    public static final String PROFILE_URL = "https://" + OnlineManager.mainHostname + "/game/profile.php?uid=";
+    public static final String REGISTER_URL = "https://" + OnlineManager.hostname + "/user/?action=register";
+    public static final String PROFILE_URL = "https://" + OnlineManager.hostname + "/game/profile.php?uid=";
 
     private WebView webview;
     private String url;

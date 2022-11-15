@@ -193,4 +193,5 @@
     <string name="message_autoclicker_detected">Please disable your accessibility service(s) with the Perform Gestures permission before playing the game.</string>
 
 	<string name="message_press_again_to_exit">Press back again to exit</string>
+	<string name="message_spec_player_data_req_failed">Request to server failed. Aborting spectator data</string>
 </resources>
