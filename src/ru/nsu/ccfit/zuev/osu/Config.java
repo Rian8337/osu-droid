@@ -222,7 +222,7 @@ public class Config {
         hideInGameUI = prefs.getBoolean("hideInGameUI", false);
         receiveAnnouncements = prefs.getBoolean("receiveAnnouncements", true);
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
-        useSliderAccuracy = prefs.getBoolean("sliderAccuracy", false);
+        useSliderAccuracy = prefs.getBoolean("useSliderAccuracy", false);
 
         //Init
         onlineDeviceID = prefs.getString("installID", null);

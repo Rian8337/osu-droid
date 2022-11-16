@@ -660,24 +660,25 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         stat.setFLFollowDelay(ModMenu.getInstance().getFLfollowDelay());
 
         if (!replaying && OnlineManager.getInstance().isStayOnline() && replay != null) {
-            boolean requestSuccess = false;
+            ArrayList<String> response = new ArrayList<>();
 
             try {
-                requestSuccess = OnlineManager.getInstance().sendPlaySettings(stat, trackMD5);
+                response = OnlineManager.getInstance().sendPlaySettings(stat, trackMD5);
             } catch (OnlineManager.OnlineManagerException e) {
                 e.printStackTrace();
-            } finally {
-                if (requestSuccess) {
-                    spectatorDataManager = new SpectatorDataManager(this, replay, stat);
-                } else {
-                    ToastLogger.showText(
-                        StringTable.get(R.string.message_spec_player_data_req_failed),
-                        true
-                    );
-
-                    spectatorDataManager = null;
-                }
             }
+
+            if (response == null) {
+                ToastLogger.showText(
+                    OnlineManager.getInstance().getFailMessage(),
+                    true
+                );
+
+                spectatorDataManager = null;
+                return false;
+            }
+
+            spectatorDataManager = new SpectatorDataManager(this, replay, stat);
         } else {
             spectatorDataManager = null;
         }

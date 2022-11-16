@@ -192,15 +192,13 @@ public class OnlineManager {
         return response.get(0);
     }
 
-    public boolean sendPlaySettings(StatisticV2 stat, final String hash) throws OnlineManagerException {
+    public ArrayList<String> sendPlaySettings(StatisticV2 stat, final String hash) throws OnlineManagerException {
         PostBuilder post = new PostBuilder();
-        post.addParam("uid", userId);
+        post.addParam("userID", userId);
         post.addParam("modstring", stat.getModString());
         post.addParam("hash", hash);
 
-        ArrayList<String> response = sendRequest(post, endpoint + "spectatorPlayerSettings");
-
-        return response != null && response.size() > 0 && response.get(0).equals("SUCCESS");
+        return sendRequest(post, endpoint + "spectatorPlayerSettings");
     }
 
     public ArrayList<String> getTop(final File trackFile, final String hash) throws OnlineManagerException {
