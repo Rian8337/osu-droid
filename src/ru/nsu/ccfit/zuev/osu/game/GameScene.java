@@ -679,6 +679,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             }
 
             spectatorDataManager = new SpectatorDataManager(this, replay, stat);
+            spectatorDataManager.setRoomId(response.get(1));
         } else {
             spectatorDataManager = null;
         }

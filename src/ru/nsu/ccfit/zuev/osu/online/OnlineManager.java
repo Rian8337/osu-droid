@@ -176,11 +176,12 @@ public class OnlineManager {
         return true;
     }
 
-    public String sendSpectatorData(byte[] data) throws OnlineManagerException {
+    public String sendSpectatorData(String roomId, byte[] data) throws OnlineManagerException {
         System.out.println("Data length: " + data.length);
 
         PostBuilder post = new PostBuilder();
         post.addParam("userID", userId);
+        post.addParam("roomID", roomId);
         post.addParam("data", Base64.encodeToString(data, Base64.URL_SAFE));
 
         ArrayList<String> response = sendRequest(post, endpoint + "spectatorData");

@@ -25,6 +25,7 @@ public class SpectatorDataManager {
     private int[] beginningCursorMoveIndexes = new int[GameScene.CursorCount];
     private final int[] endCursorMoveIndexes = new int[GameScene.CursorCount];
 
+    private String roomId = "";
     private int beginningObjectDataIndex;
     private int endObjectDataIndex;
 
@@ -104,6 +105,7 @@ public class SpectatorDataManager {
                 byteArrayOutputStream.flush();
 
                 String message = OnlineManager.getInstance().sendSpectatorData(
+                    roomId,
                     byteArrayOutputStream.toByteArray()
                 );
 
@@ -200,6 +202,15 @@ public class SpectatorDataManager {
 
         submissionTimer.cancel();
         isPaused = true;
+    }
+
+    /**
+     * Sets the room ID of this manager.
+     *
+     * @param id The room ID.
+     */
+    public void setRoomId(final String id) {
+        roomId = id;
     }
 
     @Override
