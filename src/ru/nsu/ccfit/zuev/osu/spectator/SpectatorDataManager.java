@@ -138,7 +138,7 @@ public class SpectatorDataManager {
                 return;
             }
 
-            if (endObjectDataIndex == replay.objectData.length - 1) {
+            if (endObjectDataIndex == replay.objectData.length) {
                 // End the submission after the latest object data has been submitted.
                 cancel();
                 return;
