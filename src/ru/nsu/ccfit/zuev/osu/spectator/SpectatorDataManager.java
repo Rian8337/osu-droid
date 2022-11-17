@@ -10,7 +10,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import ru.nsu.ccfit.zuev.osu.Config;
-import ru.nsu.ccfit.zuev.osu.game.GameHelper;
 import ru.nsu.ccfit.zuev.osu.game.GameScene;
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager;
 import ru.nsu.ccfit.zuev.osu.scoring.Replay;
@@ -156,8 +155,8 @@ public class SpectatorDataManager {
 
         submissionTimer.scheduleAtFixedRate(
             task,
-            (long) (submissionPeriod * GameHelper.getTimeMultiplier()),
-            (long) (submissionPeriod * GameHelper.getTimeMultiplier())
+            submissionPeriod,
+            submissionPeriod
         );
     }
 
