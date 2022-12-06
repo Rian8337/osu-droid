@@ -18,6 +18,34 @@ import org.anddev.andengine.util.Debug;
 import ru.nsu.ccfit.zuev.osu.helper.FileUtils;
 
 public class OnlineFileOperator {
+    public static void sendFile(String urlstr, String filename, String mapMD5) {
+        try {
+            File file = new File(filename);
+            if (!file.exists()) {
+                Debug.i(filename + " does not exist.");
+                return;
+            }
+
+            MediaType mime = MediaType.parse("application/octet-stream");
+            RequestBody fileBody = RequestBody.create(mime, file);
+            RequestBody requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                    .addFormDataPart("uploadedFile", file.getName(), fileBody)
+                    .addFormDataPart("userID", OnlineManager.getInstance().getUserId())
+                    .addFormDataPart("hash", mapMD5)
+                    .build();
+            Request request = new Request.Builder().url(urlstr)
+                    .post(requestBody).build();
+            Response response = OnlineManager.client.newCall(request).execute();
+            String responseMsg = response.body().string();
+
+            Debug.i("sendFile signatureResponse " + responseMsg);
+        } catch (final IOException e) {
+            Debug.e("sendFile IOException " + e.getMessage(), e);
+        } catch (final Exception e) {
+            Debug.e("sendFile Exception " + e.getMessage(), e);
+        }
+    }
+
     public static boolean downloadFile(String urlstr, String filename) {
         Debug.i("Starting download " + urlstr);
         File file = new File(filename);

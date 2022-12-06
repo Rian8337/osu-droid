@@ -46,8 +46,8 @@ public class OnlineManager {
         return instance;
     }
 
-    public static String getReplayURL(int playID) {
-        return endpoint + "upload/" + playID + ".odr";
+    public static String getReplayURL(int userID, String hash) {
+        return endpoint + "getReplay?userID=" + userID + "&hash=" + hash;
     }
 
     public void Init(Context context) {
@@ -202,12 +202,19 @@ public class OnlineManager {
         return sendRequest(post, endpoint + "spectatorPlayerSettings");
     }
 
-    public ArrayList<String> getTop(final File trackFile, final String hash) throws OnlineManagerException {
+    public ArrayList<String> getTop(final String hash) throws OnlineManagerException {
         PostBuilder post = new PostBuilder();
-        post.addParam("filename", trackFile.getName());
         post.addParam("hash", hash);
 
-        return new ArrayList<>();
+        ArrayList<String> response = sendRequest(post, endpoint + "getLeaderboard");
+
+        if (response == null) {
+            return new ArrayList<>();
+        }
+
+        response.remove(0);
+
+        return response;
     }
 
     public boolean loadAvatarToTextureManager() {
@@ -253,11 +260,16 @@ public class OnlineManager {
         return false;
     }
 
-    public String getScorePack(int playid) throws OnlineManagerException {
-        PostBuilder post = new PostBuilder();
-        post.addParam("playID", String.valueOf(playid));
+    public void sendReplay(String filename, String mapMD5) {
+        OnlineFileOperator.sendFile(endpoint + "uploadReplay", filename, mapMD5);
+    }
 
-        ArrayList<String> response = sendRequest(post, endpoint + "gettop.php");
+    public String getScorePack(int userID, String hash) throws OnlineManagerException {
+        PostBuilder post = new PostBuilder();
+        post.addParam("userID", String.valueOf(userID));
+        post.addParam("hash", hash);
+
+        ArrayList<String> response = sendRequest(post, endpoint + "getScore");
 
         if (response == null || response.size() < 2) {
             return "";

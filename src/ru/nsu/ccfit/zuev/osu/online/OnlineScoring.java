@@ -116,7 +116,7 @@ public class OnlineScoring {
         });
     }
 
-    public void sendRecord(final StatisticV2 record, final SendingPanel panel, final String mapMD5) {
+    public void sendRecord(final StatisticV2 record, final SendingPanel panel, final String replay, final String mapMD5) {
         if (OnlineManager.getInstance().isStayOnline() == false)
             return;
 
@@ -151,6 +151,7 @@ public class OnlineScoring {
                             updatePanels();
                             OnlineManager mgr = OnlineManager.getInstance();
                             panel.show(mgr.getMapRank(), mgr.getScore(), mgr.getRank(), mgr.getAccuracy());
+                            mgr.sendReplay(replay, mapMD5);
                             break;
                         }
 

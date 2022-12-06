@@ -493,7 +493,7 @@ public class ScoringScene {
                 sendingPanel.setPosition(Config.getRES_WIDTH() / 2 - 400, Utils.toRes(-300));
                 scene.registerTouchArea(sendingPanel.getDismissTouchArea());
                 scene.attachChild(sendingPanel);
-                ScoreLibrary.getInstance().sendScoreOnline(stat, sendingPanel, mapMD5);
+                ScoreLibrary.getInstance().sendScoreOnline(stat, replay, sendingPanel, mapMD5);
             }
         }
     }

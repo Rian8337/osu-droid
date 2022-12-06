@@ -191,7 +191,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
         return scoreBuilder.toString();
     }
 
-    private void initSprite(int i, String title, String acc, String markStr, final boolean showOnline, final int scoreID, String avaUrl, final String userName) {
+    private void initSprite(int i, String title, String acc, String markStr, final boolean showOnline, final int userID, String avaUrl, final String userName, final String hash) {
         final TextureRegion tex = ResourceManager.getInstance().getTexture(
                 "menu-button-background").deepCopy();
         tex.setHeight(107);
@@ -213,13 +213,13 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
                     dx = pTouchAreaLocalX;
                     dy = pTouchAreaLocalY;
                     downTime = 0;
-                    _scoreID = scoreID;
+                    _scoreID = userID;
                     return true;
                 } else if (pSceneTouchEvent.isActionUp() && !moved && !isScroll) {
                     downTime = -1;
                     setAlpha(0.5f);
-                    listener.openScore(scoreID, showOnline, userName);
-                    GlobalManager.getInstance().getScoring().setReplayID(scoreID);
+                    listener.openScore(userID, showOnline, userName, hash);
+                    GlobalManager.getInstance().getScoring().setReplayID(userID);
                     return true;
                 } else if (pSceneTouchEvent.isActionOutside()
                         || pSceneTouchEvent.isActionMove()
@@ -263,6 +263,102 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
         height = sprites[i].getHeight();
     }
 
+    private void initFromOnline(final TrackInfo track) {
+        final long currentNumber = viewNumber;
+        loadingText.setText("Loading scores...");
+        onlineTask = new AsyncTaskLoader().execute(new OsuAsyncCallback() {
+
+
+            public void run() {
+                File trackFile = new File(track.getFilename());
+                String hash = FileUtils.getMD5Checksum(trackFile);
+                ArrayList<String> scores;
+
+                try {
+                    scores = OnlineManager.getInstance().getTop(hash);
+                } catch (OnlineManager.OnlineManagerException e) {
+                    Debug.e("Cannot load scores " + e.getMessage());
+                    synchronized (trackMutex) {
+                        if (currentNumber == viewNumber)
+                            loadingText.setText(OnlineManager.getInstance().getFailMessage());
+                    }
+                    return;
+                }
+
+                synchronized (trackMutex) {
+                    if (currentNumber != viewNumber)
+                        return;
+
+                    loadingText.setText(OnlineManager.getInstance().getFailMessage());
+                    sprites = new Sprite[scores.size() + 1];
+                    avatars = new Avatar[scores.size() + 1];
+                    long lastTotalScore = 0;
+                    List<ScoreBoardItems> scoreBoardItems = new ArrayList<>();
+                    for (int i = scores.size() - 1; i >= 0; i--) {
+                        Debug.i(scores.get(i));
+                        String[] data = scores.get(i).split("\\s+");
+                        if (data.length < 8 || data.length == 10)
+                            continue;
+                        final int userID = Integer.parseInt(data[0]);
+
+                        String totalScore = formatScore(Integer.parseInt(data[2]));
+                        long currTotalScore = Long.parseLong(data[2]);
+                        String titleStr = "#"
+                                + (i + 1)
+                                + " "
+                                + data[1]
+                                + "\n"
+                                + StringTable.format(R.string.menu_score,
+                                totalScore, Integer.parseInt(data[3]));
+                        long diffTotalScore = currTotalScore - lastTotalScore;
+                        String accStr = ConvertModString(data[5]) + "\n"
+                                + String.format(Locale.ENGLISH, "%.2f", GameHelper.Round(Integer.parseInt(data[6]) / 1000f, 2)) + "%" + "\n"
+                                + (lastTotalScore == 0 ? "-" : ((diffTotalScore != 0 ? "+" : "") + diffTotalScore));
+                        lastTotalScore = currTotalScore;
+                        initSprite(i, titleStr, accStr, data[4], true, userID, data[7], data[1], hash);
+                        ScoreBoardItems item = new ScoreBoardItems();
+                        item.set(data[1], Integer.parseInt(data[3]), Integer.parseInt(data[2]), userID);
+                        scoreBoardItems.add(item);
+                    }
+                    scoreItems = new ScoreBoardItems[scoreBoardItems.size()];
+                    for (int i = 0; i < scoreItems.length; i++) {
+                        scoreItems[i] = scoreBoardItems.get(scoreBoardItems.size() - 1 - i);
+                    }
+                    if (scores.size() > 0) {
+                        String[] data = scores.get(scores.size() - 1).split("\\s+");
+                        if (data.length == 10) {
+                            final int scoreID = Integer.parseInt(data[0]);
+                            String totalScore = formatScore(Integer.parseInt(data[2]));
+                            String titleStr = "#"
+                                    + data[7]
+                                    + " of "
+                                    + data[8]
+                                    + "\n"
+                                    + StringTable.format(R.string.menu_score,
+                                    totalScore, Integer.parseInt(data[3]));
+                            String accStr = ConvertModString(data[5]) + "\n"
+                                    + String.format(Locale.ENGLISH, "%.2f", GameHelper.Round(Integer.parseInt(data[6]) / 1000f, 2)) + "%" + "\n"
+                                    + "-";
+                            initSprite(scores.size(), titleStr, accStr, data[4], true, scoreID, data[9], data[1], hash);
+                        } else {
+                            sprites[scores.size()] = null;
+                        }
+                    }
+
+                    percentShow = 0;
+                }
+            }
+
+
+            public void onComplete() {
+                isCanceled = false;
+                if (Utils.isWifi(context) || Config.getLoadAvatar())
+                    loadAvatar();
+            }
+
+        });
+    }
+
     public void init(final TrackInfo track) {
         if (lastTrack == track && showOnlineScores == wasOnline && wasOnline) {
             return;
@@ -282,6 +378,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
         }
         loadingText.setText("");
         if (OnlineManager.getInstance().isStayOnline() && showOnlineScores) {
+            initFromOnline(track);
             return;
         }
 
@@ -318,7 +415,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
                     + (lastTotalScore == 0 ? "-" : ((diffTotalScore != 0 ? "+" : "") + diffTotalScore));
             lastTotalScore = currTotalScore;
             initSprite(i, titleStr, accStr, scoresSet.getString(scoresSet.getColumnIndexOrThrow("mark")),
-                    false, scoreID, null, null);
+                    false, scoreID, null, null, null);
             scoreItems[i] = new ScoreBoardItems();
             scoreItems[i].set(scoresSet.getString(scoresSet.getColumnIndexOrThrow("playername")),
                     scoresSet.getInt(scoresSet.getColumnIndexOrThrow("combo")),
@@ -579,7 +676,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
 
         public Avatar(String userName, String avaUrl) {
             this.userName = userName;
-            this.avaUrl = "https://" + OnlineManager.hostname + "/user/avatar/?s=100&id=" + avaUrl;
+            this.avaUrl = "https://osudroid.moe/user/avatar/0.png";
         }
 
         public String getUserName() {

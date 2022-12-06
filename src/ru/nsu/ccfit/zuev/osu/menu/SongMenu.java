@@ -1109,7 +1109,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
         }
     }
 
-    public void openScore(final int id, boolean showOnline, final String playerName) {
+    public void openScore(final int id, boolean showOnline, final String playerName, final String hash) {
         if (showOnline) {
             engine.setScene(new LoadingScreen().getScene());
             ToastLogger.showTextId(R.string.online_loadrecord, false);
@@ -1118,13 +1118,13 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
 
                 public void run() {
                     try {
-                        String scorePack = OnlineManager.getInstance().getScorePack(id);
+                        String scorePack = OnlineManager.getInstance().getScorePack(id, hash);
                         String[] params = scorePack.split("\\s+");
                         if (params.length < 11) return;
 
                         StatisticV2 stat = new StatisticV2(params);
                         stat.setPlayerName(playerName);
-                        scoreScene.load(stat, null, null, OnlineManager.getReplayURL(id), null, selectedTrack);
+                        scoreScene.load(stat, null, null, OnlineManager.getReplayURL(id, hash), null, selectedTrack);
                         engine.setScene(scoreScene.getScene());
 
                     } catch (OnlineManagerException e) {
