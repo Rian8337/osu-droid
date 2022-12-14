@@ -137,7 +137,7 @@ public class OnlineScoring {
                         }
 
                         try {
-                            success = OnlineManager.getInstance().sendRecord(recordData, mapMD5);
+                            success = OnlineManager.getInstance().sendRecord(recordData, mapMD5, replay);
                         } catch (OnlineManagerException e) {
                             Debug.e("Login error: " + e.getMessage());
                             success = false;
@@ -151,7 +151,6 @@ public class OnlineScoring {
                             updatePanels();
                             OnlineManager mgr = OnlineManager.getInstance();
                             panel.show(mgr.getMapRank(), mgr.getScore(), mgr.getRank(), mgr.getAccuracy());
-                            mgr.sendReplay(replay, mapMD5);
                             break;
                         }
 

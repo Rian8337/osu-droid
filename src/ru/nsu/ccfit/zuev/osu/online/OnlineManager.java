@@ -145,28 +145,26 @@ public class OnlineManager {
         return true;
     }
 
-    public boolean sendRecord(String data, String mapMD5) throws OnlineManagerException {
+    public boolean sendRecord(String data, String mapMD5, String replay) throws OnlineManagerException {
         Debug.i("Sending record...");
 
-        PostBuilder post = new PostBuilder();
-        post.addParam("userID", userId);
-        post.addParam("data", data);
-        post.addParam("hash", mapMD5);
-
-        ArrayList<String> response = sendRequest(post, endpoint + "submit");
+        ArrayList<String> response = OnlineFileOperator.sendScore(endpoint + "submit", data, replay, mapMD5);
 
         if (response == null) {
             return false;
         }
 
-        if (failMessage.equals("Invalid record data") || response.size() < 2)
-            return false;
-
-        String[] resp = response.get(1).split("\\s+");
-        if (resp.length < 4) {
+        if (response.size() < 2) {
             failMessage = "Invalid server response";
             return false;
         }
+
+        if (response.get(0).equals("FAILED")) {
+            failMessage = response.get(1);
+            return false;
+        }
+
+        String[] resp = response.get(1).split("\\s+");
 
         rank = Integer.parseInt(resp[0]);
         score = Long.parseLong(resp[1]);
@@ -260,10 +258,6 @@ public class OnlineManager {
         return false;
     }
 
-    public void sendReplay(String filename, String mapMD5) {
-        OnlineFileOperator.sendFile(endpoint + "uploadReplay", filename, mapMD5);
-    }
-
     public String getScorePack(int userID, String hash) throws OnlineManagerException {
         PostBuilder post = new PostBuilder();
         post.addParam("userID", String.valueOf(userID));
@@ -304,6 +298,10 @@ public class OnlineManager {
 
     public String getUserId() {
         return userId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 
     public String getPassword() {
