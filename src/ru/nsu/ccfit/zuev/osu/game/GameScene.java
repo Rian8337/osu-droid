@@ -261,15 +261,13 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     private boolean loadGame(final TrackInfo track, final String rFile) {
         InGameSettingMenu.getInstance().dismiss();
         if (rFile != null && rFile.startsWith("https://")) {
-            ToastLogger.showTextId(R.string.replay_cantdownload, true);
-            return false;
-//            this.replayFile = Config.getCachePath() + "/" +
-//                    MD5Calcuator.getStringMD5(rFile) + ".odr";
-//            Debug.i("ReplayFile = " + replayFile);
-//            if (!OnlineFileOperator.downloadFile(rFile, this.replayFile)) {
-//                ToastLogger.showTextId(R.string.replay_cantdownload, true);
-//                return false;
-//            }
+            this.replayFile = Config.getCachePath() + "/" +
+                    MD5Calcuator.getStringMD5(rFile) + ".odr";
+            Debug.i("ReplayFile = " + replayFile);
+            if (!OnlineFileOperator.downloadFile(rFile, this.replayFile)) {
+                ToastLogger.showTextId(R.string.replay_cantdownload, true);
+                return false;
+            }
         } else
             this.replayFile = rFile;
 
