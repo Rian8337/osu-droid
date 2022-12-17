@@ -196,6 +196,8 @@ public class OnlineManager {
         post.addParam("userID", userId);
         post.addParam("modstring", stat.getModString());
         post.addParam("hash", hash);
+        post.addParam("isSliderLock", Config.isRemoveSliderLock() ? "1" : "0");
+        post.addParam("isSliderAccuracy", Config.isUseSliderAccuracy() ? "1" : "0");
 
         return sendRequest(post, endpoint + "spectatorPlayerSettings");
     }
