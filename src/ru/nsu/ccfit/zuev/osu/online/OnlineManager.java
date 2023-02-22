@@ -16,6 +16,7 @@ import ru.nsu.ccfit.zuev.osu.ResourceManager;
 import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
+import ru.nsu.ccfit.zuev.osu.spectator.SpectatorDataManager;
 
 public class OnlineManager {
     public static final String hostname = "droidpp.osudroid.moe";
@@ -198,6 +199,7 @@ public class OnlineManager {
         post.addParam("hash", hash);
         post.addParam("isSliderLock", Config.isRemoveSliderLock() ? "1" : "0");
         post.addParam("isSliderAccuracy", Config.isUseSliderAccuracy() ? "1" : "0");
+        post.addParam("spectatorDataVersion", String.valueOf(SpectatorDataManager.spectatorDataVersion));
 
         return sendRequest(post, endpoint + "spectatorPlayerSettings");
     }
