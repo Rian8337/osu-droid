@@ -56,6 +56,10 @@ public class SpectatorDataManager {
                 ds.writeInt(stat.getModifiedTotalScore());
                 ds.writeInt(stat.getCombo());
                 ds.writeFloat(stat.getAccuracy());
+                ds.writeInt(stat.getHit300());
+                ds.writeInt(stat.getHit100());
+                ds.writeInt(stat.getHit50());
+                ds.writeInt(stat.getMisses());
 
                 ds.writeInt(replay.cursorMoves.size());
                 for (int i = 0; i < beginningCursorMoveIndexes.length; ++i) {
