@@ -814,7 +814,7 @@ public class Slider extends GameObject {
             }
         }
         int score = 0;
-        if (ticksGot > 0 && (!Config.isUseSliderAccuracy() || firstHitScore > 0)) {
+        if (ticksGot > 0) {
             score = 50;
         }
         if (ticksGot >= ticksTotal / 2 && (!Config.isUseSliderAccuracy() || firstHitScore >= 100)) {
