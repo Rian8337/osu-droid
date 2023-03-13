@@ -1,11 +1,16 @@
 package main.osu.helper;
 
+import com.rian.difficultycalculator.attributes.ExtendedRimuDifficultyAttributes;
+import com.rian.difficultycalculator.attributes.RimuDifficultyAttributes;
+import com.rian.difficultycalculator.attributes.RimuPerformanceAttributes;
 import com.rian.difficultycalculator.attributes.StandardDifficultyAttributes;
 import com.rian.difficultycalculator.attributes.StandardPerformanceAttributes;
 import com.rian.difficultycalculator.beatmap.BeatmapDifficultyManager;
 import com.rian.difficultycalculator.beatmap.DifficultyBeatmap;
 import com.rian.difficultycalculator.calculator.DifficultyCalculationParameters;
 import com.rian.difficultycalculator.calculator.PerformanceCalculationParameters;
+import com.rian.difficultycalculator.calculator.RimuDifficultyCalculator;
+import com.rian.difficultycalculator.calculator.RimuPerformanceCalculator;
 import com.rian.difficultycalculator.calculator.StandardDifficultyCalculator;
 import com.rian.difficultycalculator.calculator.StandardPerformanceCalculator;
 
@@ -19,6 +24,7 @@ import main.osu.scoring.StatisticV2;
  * A helper class for operations relating to difficulty and performance calculation.
  */
 public final class BeatmapDifficultyCalculator {
+    private static final RimuDifficultyCalculator rimuDifficultyCalculator = new RimuDifficultyCalculator();
     private static final StandardDifficultyCalculator standardDifficultyCalculator = new StandardDifficultyCalculator();
 
     /**
@@ -98,21 +104,57 @@ public final class BeatmapDifficultyCalculator {
     }
 
     /**
-     * Calculates the difficulty of a <code>DifficultyBeatmap</code>.
+     * Calculates the rimu! difficulty of a <code>DifficultyBeatmap</code>.
      *
      * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
-     * @return A structure describing the difficulty of the <code>DifficultyBeatmap</code>.
+     * @return A structure describing the rimu! difficulty of the <code>DifficultyBeatmap</code>.
+     */
+    public static ExtendedRimuDifficultyAttributes calculateRimuDifficulty(final DifficultyBeatmap beatmap) {
+        return calculateRimuDifficulty(beatmap, (DifficultyCalculationParameters) null);
+    }
+
+    /**
+     * Calculates the rimu! difficulty of a <code>DifficultyBeatmap</code> given a <code>StatisticV2</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
+     * @param stat The <code>StatisticV2</code> to calculate.
+     * @return A structure describing the rimu! difficulty of the <code>DifficultyBeatmap</code>
+     * relating to the <code>StatisticV2</code>.
+     */
+    public static ExtendedRimuDifficultyAttributes calculateRimuDifficulty(
+            final DifficultyBeatmap beatmap, final StatisticV2 stat) {
+        return calculateRimuDifficulty(beatmap, constructDifficultyParameters(stat));
+    }
+
+    /**
+     * Calculates the rimu! difficulty of a <code>DifficultyBeatmap</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
+     * @param parameters The parameters of the calculation. Can be <code>null</code>.
+     * @return A structure describing the rimu! difficulty of the <code>DifficultyBeatmap</code>.
+     */
+    public static ExtendedRimuDifficultyAttributes calculateRimuDifficulty(
+            final DifficultyBeatmap beatmap, final DifficultyCalculationParameters parameters) {
+        return (ExtendedRimuDifficultyAttributes) rimuDifficultyCalculator.calculate(beatmap, parameters);
+    }
+
+    /**
+     * Calculates the osu!standard difficulty of a <code>DifficultyBeatmap</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
+     * @return A structure describing the osu!standard difficulty of the <code>DifficultyBeatmap</code>.
      */
     public static StandardDifficultyAttributes calculateStandardDifficulty(final DifficultyBeatmap beatmap) {
         return calculateStandardDifficulty(beatmap, (DifficultyCalculationParameters) null);
     }
 
     /**
-     * Calculates the difficulty of a <code>DifficultyBeatmap</code> given a <code>StatisticV2</code>.
+     * Calculates the osu!standard difficulty of a <code>DifficultyBeatmap</code> given a <code>StatisticV2</code>.
      *
      * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
      * @param stat The <code>StatisticV2</code> to calculate.
-     * @return A structure describing the difficulty of the <code>DifficultyBeatmap</code>.
+     * @return A structure describing the osu!standard difficulty of the <code>DifficultyBeatmap</code>
+     * relating to the <code>StatisticV2</code>.
      */
     public static StandardDifficultyAttributes calculateStandardDifficulty(
             final DifficultyBeatmap beatmap, final StatisticV2 stat) {
@@ -120,15 +162,52 @@ public final class BeatmapDifficultyCalculator {
     }
 
     /**
-     * Calculates the difficulty of a <code>DifficultyBeatmap</code>.
+     * Calculates the osu!standard difficulty of a <code>DifficultyBeatmap</code>.
      *
      * @param beatmap The <code>DifficultyBeatmap</code> to calculate.
      * @param parameters The parameters of the calculation. Can be <code>null</code>.
-     * @return A structure describing the difficulty of the <code>DifficultyBeatmap</code>.
+     * @return A structure describing the osu!standard difficulty of the <code>DifficultyBeatmap</code>
+     * relating to the calculation parameters.
      */
     public static StandardDifficultyAttributes calculateStandardDifficulty(
             final DifficultyBeatmap beatmap, final DifficultyCalculationParameters parameters) {
         return (StandardDifficultyAttributes) standardDifficultyCalculator.calculate(beatmap, parameters);
+    }
+
+    /**
+     * Calculates the performance of a <code>RimuDifficultyAttributes</code>.
+     *
+     * @param attributes The <code>RimuDifficultyAttributes</code> to calculate.
+     * @return A structure describing the performance of the <code>RimuDifficultyAttributes</code>.
+     */
+    public static RimuPerformanceAttributes calculateRimuPerformance(final RimuDifficultyAttributes attributes) {
+        return calculateRimuPerformance(attributes, (PerformanceCalculationParameters) null);
+    }
+
+    /**
+     * Calculates the performance of a <code>RimuDifficultyAttributes</code> given a <code>StatisticV2</code>.
+     *
+     * @param attributes The <code>RimuDifficultyAttributes</code> to calculate.
+     * @param stat The <code>StatisticV2</code> to calculate.
+     * @return A structure describing the performance of the <code>RimuDifficultyAttributes</code>
+     * relating to the <code>StatisticV2</code>.
+     */
+    public static RimuPerformanceAttributes calculateRimuPerformance(
+            final RimuDifficultyAttributes attributes, final StatisticV2 stat) {
+        return calculateRimuPerformance(attributes, constructPerformanceParameters(stat));
+    }
+
+    /**
+     * Calculates the performance of a <code>RimuDifficultyAttributes</code>.
+     *
+     * @param attributes The <code>RimuDifficultyAttributes</code> to calculate.
+     * @param parameters The parameters of the calculation. Can be <code>null</code>.
+     * @return A structure describing the performance of the <code>RimuDifficultyAttributes</code>
+     * relating to the calculation parameters.
+     */
+    public static RimuPerformanceAttributes calculateRimuPerformance(
+            final RimuDifficultyAttributes attributes, final PerformanceCalculationParameters parameters) {
+        return (RimuPerformanceAttributes) new RimuPerformanceCalculator(attributes).calculate(parameters);
     }
 
     /**
