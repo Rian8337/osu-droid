@@ -4,6 +4,8 @@ import android.app.Activity;
 
 import com.reco1l.Game;
 
+import main.osu.beatmap.BeatmapData;
+import main.osu.beatmap.parser.BeatmapParser;
 import main.osu.helper.FileUtils;
 import org.anddev.andengine.util.Debug;
 
@@ -17,7 +19,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Objects;
 // import java.util.HashSet;
 // import java.util.Set;
@@ -390,7 +391,7 @@ public class LibraryManager {
             return;
         }
         for (final File file : filelist) {
-            final OSUParser parser = new OSUParser(file);
+            final BeatmapParser parser = new BeatmapParser(file);
             if (!parser.openFile()) {
                 continue;
             }
@@ -398,9 +399,19 @@ public class LibraryManager {
             final TrackInfo track = new TrackInfo(info);
             track.setFilename(file.getPath());
             track.setCreator("unknown");
-            if (!parser.readMetaData(track, info)) {
+
+            final BeatmapData data = parser.parse(true);
+            if (data == null) {
                 continue;
             }
+
+            if (!parser.populateMetadata(data, info)) {
+                continue;
+            }
+            if (!parser.populateMetadata(data, track)) {
+                continue;
+            }
+
             if (track.getBackground() != null) {
                 track.setBackground(info.getPath() + "/"
                         + track.getBackground());
@@ -408,11 +419,7 @@ public class LibraryManager {
             info.addTrack(track);
         }
 
-        Collections.sort(info.getTracks(), new Comparator<TrackInfo>() {
-            public int compare(final TrackInfo object1, final TrackInfo object2) {
-                return Float.valueOf(object1.getDifficulty()).compareTo(object2.getDifficulty());
-            }
-        });
+        info.getTracks().sort((object1, object2) -> Float.compare(object1.getDifficulty(), object2.getDifficulty()));
     }
 
     public ArrayList<BeatmapInfo> getLibrary() {
