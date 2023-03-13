@@ -16,6 +16,11 @@ public class DifficultyBeatmap {
     private int formatVersion = 14;
 
     /**
+     * The multiplier for the threshold in time where hit objects placed close together stack, ranging from 0 to 1.
+     */
+    private float stackLeniency = 0.7f;
+
+    /**
      * The manager for difficulty settings of this beatmap.
      */
     private BeatmapDifficultyManager difficultyManager = new BeatmapDifficultyManager();
@@ -39,6 +44,7 @@ public class DifficultyBeatmap {
      */
     private DifficultyBeatmap(DifficultyBeatmap source) {
         formatVersion = source.formatVersion;
+        stackLeniency = source.stackLeniency;
         difficultyManager = source.difficultyManager.deepClone();
         hitObjectsManager = source.hitObjectsManager.deepClone();
     }
@@ -71,6 +77,22 @@ public class DifficultyBeatmap {
      */
     public void setFormatVersion(int formatVersion) {
         this.formatVersion = formatVersion;
+    }
+
+    /**
+     * Gets the multiplier for the threshold in time where hit objects placed close together stack, ranging from 0 to 1.
+     */
+    public float getStackLeniency() {
+        return stackLeniency;
+    }
+
+    /**
+     * Sets the multiplier for the threshold in time where hit objects placed close together stack.
+     *
+     * @param stackLeniency The new multiplier, ranging from 0 to 1.
+     */
+    public void setStackLeniency(float stackLeniency) {
+        this.stackLeniency = stackLeniency;
     }
 
     /**
