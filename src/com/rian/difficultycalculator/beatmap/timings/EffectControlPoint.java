@@ -19,8 +19,22 @@ public class EffectControlPoint extends ControlPoint {
         this.isKiai = isKiai;
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private EffectControlPoint(EffectControlPoint source) {
+        this(source.time, source.isKiai);
+    }
+
     @Override
     public boolean isRedundant(ControlPoint existing) {
         return existing instanceof EffectControlPoint && isKiai == ((EffectControlPoint) existing).isKiai;
+    }
+
+    @Override
+    public EffectControlPoint deepClone() {
+        return new EffectControlPoint(this);
     }
 }

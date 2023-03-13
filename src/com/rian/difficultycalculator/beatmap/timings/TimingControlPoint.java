@@ -27,6 +27,15 @@ public class TimingControlPoint extends ControlPoint {
     }
 
     /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private TimingControlPoint(TimingControlPoint source) {
+        this(source.time, source.msPerBeat, source.timeSignature);
+    }
+
+    /**
      * Gets the BPM of this control point.
      */
     public double getBPM() {
@@ -37,5 +46,10 @@ public class TimingControlPoint extends ControlPoint {
     public boolean isRedundant(ControlPoint existing) {
         // Timing points are never redundant as they can change the time signature.
         return false;
+    }
+
+    @Override
+    public TimingControlPoint deepClone() {
+        return new TimingControlPoint(this);
     }
 }

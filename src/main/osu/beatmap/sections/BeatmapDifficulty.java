@@ -33,4 +33,29 @@ public class BeatmapDifficulty {
      * The amount of slider ticks per beat.
      */
     public int sliderTickRate = 1;
+
+    public BeatmapDifficulty() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private BeatmapDifficulty(BeatmapDifficulty source) {
+        ar = source.ar;
+        od = source.od;
+        cs = source.cs;
+        hp = source.hp;
+        sliderMultiplier = source.sliderMultiplier;
+        sliderTickRate = source.sliderTickRate;
+    }
+
+    /**
+     * Deep clones this instance.
+     *
+     * @return The deep cloned instance.
+     */
+    public BeatmapDifficulty deepClone() {
+        return new BeatmapDifficulty(this);
+    }
 }

@@ -45,4 +45,30 @@ public class BeatmapGeneral {
      * placed close together stack, ranging from 0 to 1.
      */
     public float stackLeniency = 0.7f;
+
+    public BeatmapGeneral() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private BeatmapGeneral(BeatmapGeneral source) {
+        audioFilename = source.audioFilename;
+        audioLeadIn = source.audioLeadIn;
+        previewTime = source.previewTime;
+        countdown = source.countdown;
+        sampleBank = source.sampleBank;
+        sampleVolume = source.sampleVolume;
+        stackLeniency = source.stackLeniency;
+    }
+
+    /**
+     * Deep clones this instance.
+     *
+     * @return The deep cloned instance.
+     */
+    public BeatmapGeneral deepClone() {
+        return new BeatmapGeneral(this);
+    }
 }

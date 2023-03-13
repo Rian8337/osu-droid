@@ -28,10 +28,24 @@ public class DifficultyControlPoint extends ControlPoint {
         this.generateTicks = generateTicks;
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private DifficultyControlPoint(DifficultyControlPoint source) {
+        this(source.time, source.speedMultiplier, source.generateTicks);
+    }
+
     @Override
     public boolean isRedundant(ControlPoint existing) {
         return existing instanceof DifficultyControlPoint &&
                 speedMultiplier == ((DifficultyControlPoint) existing).speedMultiplier &&
                 generateTicks == ((DifficultyControlPoint) existing).generateTicks;
+    }
+
+    @Override
+    public DifficultyControlPoint deepClone() {
+        return new DifficultyControlPoint(this);
     }
 }

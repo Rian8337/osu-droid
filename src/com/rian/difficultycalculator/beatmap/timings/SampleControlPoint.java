@@ -31,11 +31,25 @@ public class SampleControlPoint extends ControlPoint {
         this.customSampleBank = customSampleBank;
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private SampleControlPoint(SampleControlPoint source) {
+        this(source.time, source.sampleBank, source.sampleVolume, source.customSampleBank);
+    }
+
     @Override
     public boolean isRedundant(ControlPoint existing) {
         return existing instanceof SampleControlPoint &&
                 sampleBank == ((SampleControlPoint) existing).sampleBank &&
                 sampleVolume == ((SampleControlPoint) existing).sampleVolume &&
                 customSampleBank == ((SampleControlPoint) existing).customSampleBank;
+    }
+
+    @Override
+    public SampleControlPoint deepClone() {
+        return new SampleControlPoint(this);
     }
 }

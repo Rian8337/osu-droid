@@ -53,4 +53,33 @@ public class BeatmapMetadata {
      * The ID of this beatmap set containing this beatmap.
      */
     public int beatmapSetID = -1;
+
+    public BeatmapMetadata() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private BeatmapMetadata(BeatmapMetadata source) {
+        title = source.title;
+        titleUnicode = source.titleUnicode;
+        artist = source.artist;
+        artistUnicode = source.artistUnicode;
+        creator = source.creator;
+        version = source.version;
+        this.source = source.source;
+        tags = source.tags;
+        beatmapID = source.beatmapID;
+        beatmapSetID = source.beatmapSetID;
+    }
+
+    /**
+     * Deep clones this instance.
+     *
+     * @return The deep cloned instance.
+     */
+    public BeatmapMetadata deepClone() {
+        return new BeatmapMetadata(this);
+    }
 }

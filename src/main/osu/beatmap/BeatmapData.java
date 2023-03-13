@@ -20,32 +20,32 @@ public class BeatmapData {
     /**
      * General information about this beatmap.
      */
-    public final BeatmapGeneral general = new BeatmapGeneral();
+    public final BeatmapGeneral general;
 
     /**
      * Information used to identify this beatmap.
      */
-    public final BeatmapMetadata metadata = new BeatmapMetadata();
+    public final BeatmapMetadata metadata;
 
     /**
      * Difficulty settings of this beatmap.
      */
-    public final BeatmapDifficulty difficulty = new BeatmapDifficulty();
+    public final BeatmapDifficulty difficulty;
 
     /**
      * Events of this beatmap.
      */
-    public final BeatmapEvents events = new BeatmapEvents();
+    public final BeatmapEvents events;
 
     /**
      * Combo and skin colors of this beatmap.
      */
-    public final BeatmapColor colors = new BeatmapColor();
+    public final BeatmapColor colors;
 
     /**
      * The manager of timing points in this beatmap.
      */
-    public final BeatmapControlPointsManager timingPoints = new BeatmapControlPointsManager();
+    public final BeatmapControlPointsManager timingPoints;
 
     /**
      * Raw data of hit objects in this beatmap.
@@ -55,7 +55,7 @@ public class BeatmapData {
     /**
      * The manager of hit objects in this beatmap.
      */
-    public final BeatmapHitObjectsManager hitObjects = new BeatmapHitObjectsManager();
+    public final BeatmapHitObjectsManager hitObjects;
 
     /**
      * The path of parent folder of this beatmap.
@@ -66,6 +66,45 @@ public class BeatmapData {
      * The format version of this beatmap.
      */
     private int formatVersion = 14;
+
+    public BeatmapData() {
+        general = new BeatmapGeneral();
+        metadata = new BeatmapMetadata();
+        difficulty = new BeatmapDifficulty();
+        events = new BeatmapEvents();
+        colors = new BeatmapColor();
+        timingPoints = new BeatmapControlPointsManager();
+        hitObjects = new BeatmapHitObjectsManager();
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private BeatmapData(BeatmapData source) {
+        folder = source.folder;
+        formatVersion = source.formatVersion;
+
+        general = source.general.deepClone();
+        metadata = source.metadata.deepClone();
+        difficulty = source.difficulty.deepClone();
+        events = source.events.deepClone();
+        colors = source.colors.deepClone();
+        timingPoints = source.timingPoints.deepClone();
+        hitObjects = source.hitObjects.deepClone();
+
+        rawHitObjects.addAll(source.rawHitObjects);
+    }
+
+    /**
+     * Deep clones this instance.
+     *
+     * @return The deep cloned instance.
+     */
+    public BeatmapData deepClone() {
+        return new BeatmapData(this);
+    }
 
     /**
      * Gets the path of the parent folder of this beatmap.

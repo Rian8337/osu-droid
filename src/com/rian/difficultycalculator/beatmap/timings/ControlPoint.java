@@ -22,4 +22,13 @@ public abstract class ControlPoint {
      * @param existing An existing control point to compare with.
      */
     public abstract boolean isRedundant(ControlPoint existing);
+
+    /**
+     * Deep clones this control point.
+     *
+     * @return The deep cloned control point.
+     */
+    public ControlPoint deepClone() {
+        return null;
+    }
 }

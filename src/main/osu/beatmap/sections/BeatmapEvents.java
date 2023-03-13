@@ -23,4 +23,30 @@ public class BeatmapEvents {
      * The background color of this beatmap.
      */
     public RGBColor backgroundColor;
+
+    public BeatmapEvents() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private BeatmapEvents(BeatmapEvents source) {
+        backgroundFilename = source.backgroundFilename;
+
+        for (BreakPeriod breakPeriod : source.breaks) {
+            breaks.add(new BreakPeriod(breakPeriod.getStart(), breakPeriod.getEndTime()));
+        }
+
+        backgroundColor = source.backgroundColor != null ? new RGBColor(backgroundColor) : null;
+    }
+
+    /**
+     * Deep clones this instance.
+     *
+     * @return The deep cloned instance.
+     */
+    public BeatmapEvents deepClone() {
+        return new BeatmapEvents(this);
+    }
 }

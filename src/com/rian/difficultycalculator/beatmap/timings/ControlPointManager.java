@@ -105,6 +105,15 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     }
 
     /**
+     * Deep clones this manager.
+     *
+     * @return The deep cloned manager.
+     */
+    public ControlPointManager<T> deepClone() {
+        return null;
+    }
+
+    /**
      * Binary searches one of the control point lists to find the active control point at the given time.
      * <br><br>
      * Includes logic for returning the default control point when no matching point is found.

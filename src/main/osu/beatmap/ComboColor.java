@@ -16,4 +16,24 @@ public class ComboColor extends RGBColor {
 
         this.index = index;
     }
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    private ComboColor(ComboColor source) {
+        super(new RGBColor(source.r(), source.g(), source.b()));
+
+        index = source.index;
+    }
+
+    /**
+     * Deep clones this combo color.
+     *
+     * @return The deep cloned combo color.
+     */
+    public ComboColor deepClone() {
+        return new ComboColor(this);
+    }
 }
