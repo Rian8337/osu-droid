@@ -23,19 +23,36 @@ public class DifficultyBeatmap {
     /**
      * The manager for difficulty settings of this beatmap.
      */
-    private BeatmapDifficultyManager difficultyManager = new BeatmapDifficultyManager();
+    private final BeatmapDifficultyManager difficultyManager;
 
     /**
      * The manager for hit objects of this beatmap.
      */
-    private BeatmapHitObjectsManager hitObjectsManager = new BeatmapHitObjectsManager();
+    private final BeatmapHitObjectsManager hitObjectsManager;
 
     /**
      * The break periods of this beatmap.
      */
     public final ArrayList<BreakPeriod> breakPeriods = new ArrayList<>();
 
-    public DifficultyBeatmap() {}
+    public DifficultyBeatmap() {
+        difficultyManager = new BeatmapDifficultyManager();
+        hitObjectsManager = new BeatmapHitObjectsManager();
+    }
+
+    /**
+     * Constructs a new instance of <code>DifficultyBeatmap</code> using an existing
+     * difficulty manager and hit objects manager.
+     * <br><br>
+     * Both managers will be deep-cloned.
+     *
+     * @param difficultyManager The difficulty manager.
+     * @param hitObjectsManager The hit objects manager.
+     */
+    public DifficultyBeatmap(BeatmapDifficultyManager difficultyManager, BeatmapHitObjectsManager hitObjectsManager) {
+        this.difficultyManager = difficultyManager.deepClone();
+        this.hitObjectsManager = hitObjectsManager.deepClone();
+    }
 
     /**
      * Copy constructor.
@@ -43,10 +60,10 @@ public class DifficultyBeatmap {
      * @param source The source to copy from.
      */
     private DifficultyBeatmap(DifficultyBeatmap source) {
+        this(source.difficultyManager, source.hitObjectsManager);
+
         formatVersion = source.formatVersion;
         stackLeniency = source.stackLeniency;
-        difficultyManager = source.difficultyManager.deepClone();
-        hitObjectsManager = source.hitObjectsManager.deepClone();
     }
 
     /**
