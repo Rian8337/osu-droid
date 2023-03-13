@@ -225,27 +225,18 @@ public class TimingWrapper implements IMusicObserver {
 
         if (mCurrentTimingPoint != null && position > mCurrentTimingPoint.time) {
             mMaxBeat = (short) (mCurrentTimingPoint.timeSignature - 1);
+            mCurrentTimingPoint = !mTimingPoints.isEmpty() ? mTimingPoints.removeFirst() : null;
 
-            if (mTimingPoints.isEmpty()) {
-                mCurrentTimingPoint = null;
-                return;
+            if (mCurrentTimingPoint != null) {
+                mLastTimingPoint = mCurrentTimingPoint;
+                computeCurrentBpmLength();
+                computeOffset();
             }
-
-            mCurrentTimingPoint = mTimingPoints.removeFirst();
-            mLastTimingPoint = mCurrentTimingPoint;
-            computeCurrentBpmLength();
-            computeOffset();
         }
 
         if (mCurrentEffectPoint != null && position > mCurrentEffectPoint.time) {
             mIsKiaiSection = mCurrentEffectPoint.isKiai;
-
-            if (mEffectPoints.isEmpty()) {
-                mCurrentEffectPoint = null;
-                return;
-            }
-
-            mCurrentEffectPoint = mEffectPoints.removeFirst();
+            mCurrentEffectPoint = !mEffectPoints.isEmpty() ? mEffectPoints.removeFirst() : null;
         }
     }
 }
