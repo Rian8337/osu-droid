@@ -7,25 +7,35 @@ import android.util.Log;
 import com.reco1l.Game;
 import com.reco1l.framework.execution.Async;
 
+import com.rian.difficultycalculator.beatmap.timings.EffectControlPoint;
+import com.rian.difficultycalculator.beatmap.timings.EffectControlPointManager;
+import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
+import com.rian.difficultycalculator.beatmap.timings.TimingControlPointManager;
+
 import java.util.LinkedList;
 
-import main.osu.BeatmapData;
-import main.osu.OSUParser;
 import main.osu.TrackInfo;
-import main.osu.game.TimingPoint;
+import main.osu.beatmap.BeatmapData;
+import main.osu.beatmap.parser.BeatmapParser;
 
 public class TimingWrapper implements IMusicObserver {
 
     public static final TimingWrapper instance = new TimingWrapper();
+    private static final int defaultBeatLength = 1000;
 
-    private TimingPoint
-            mLastPoint,
-            mFirstPoint,
-            mCurrentPoint;
+    private TimingControlPoint
+            mLastTimingPoint,
+            mFirstTimingPoint,
+            mCurrentTimingPoint;
 
-    private LinkedList<TimingPoint> mPoints;
+    private EffectControlPoint mCurrentEffectPoint;
 
-    private short mBeat;
+    private final LinkedList<TimingControlPoint> mTimingPoints;
+    private final LinkedList<EffectControlPoint> mEffectPoints;
+
+    private short
+            mBeat,
+            mMaxBeat;
 
     private float
             mOffset,
@@ -41,49 +51,55 @@ public class TimingWrapper implements IMusicObserver {
     //--------------------------------------------------------------------------------------------//
 
     public TimingWrapper() {
-        mBeatLength = 1000;
-        mPoints = new LinkedList<>();
+        mBeatLength = defaultBeatLength;
+        mTimingPoints = new LinkedList<>();
+        mEffectPoints = new LinkedList<>();
         Game.musicManager.bindMusicObserver(this);
     }
 
     //--------------------------------------------------------------------------------------------//
 
     private void clear() {
-        mPoints = new LinkedList<>();
-        mCurrentPoint = null;
+        mTimingPoints.clear();
+        mEffectPoints.clear();
+        mCurrentTimingPoint = null;
         mIsKiaiSection = false;
     }
 
     private void loadPointsFrom(TrackInfo track) {
         Async.run(() -> {
-            OSUParser parser = new OSUParser(track.getFilename());
+            BeatmapParser parser = new BeatmapParser(track.getFilename());
 
             if (parser.openFile()) {
                 Log.i("TimingWrapper", "Parsed points from: " + track.getPublicName());
-                parsePoints(parser.readData());
+                parsePoints(parser.parse(false));
             }
         });
     }
 
     public void parsePoints(BeatmapData data) {
-        if (data == null || data.getData("TimingPoints") == null) {
+        if (data == null) {
             Log.i("TimingWrapper", "Data is null!");
             return;
         }
 
-        for (String string : data.getData("TimingPoints")) {
-            TimingPoint point = new TimingPoint(string.split("[,]"), mCurrentPoint);
-            mPoints.add(point);
+        TimingControlPointManager timingManager = data.timingPoints.timing;
+        EffectControlPointManager effectManager = data.timingPoints.effect;
 
-            if (!point.wasInderited() || mCurrentPoint == null) {
-                mCurrentPoint = point;
-            }
-        }
-        Log.i("TimingWrapper", "Timing points found: " + mPoints.size());
-        mFirstPoint = mPoints.removeFirst();
-        mCurrentPoint = mFirstPoint;
-        mLastPoint = mCurrentPoint;
-        mBeatLength = mFirstPoint.getBeatLength() * 1000f;
+        mTimingPoints.addAll(timingManager.getControlPoints());
+        mEffectPoints.addAll(effectManager.getControlPoints());
+
+        Log.i("TimingWrapper", "Timing points found: " + mTimingPoints.size());
+        Log.i("TimingWrapper", "Effect points found: " + mEffectPoints.size());
+
+        mFirstTimingPoint = timingManager.controlPointAt(0);
+        mCurrentTimingPoint = mFirstTimingPoint;
+        mLastTimingPoint = mCurrentTimingPoint;
+        mBeatLength = (float) mFirstTimingPoint.msPerBeat;
+        mMaxBeat = (short) (mFirstTimingPoint.timeSignature - 1);
+
+        mCurrentEffectPoint = effectManager.controlPointAt(0);
+        mIsKiaiSection = mCurrentEffectPoint.isKiai;
 
         if (computeFirstBpmLength()) {
             computeOffset();
@@ -104,28 +120,28 @@ public class TimingWrapper implements IMusicObserver {
     //--------------------------------------------------------------------------------------------//
 
     private void computeCurrentBpmLength() {
-        if (mCurrentPoint != null) {
-            mBeatLength = mCurrentPoint.getBeatLength() * 1000f;
+        if (mCurrentTimingPoint != null) {
+            mBeatLength = (float) mCurrentTimingPoint.msPerBeat;
         }
     }
 
     private boolean computeFirstBpmLength() {
-        if (mFirstPoint != null) {
-            mBeatLength = mFirstPoint.getBeatLength() * 1000f;
+        if (mFirstTimingPoint != null) {
+            mBeatLength = (float) mFirstTimingPoint.msPerBeat;
             return true;
         }
         return false;
     }
 
     private void computeOffset() {
-        if (mLastPoint != null) {
-            mOffset = mLastPoint.getTime() * 1000f % mBeatLength;
+        if (mLastTimingPoint != null) {
+            mOffset = mLastTimingPoint.time % mBeatLength;
         }
     }
 
     private void computeOffsetAtPosition(int position) {
-        if (mLastPoint != null) {
-            mOffset = (position - mLastPoint.getTime() * 1000f) % mBeatLength;
+        if (mLastTimingPoint != null) {
+            mOffset = (position - mLastTimingPoint.time) % mBeatLength;
         }
     }
 
@@ -166,12 +182,12 @@ public class TimingWrapper implements IMusicObserver {
 
     @Override
     public void onMusicPause() {
-        setBeatLength(1000);
+        setBeatLength(defaultBeatLength);
     }
 
     @Override
     public void onMusicStop() {
-        setBeatLength(1000);
+        setBeatLength(defaultBeatLength);
     }
 
     public void sync() {
@@ -198,7 +214,7 @@ public class TimingWrapper implements IMusicObserver {
             mOffset = 0;
 
             mBeat++;
-            if (mBeat > 3) {
+            if (mBeat > mMaxBeat) {
                 mBeat = 0;
             }
 
@@ -207,20 +223,29 @@ public class TimingWrapper implements IMusicObserver {
             mIsNextBeat = false;
         }
 
-        if (mCurrentPoint != null && position > mCurrentPoint.getTime() * 1000) {
-            mIsKiaiSection = mCurrentPoint.isKiai();
+        if (mCurrentTimingPoint != null && position > mCurrentTimingPoint.time) {
+            mMaxBeat = (short) (mCurrentTimingPoint.timeSignature - 1);
 
-            if (mPoints.size() == 0) {
-                mCurrentPoint = null;
+            if (mTimingPoints.isEmpty()) {
+                mCurrentTimingPoint = null;
                 return;
             }
-            mCurrentPoint = mPoints.remove(0);
 
-            if (!mCurrentPoint.wasInderited()) {
-                mLastPoint = mCurrentPoint;
-                computeCurrentBpmLength();
-                computeOffset();
+            mCurrentTimingPoint = mTimingPoints.removeFirst();
+            mLastTimingPoint = mCurrentTimingPoint;
+            computeCurrentBpmLength();
+            computeOffset();
+        }
+
+        if (mCurrentEffectPoint != null && position > mCurrentEffectPoint.time) {
+            mIsKiaiSection = mCurrentEffectPoint.isKiai;
+
+            if (mEffectPoints.isEmpty()) {
+                mCurrentEffectPoint = null;
+                return;
             }
+
+            mCurrentEffectPoint = mEffectPoints.removeFirst();
         }
     }
 }
