@@ -13,11 +13,15 @@ import com.rian.difficultycalculator.calculator.RimuDifficultyCalculator;
 import com.rian.difficultycalculator.calculator.RimuPerformanceCalculator;
 import com.rian.difficultycalculator.calculator.StandardDifficultyCalculator;
 import com.rian.difficultycalculator.calculator.StandardPerformanceCalculator;
+import com.rian.difficultycalculator.checkers.SliderCheeseChecker;
+import com.rian.difficultycalculator.checkers.SliderCheeseInformation;
+import com.rian.difficultycalculator.checkers.ThreeFingerChecker;
 
 import java.util.EnumSet;
 
 import main.osu.beatmap.BeatmapData;
 import main.osu.beatmap.parser.sections.BeatmapHitObjectsParser;
+import main.osu.scoring.Replay;
 import main.osu.scoring.StatisticV2;
 
 /**
@@ -245,5 +249,59 @@ public final class BeatmapDifficultyCalculator {
     public static StandardPerformanceAttributes calculateStandardPerformance(
             final StandardDifficultyAttributes attributes, final PerformanceCalculationParameters parameters) {
         return (StandardPerformanceAttributes) new StandardPerformanceCalculator(attributes).calculate(parameters);
+    }
+
+    /**
+     * Performs <code>Replay</code>-related operations and applies the results to a
+     * <code>PerformanceCalculationParameters</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> being played in the <code>Replay</code>.
+     * @param difficultyAttributes The <code>ExtendedRimuDifficultyAttributes</code> of the <code>DifficultyBeatmap</code>.
+     * @param replay The <code>Replay</code> to perform the operations against.
+     * @param performanceCalculationParameters The <code>PerformanceCalculationParameters</code> to apply the results to.
+     */
+    public static void performReplayOperations(final DifficultyBeatmap beatmap,
+                                               final ExtendedRimuDifficultyAttributes difficultyAttributes,
+                                               final Replay replay,
+                                               final PerformanceCalculationParameters performanceCalculationParameters) {
+        checkThreeFingerUsage(beatmap, difficultyAttributes, replay, performanceCalculationParameters);
+        checkSliderCheesing(beatmap, difficultyAttributes, replay, performanceCalculationParameters);
+    }
+
+    /**
+     * Checks for three-finger usage in a <code>Replay</code> and applies the result of the check to a
+     * <code>PerformanceCalculationParameters</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> being played in the <code>Replay</code>.
+     * @param difficultyAttributes The <code>ExtendedRimuDifficultyAttributes</code> of the <code>DifficultyBeatmap</code>.
+     * @param replay The <code>Replay</code> to perform the check against.
+     * @param performanceCalculationParameters The <code>PerformanceCalculationParameters</code> to apply the result to.
+     */
+    public static void checkThreeFingerUsage(final DifficultyBeatmap beatmap,
+                                             final ExtendedRimuDifficultyAttributes difficultyAttributes,
+                                             final Replay replay,
+                                             final PerformanceCalculationParameters performanceCalculationParameters) {
+        ThreeFingerChecker checker = new ThreeFingerChecker(beatmap, difficultyAttributes, replay.cursorMoves, replay.objectData);
+
+        performanceCalculationParameters.tapPenalty = checker.calculatePenalty();
+    }
+
+    /**
+     * Checks for slider cheesing in a <code>Replay</code> and applies the result of the check to a
+     * <code>PerformanceCalculationParameters</code>.
+     *
+     * @param beatmap The <code>DifficultyBeatmap</code> being played in the <code>Replay</code>.
+     * @param difficultyAttributes The <code>ExtendedRimuDifficultyAttributes</code> of the <code>DifficultyBeatmap</code>.
+     * @param replay The <code>Replay</code> to perform the check against.
+     * @param performanceCalculationParameters The <code>PerformanceCalculationParameters</code> to apply the result to.
+     */
+    public static void checkSliderCheesing(final DifficultyBeatmap beatmap,
+                                           final ExtendedRimuDifficultyAttributes difficultyAttributes,
+                                           final Replay replay,
+                                           final PerformanceCalculationParameters performanceCalculationParameters) {
+        SliderCheeseChecker checker = new SliderCheeseChecker(beatmap, difficultyAttributes, replay.cursorMoves, replay.objectData);
+        SliderCheeseInformation cheeseInformation = checker.check();
+
+        performanceCalculationParameters.applySliderCheeseInformation(cheeseInformation);
     }
 }
