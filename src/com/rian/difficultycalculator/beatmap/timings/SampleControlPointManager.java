@@ -11,7 +11,7 @@ public class SampleControlPointManager extends ControlPointManager<SampleControl
     }
 
     @Override
-    public SampleControlPoint controlPointAt(int time) {
+    public SampleControlPoint controlPointAt(double time) {
         return binarySearchWithFallback(time);
     }
 }

@@ -31,7 +31,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
      * @param time The time.
      * @return The active control point at the given time.
      */
-    public abstract T controlPointAt(int time);
+    public abstract T controlPointAt(double time);
 
     /**
      * Adds a new control point.
@@ -112,7 +112,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
      * @param time The time to find the control point at.
      * @return The active control point at the given time, or the default control point if none found.
      */
-    protected T binarySearchWithFallback(int time) {
+    protected T binarySearchWithFallback(double time) {
         return binarySearchWithFallback(time, defaultControlPoint);
     }
 
@@ -125,7 +125,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
      * @param fallback The control point to fallback to when no control points were found.
      * @return The active control point at the given time, or the fallback control point if none found.
      */
-    protected T binarySearchWithFallback(int time, T fallback) {
+    protected T binarySearchWithFallback(double time, T fallback) {
         T controlPoint = binarySearch(time);
 
         return controlPoint != null ? controlPoint : fallback;
@@ -137,7 +137,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
      * @param time The time to find the control point at.
      * @return The active control point at the given time, `null` if none found.
      */
-    protected T binarySearch(int time) {
+    protected T binarySearch(double time) {
         if (controlPoints.size() == 0 || time < controlPoints.get(0).time) {
             return null;
         }

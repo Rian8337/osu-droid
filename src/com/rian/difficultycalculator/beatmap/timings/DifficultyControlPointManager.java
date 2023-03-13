@@ -9,7 +9,7 @@ public class DifficultyControlPointManager extends ControlPointManager<Difficult
     }
 
     @Override
-    public DifficultyControlPoint controlPointAt(int time) {
+    public DifficultyControlPoint controlPointAt(double time) {
         return binarySearchWithFallback(time);
     }
 }

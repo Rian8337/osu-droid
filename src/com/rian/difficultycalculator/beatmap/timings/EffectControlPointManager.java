@@ -9,7 +9,7 @@ public class EffectControlPointManager extends ControlPointManager<EffectControl
     }
 
     @Override
-    public EffectControlPoint controlPointAt(int time) {
+    public EffectControlPoint controlPointAt(double time) {
         return binarySearchWithFallback(time);
     }
 }
