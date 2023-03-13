@@ -4,10 +4,19 @@ package com.rian.difficultycalculator.beatmap.constants;
  * Represents available sample banks.
  */
 public enum SampleBank {
-    none,
-    normal,
-    soft,
-    drum;
+    none(""),
+    normal("normal"),
+    soft("soft"),
+    drum("drum");
+
+    /**
+     * The prefix of audio files representing this sample bank.
+     */
+    public final String prefix;
+
+    SampleBank(final String prefix) {
+        this.prefix = prefix;
+    }
 
     /**
      * Converts an integer value to its sample bank counterpart.
