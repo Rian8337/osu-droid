@@ -18,7 +18,7 @@ public class SampleControlPoint extends ControlPoint {
 
     /**
      * The index of the sample bank, if this sample bank uses custom samples.
-     *
+     * <br><br>
      * If this is 0, the beatmap's sample should be used instead.
      */
     public final int customSampleBank;

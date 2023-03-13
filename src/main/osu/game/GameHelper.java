@@ -2,7 +2,7 @@ package main.osu.game;
 
 import android.graphics.PointF;
 
-import com.edlplan.osu.support.timing.controlpoint.ControlPoints;
+import com.rian.difficultycalculator.beatmap.BeatmapControlPointsManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,7 +20,7 @@ import main.osu.helper.DifficultyHelper;
 import main.osu.polygon.Spline;
 
 public class GameHelper {
-    public static ControlPoints controlPoints;
+    public static BeatmapControlPointsManager controlPoints;
     private static double binomTable[][];
     private static int binomTableN;
     private static float tickRate = 1;
@@ -29,7 +29,7 @@ public class GameHelper {
     private static float difficulty = 1;
     private static float approachRate = 1;
     private static float drain = 0;
-    private static float stackLatient = 0;
+    private static float stackLeniency = 0;
     private static float timeMultiplier = 0;
     private static RGBColor sliderColor = new RGBColor();
     private static boolean hidden = false;
@@ -49,7 +49,7 @@ public class GameHelper {
     private static float beatLength = 0;
     private static float timingOffset = 0;
     private static int timeSignature = 4;
-    private static float initalBeatLength = 0;
+    private static float initialBeatLength = 0;
     private static float globalTime = 0;
     private static Spline.CurveTypes curveType;
     private static int gameid = 0;
@@ -338,12 +338,12 @@ public class GameHelper {
         return pointPool.poll();
     }
 
-    public static float getStackLatient() {
-        return stackLatient;
+    public static float getStackLeniency() {
+        return stackLeniency;
     }
 
-    public static void setStackLatient(final float stackLatient) {
-        GameHelper.stackLatient = stackLatient;
+    public static void setStackLeniency(final float stackLeniency) {
+        GameHelper.stackLeniency = stackLeniency;
     }
 
     public static RGBColor getSliderColor() {
@@ -473,20 +473,20 @@ public class GameHelper {
         GameHelper.timeSignature = timeSignature;
     }
 
-    public static float getInitalBeatLength() {
-        return initalBeatLength;
+    public static float getInitialBeatLength() {
+        return initialBeatLength;
     }
 
-    public static void setInitalBeatLength(float initalBeatLength) {
-        GameHelper.initalBeatLength = initalBeatLength;
+    public static void setInitialBeatLength(float initialBeatLength) {
+        GameHelper.initialBeatLength = initialBeatLength;
     }
 
     public static float getSliderTickLength() {
-        return 100f * initalBeatLength / speed;
+        return 100f * initialBeatLength / speed;
     }
 
     public static float getKiaiTickLength() {
-        return initalBeatLength;
+        return initialBeatLength;
     }
 
     public static boolean isRelaxMod() {

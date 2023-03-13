@@ -5,7 +5,7 @@ import android.graphics.PointF;
 import com.edlplan.framework.math.Vec2;
 import com.edlplan.framework.math.line.LinePath;
 import com.edlplan.osu.support.slider.SliderBody2D;
-import com.edlplan.osu.support.timing.controlpoint.TimingControlPoint;
+import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
 
 import org.anddev.andengine.entity.modifier.AlphaModifier;
 import org.anddev.andengine.entity.modifier.FadeInModifier;
@@ -37,7 +37,7 @@ public class Slider extends GameObject {
     private final ArrayList<Sprite> ticks = new ArrayList<>();
     private Scene scene;
     private GameObjectListener listener;
-    private TimingPoint timing;
+    private TimingControlPoint timing;
     private CircleNumber number;
     private SliderPath path;
     private float passedTime;
@@ -91,7 +91,7 @@ public class Slider extends GameObject {
     public void init(final GameObjectListener listener, final Scene scene,
                      final PointF pos, final float offset, final float time, final float r, final float g,
                      final float b, final float scale, int num, final int sound, final int repeats,
-                     final float length, final String data, final TimingPoint timing,
+                     final float length, final String data, final TimingControlPoint timing,
                      final String customSound, final String tempSound, final boolean isFirstNote, final double realTime) {
         init(listener, scene, pos, offset, time, r, g, b, scale, num, sound, repeats, length, data, timing, customSound, tempSound, isFirstNote, realTime, null);
     }
@@ -99,7 +99,7 @@ public class Slider extends GameObject {
     public void init(final GameObjectListener listener, final Scene scene,
                      final PointF pos, final float offset, final float time, final float r, final float g,
                      final float b, final float scale, int num, final int sound, final int repeats,
-                     final float length, final String data, final TimingPoint timing,
+                     final float length, final String data, final TimingControlPoint timing,
                      final String customSound, final String tempSound, final boolean isFirstNote, final double realTime,
                      SliderPath sliderPath) {
         this.listener = listener;
@@ -128,11 +128,11 @@ public class Slider extends GameObject {
         number = GameObjectPool.getInstance().getNumber(num);
 
 
-        TimingControlPoint timingPoint = GameHelper.controlPoints.getTimingPointAt(realTime);
-        double speedMultiplier = GameHelper.controlPoints.getDifficultyPointAt(realTime).getSpeedMultiplier();
+        TimingControlPoint timingPoint = GameHelper.controlPoints.timing.controlPointAt(realTime / 1000);
+        double speedMultiplier = GameHelper.controlPoints.difficulty.controlPointAt(realTime / 1000).speedMultiplier;
 
         double scoringDistance = GameHelper.getSpeed() * speedMultiplier;
-        double velocity = scoringDistance / timingPoint.getBeatLength();
+        double velocity = scoringDistance / timingPoint.msPerBeat;
         double spanDuration = length / velocity;
         //fixed negative length silder bug
         if (spanDuration <= 0) {
@@ -261,7 +261,7 @@ public class Slider extends GameObject {
 
         // Ticks
         // Try to fix incorrect slider tick count bug
-        tickInterval = timing.getBeatLength() * speedMultiplier;
+        tickInterval = timing.msPerBeat / 1000 * speedMultiplier;
         int tickCount = (int) (maxTime * GameHelper.getTickRate() / tickInterval);
         if (Double.isNaN(tickInterval) || tickInterval < GameHelper.getSliderTickLength() / 1000) {
             tickCount = 0;
@@ -663,7 +663,7 @@ public class Slider extends GameObject {
             ball = SpritePool.getInstance().getAnimSprite("sliderb",
                     SkinManager.getFrames("sliderb"));
             ball.setFps(0.1f * GameHelper.getSpeed() * scale
-                    / timing.getBeatLength());
+                    / (float) timing.msPerBeat);
             ball.setScale(scale);
             ball.setFlippedHorizontal(false);
 
@@ -698,7 +698,7 @@ public class Slider extends GameObject {
 
         tickTime += dt;
         //try fixed big followcircle bug
-        float fcscale = scale * (1.1f - 0.1f * tickTime * GameHelper.getTickRate() / timing.getBeatLength());
+        float fcscale = scale * (1.1f - 0.1f * tickTime * GameHelper.getTickRate() / (float) timing.msPerBeat);
         if (fcscale <= scale * 1.1f && fcscale >= scale * -1.1f) {
             followcircle.setScale(fcscale);
         }
