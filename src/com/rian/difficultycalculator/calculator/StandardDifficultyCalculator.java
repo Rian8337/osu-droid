@@ -9,6 +9,7 @@ import com.rian.difficultycalculator.skills.standard.StandardAim;
 import com.rian.difficultycalculator.skills.standard.StandardFlashlight;
 import com.rian.difficultycalculator.skills.standard.StandardSpeed;
 import com.rian.difficultycalculator.utils.GameMode;
+import com.rian.difficultycalculator.utils.HitObjectStackEvaluator;
 import com.rian.difficultycalculator.utils.StandardHitWindowConverter;
 
 import java.util.EnumSet;
@@ -97,6 +98,15 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         processAR(manager, parameters);
         processOD(manager, parameters);
         processHP(manager, parameters);
+
+        HitObjectStackEvaluator.applyStacking(
+                beatmap.getFormatVersion(),
+                beatmap.getHitObjectsManager().getObjects(),
+                manager.getAR(),
+                beatmap.getStackLeniency(),
+                0,
+                beatmap.getHitObjectsManager().getObjects().size() - 1
+        );
     }
 
     @Override

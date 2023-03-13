@@ -15,6 +15,7 @@ import com.rian.difficultycalculator.skills.rimu.RimuTap;
 import com.rian.difficultycalculator.skills.rimu.RimuVisual;
 import com.rian.difficultycalculator.utils.CircleSizeCalculator;
 import com.rian.difficultycalculator.utils.GameMode;
+import com.rian.difficultycalculator.utils.HitObjectStackEvaluator;
 import com.rian.difficultycalculator.utils.RimuHitWindowConverter;
 import com.rian.difficultycalculator.utils.StandardHitWindowConverter;
 
@@ -122,6 +123,15 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         processAR(manager, parameters);
         processOD(manager, parameters);
         processHP(manager, parameters);
+
+        HitObjectStackEvaluator.applyStacking(
+                beatmap.getFormatVersion(),
+                beatmap.getHitObjectsManager().getObjects(),
+                manager.getAR(),
+                beatmap.getStackLeniency(),
+                0,
+                beatmap.getHitObjectsManager().getObjects().size() - 1
+        );
     }
 
     @Override
