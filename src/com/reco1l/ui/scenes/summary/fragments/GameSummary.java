@@ -25,9 +25,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import main.osu.TrackInfo;
+import main.osu.beatmap.BeatmapData;
+import main.osu.beatmap.parser.BeatmapParser;
 import main.osu.game.GameHelper;
-import main.osu.helper.DifficultyReCalculator;
+import main.osu.helper.BeatmapDifficultyCalculator;
 import main.osu.scoring.StatisticV2;
+
+import com.rian.difficultycalculator.attributes.StandardDifficultyAttributes;
+import com.rian.difficultycalculator.attributes.StandardPerformanceAttributes;
+import com.rian.difficultycalculator.beatmap.DifficultyBeatmap;
 import com.rimu.R;
 
 public final class GameSummary extends BaseFragment {
@@ -62,7 +68,6 @@ public final class GameSummary extends BaseFragment {
     private LinearLayout mModsContainer;
 
     private RankingSection mRankingSection;
-    private DifficultyReCalculator mCalculator;
 
     private TrackInfo mTrack;
     private StatisticV2 mStats;
@@ -135,8 +140,6 @@ public final class GameSummary extends BaseFragment {
             return;
         }
 
-        mCalculator = new DifficultyReCalculator();
-
         Game.activity.runOnUiThread(() -> {
             loadTrackData(mTrack, mStats);
 
@@ -167,16 +170,24 @@ public final class GameSummary extends BaseFragment {
     }
 
     private void loadTrackData(TrackInfo track, StatisticV2 stats) {
-
         mTitleText.setText(BeatmapHelper.getTitle(track));
         mArtistText.setText(BeatmapHelper.getArtist(track));
         mMapperText.setText(track.getBeatmap().getCreator());
         mDifficultyText.setText(track.getMode());
 
-        float cs = mCalculator.getCS(stats, track);
-        float sr = mCalculator.recalculateStar(track, cs, stats.getSpeed());
+        BeatmapParser parser = new BeatmapParser(track.getFilename());
+        BeatmapData data = parser.parse(true);
 
-        mStarsText.setText("" + sr);
+        if (data == null) {
+            mStarsText.setText("0");
+            return;
+        }
+
+        DifficultyBeatmap beatmap = BeatmapDifficultyCalculator.constructDifficultyBeatmap(data);
+        StandardDifficultyAttributes difficultyAttributes =
+                BeatmapDifficultyCalculator.calculateStandardDifficulty(beatmap, stats);
+
+        mStarsText.setText(String.format("%.2f", difficultyAttributes.starRating));
     }
 
     private void loadPerformanceStatistics(TrackInfo track, StatisticV2 stats) {
@@ -187,10 +198,24 @@ public final class GameSummary extends BaseFragment {
         }
 
         Async.run(() -> {
-            mCalculator.calculatePP(stats, track);
+            BeatmapParser parser = new BeatmapParser(track.getFilename());
+            BeatmapData data = parser.parse(true);
+
+            if (data == null) {
+                Game.activity.runOnUiThread(() ->
+                        mPPText.setText(String.format("%.2f", 0d))
+                );
+                return;
+            }
+
+            DifficultyBeatmap beatmap = BeatmapDifficultyCalculator.constructDifficultyBeatmap(data);
+            StandardDifficultyAttributes difficultyAttributes =
+                    BeatmapDifficultyCalculator.calculateStandardDifficulty(beatmap, stats);
+            StandardPerformanceAttributes performanceAttributes =
+                    BeatmapDifficultyCalculator.calculateStandardPerformance(difficultyAttributes, stats);
 
             Game.activity.runOnUiThread(() ->
-                    mPPText.setText(String.format("%.2f", mCalculator.getTotalPP()))
+                    mPPText.setText(String.format("%.2f", performanceAttributes.total))
             );
         });
 

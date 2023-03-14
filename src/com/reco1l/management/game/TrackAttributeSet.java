@@ -3,14 +3,18 @@ package com.reco1l.management.game;
 import com.reco1l.Game;
 import com.reco1l.management.modding.ModAcronyms;
 import com.reco1l.framework.execution.Async;
+import com.rian.difficultycalculator.attributes.StandardDifficultyAttributes;
+import com.rian.difficultycalculator.beatmap.DifficultyBeatmap;
 
 import java.util.EnumSet;
 import java.util.function.Consumer;
 
 import main.osu.TrackInfo;
+import main.osu.beatmap.BeatmapData;
+import main.osu.beatmap.parser.BeatmapParser;
 import main.osu.game.GameHelper;
 import main.osu.game.mods.GameMod;
-import main.osu.helper.DifficultyReCalculator;
+import main.osu.helper.BeatmapDifficultyCalculator;
 
 public class TrackAttributeSet implements ModAcronyms {
 
@@ -148,11 +152,19 @@ public class TrackAttributeSet implements ModAcronyms {
         }
 
         Async.run(() -> {
-            DifficultyReCalculator drc = new DifficultyReCalculator();
+            BeatmapParser parser = new BeatmapParser(mTrack.getFilename());
+            BeatmapData data = parser.parse(true);
 
-            get(TrackAttribute.STARS).opt(v ->
-                    drc.recalculateStar(mTrack, getValue(TrackAttribute.CS), Game.modManager.getSpeed())
-            );
+            if (data == null) {
+                get(TrackAttribute.STARS).opt(v -> 0);
+                return;
+            }
+
+            DifficultyBeatmap beatmap = BeatmapDifficultyCalculator.constructDifficultyBeatmap(data);
+            StandardDifficultyAttributes difficultyAttributes =
+                    BeatmapDifficultyCalculator.calculateStandardDifficulty(beatmap);
+
+            get(TrackAttribute.STARS).opt(v -> difficultyAttributes.starRating);
         });
     }
 }
