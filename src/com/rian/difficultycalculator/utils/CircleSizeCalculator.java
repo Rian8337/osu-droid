@@ -1,5 +1,7 @@
 package com.rian.difficultycalculator.utils;
 
+import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
+
 import java.util.EnumSet;
 
 import main.osu.Config;
@@ -50,6 +52,16 @@ public final class CircleSizeCalculator {
     }
 
     /**
+     * Converts osu!standard radius to rimu! scale.
+     *
+     * @param radius The osu!standard radius to convert.
+     * @return The rimu! scale of the given osu!standard radius.
+     */
+    public static double standardRadiusToRimuScale(double radius) {
+        return radius * ((Config.getRES_HEIGHT() * 0.85) / 384) / HitObject.OBJECT_RADIUS;
+    }
+
+    /**
      * Converts osu!standard radius to osu!standard circle size.
      *
      * @param radius The osu!standard radius to convert.
@@ -57,5 +69,35 @@ public final class CircleSizeCalculator {
      */
     public static double standardRadiusToStandardCS(double radius) {
         return 5 + (1 - radius / 32) * 5 / 0.7;
+    }
+
+    /**
+     * Converts osu!standard circle size to osu!standard scale.
+     *
+     * @param cs The osu!standard circle size to convert.
+     * @return The osu!standard scale of the given circle size.
+     */
+    public static double standardCSToStandardScale(double cs) {
+        return (1 - (0.7 * (cs - 5)) / 5) / 2;
+    }
+
+    /**
+     * Converts osu!standard scale to rimu! scale.
+     *
+     * @param scale The osu!standard scale to convert.
+     * @return The rimu! scale of the given osu!standard scale.
+     */
+    public static double standardScaleToRimuScale(double scale) {
+        return standardRadiusToRimuScale(HitObject.OBJECT_RADIUS * scale);
+    }
+
+    /**
+     * Converts osu!standard circle size to rimu! scale.
+     *
+     * @param cs The osu!standard circle size to convert.
+     * @return The rimu! scale of the given rimu! scale.
+     */
+    public static double standardCSToRimuScale(double cs) {
+        return standardScaleToRimuScale(standardCSToStandardScale(cs));
     }
 }
