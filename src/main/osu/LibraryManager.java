@@ -27,7 +27,7 @@ import main.osu.helper.StringTable;
 import com.rimu.R;
 
 public class LibraryManager {
-    private static final String VERSION = "library3.5";
+    private static final String VERSION = "library3.4";
     private static LibraryManager mgr = new LibraryManager();
     private ArrayList<BeatmapInfo> library;
     private Integer fileCount = 0;
