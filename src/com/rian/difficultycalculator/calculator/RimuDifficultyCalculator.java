@@ -126,14 +126,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         processOD(manager, parameters);
         processHP(manager, parameters);
 
-        HitObjectStackEvaluator.applyStacking(
-                beatmap.getFormatVersion(),
-                beatmap.getHitObjectsManager().getObjects(),
-                manager.getAR(),
-                beatmap.getStackLeniency(),
-                0,
-                beatmap.getHitObjectsManager().getObjects().size() - 1
-        );
+        HitObjectStackEvaluator.applyRimuStacking(beatmap.getHitObjectsManager().getObjects(), beatmap.getStackLeniency());
     }
 
     @Override

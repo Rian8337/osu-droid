@@ -99,7 +99,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         processOD(manager, parameters);
         processHP(manager, parameters);
 
-        HitObjectStackEvaluator.applyStacking(
+        HitObjectStackEvaluator.applyStandardStacking(
                 beatmap.getFormatVersion(),
                 beatmap.getHitObjectsManager().getObjects(),
                 manager.getAR(),

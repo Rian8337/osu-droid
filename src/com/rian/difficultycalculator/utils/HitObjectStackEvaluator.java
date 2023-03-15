@@ -15,7 +15,7 @@ public final class HitObjectStackEvaluator {
     private static final int stackDistance = 3;
 
     /**
-     * Applies note stacking to hit objects.
+     * Applies osu!standard note stacking to hit objects.
      *
      * @param formatVersion The format version of the beatmap containing the hit objects.
      * @param objects The hit objects to apply stacking to.
@@ -25,10 +25,10 @@ public final class HitObjectStackEvaluator {
      * @param startIndex The minimum index bound of the hit object to apply stacking to.
      * @param endIndex The maximum index bound of the hit object to apply stacking to.
      */
-    public static void applyStacking(int formatVersion, List<HitObject> objects, double ar,
-                                     float stackLeniency, int startIndex, int endIndex) {
+    public static void applyStandardStacking(int formatVersion, List<HitObject> objects, double ar,
+                                             float stackLeniency, int startIndex, int endIndex) {
         if (formatVersion < 6) {
-            applyStackingOld(objects, ar, stackLeniency);
+            applyStandardStackingOld(objects, ar, stackLeniency);
             return;
         }
 
@@ -176,7 +176,35 @@ public final class HitObjectStackEvaluator {
     }
 
     /**
-     * Applies note stacking to hit objects.
+     * Applies rimu! note stacking to hit objects.
+     *
+     * @param objects The hit objects to apply the stacking to.
+     * @param stackLeniency The multiplier for the threshold in time where hit objects
+     *                      placed close together stack, ranging from 0 to 1.
+     */
+    public static void applyRimuStacking(List<HitObject> objects, float stackLeniency) {
+        if (objects.isEmpty()) {
+            return;
+        }
+
+        objects.get(0).setRimuStackHeight(0);
+        double scale = CircleSizeCalculator.standardScaleToRimuScale(objects.get(0).getRimuScale());
+
+        for (int i = 0; i < objects.size() - 1; ++i) {
+            HitObject currentObject = objects.get(i);
+            HitObject nextObject = objects.get(i + 1);
+
+            if (nextObject.getStartTime() - currentObject.getStartTime() < 2000 * stackLeniency &&
+                nextObject.getPosition().getDistance(currentObject.getPosition()) < Math.sqrt(scale)) {
+                nextObject.setRimuStackHeight(currentObject.getRimuStackHeight() + 1);
+            } else {
+                nextObject.setRimuStackHeight(0);
+            }
+        }
+    }
+
+    /**
+     * Applies osu!standard note stacking to hit objects.
      *
      * Used for beatmaps version 5 or older.
      *
@@ -185,7 +213,7 @@ public final class HitObjectStackEvaluator {
      * @param stackLeniency The multiplier for the threshold in time where hit objects
      *                      placed close together stack, ranging from 0 to 1.
      */
-    private static void applyStackingOld(List<HitObject> objects, double ar, float stackLeniency) {
+    private static void applyStandardStackingOld(List<HitObject> objects, double ar, float stackLeniency) {
         double timePreempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
         double stackThreshold = timePreempt * stackLeniency;
 
