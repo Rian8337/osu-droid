@@ -28,7 +28,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     /**
      * Finds the control point that is active at a given time.
      *
-     * @param time The time.
+     * @param time The time, in milliseconds.
      * @return The active control point at the given time.
      */
     public abstract T controlPointAt(double time);
@@ -105,11 +105,11 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     }
 
     /**
-     * Binary searches one of the control point lists to find the active control point at the given time.
+     * Binary searches the control point list to find the active control point at the given time.
      * <br><br>
      * Includes logic for returning the default control point when no matching point is found.
      *
-     * @param time The time to find the control point at.
+     * @param time The time to find the control point at, in milliseconds.
      * @return The active control point at the given time, or the default control point if none found.
      */
     protected T binarySearchWithFallback(double time) {
@@ -117,11 +117,11 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     }
 
     /**
-     * Binary searches one of the control point lists to find the active control point at the given time.
+     * Binary searches the control point list to find the active control point at the given time.
      * <br><br>
      * Includes logic for returning a fallback control point when no matching point is found.
      *
-     * @param time The time to find the control point at.
+     * @param time The time to find the control point at, in milliseconds.
      * @param fallback The control point to fallback to when no control points were found.
      * @return The active control point at the given time, or the fallback control point if none found.
      */
@@ -132,9 +132,9 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     }
 
     /**
-     * Binary searches one of the control point lists to find the active control point at the given time.
+     * Binary searches the control point list to find the active control point at the given time.
      *
-     * @param time The time to find the control point at.
+     * @param time The time to find the control point at, in milliseconds.
      * @return The active control point at the given time, `null` if none found.
      */
     protected T binarySearch(double time) {
@@ -169,7 +169,7 @@ public abstract class ControlPointManager<T extends ControlPoint> {
     /**
      * Finds the insertion index of a control point in a given time.
      *
-     * @param time The start time of the control point.
+     * @param time The start time of the control point, in milliseconds.
      */
     private int findInsertionIndex(int time) {
         if (controlPoints.size() == 0 || time < controlPoints.get(0).time) {
