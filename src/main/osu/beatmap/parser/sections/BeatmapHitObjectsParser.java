@@ -55,11 +55,7 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
             return true;
         }
 
-        int time = Utils.tryParseInt(pars[2], -1);
-        if (time < 0) {
-            return false;
-        }
-        time = data.getOffsetTime(time);
+        int time = data.getOffsetTime(Utils.tryParseInt(pars[2], -1));
 
         HitObjectType type = HitObjectType.valueOf(Utils.tryParseInt(pars[3], -1) % 16);
         Vector2 position = new Vector2(
