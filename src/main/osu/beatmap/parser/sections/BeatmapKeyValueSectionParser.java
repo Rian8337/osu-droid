@@ -18,10 +18,9 @@ public abstract class BeatmapKeyValueSectionParser extends BeatmapSectionParser 
     protected String[] splitProperty(final String line) {
         String[] s = line.split(":");
 
-        if (s.length < 2) {
-            return null;
-        }
-
-        return new String[] { s[0].trim(), String.join(":", Arrays.copyOfRange(s, 1, s.length)).trim() };
+        return new String[] {
+                s[0].trim(),
+                s.length > 1 ? String.join(":", Arrays.copyOfRange(s, 1, s.length)).trim() : ""
+        };
     }
 }
