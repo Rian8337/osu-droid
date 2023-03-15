@@ -159,7 +159,6 @@ public abstract class HitObject {
     public double getRadius(GameMode mode) {
         double radius = OBJECT_RADIUS;
 
-
         switch (mode) {
             case rimu:
                 radius *= rimuScale;
