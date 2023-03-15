@@ -128,8 +128,8 @@ public class Slider extends GameObject {
         number = GameObjectPool.getInstance().getNumber(num);
 
 
-        TimingControlPoint timingPoint = GameHelper.controlPoints.timing.controlPointAt(realTime / 1000);
-        double speedMultiplier = GameHelper.controlPoints.difficulty.controlPointAt(realTime / 1000).speedMultiplier;
+        TimingControlPoint timingPoint = GameHelper.controlPoints.timing.controlPointAt(realTime);
+        double speedMultiplier = GameHelper.controlPoints.difficulty.controlPointAt(realTime).speedMultiplier;
 
         double scoringDistance = GameHelper.getSpeed() * speedMultiplier;
         double velocity = scoringDistance / timingPoint.msPerBeat;
@@ -663,7 +663,7 @@ public class Slider extends GameObject {
             ball = SpritePool.getInstance().getAnimSprite("sliderb",
                     SkinManager.getFrames("sliderb"));
             ball.setFps(0.1f * GameHelper.getSpeed() * scale
-                    / (float) timing.msPerBeat);
+                    / (float) (timing.msPerBeat / 1000));
             ball.setScale(scale);
             ball.setFlippedHorizontal(false);
 
@@ -698,7 +698,7 @@ public class Slider extends GameObject {
 
         tickTime += dt;
         //try fixed big followcircle bug
-        float fcscale = scale * (1.1f - 0.1f * tickTime * GameHelper.getTickRate() / (float) timing.msPerBeat);
+        float fcscale = scale * (1.1f - 0.1f * tickTime * GameHelper.getTickRate() / (float) (timing.msPerBeat / 1000));
         if (fcscale <= scale * 1.1f && fcscale >= scale * -1.1f) {
             followcircle.setScale(fcscale);
         }
