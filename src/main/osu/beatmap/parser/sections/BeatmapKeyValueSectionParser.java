@@ -22,6 +22,6 @@ public abstract class BeatmapKeyValueSectionParser extends BeatmapSectionParser 
             return null;
         }
 
-        return new String[] { s[0], String.join(":", Arrays.copyOfRange(s, 1, s.length)) };
+        return new String[] { s[0].trim(), String.join(":", Arrays.copyOfRange(s, 1, s.length)).trim() };
     }
 }
