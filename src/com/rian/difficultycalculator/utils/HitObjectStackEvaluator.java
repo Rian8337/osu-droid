@@ -67,7 +67,7 @@ public final class HitObjectStackEvaluator {
                     stackBaseIndex = n;
 
                     // Hit objects after the specified update range haven't been reset yet
-                    objectN.setStackHeight(0);
+                    objectN.setStandardStackHeight(0);
                 }
             }
 
@@ -95,7 +95,7 @@ public final class HitObjectStackEvaluator {
             // then we come backwards on the i loop iteration until we reach 3 and handle 1.
             // 2 and 1 will be ignored in the i loop because they already have a stack value.
             HitObject objectI = objects.get(i);
-            if (objectI.getStackHeight() != 0 || objectI instanceof Spinner) {
+            if (objectI.getStandardStackHeight() != 0 || objectI instanceof Spinner) {
                 continue;
             }
 
@@ -121,7 +121,7 @@ public final class HitObjectStackEvaluator {
 
                     // Hit objects before the specified update range haven't been reset yet
                     if (n < extendedStartIndex) {
-                        objectN.setStackHeight(0);
+                        objectN.setStandardStackHeight(0);
                         extendedStartIndex = n;
                     }
 
@@ -130,13 +130,13 @@ public final class HitObjectStackEvaluator {
                     //     o <- hitCircle has stack of -1
                     //      o <- hitCircle has stack of -2
                     if (objectN instanceof Slider && objectN.getEndPosition().getDistance(objectI.getPosition()) < stackDistance) {
-                        int offset = objectI.getStackHeight() - objectN.getStackHeight() + 1;
+                        int offset = objectI.getStandardStackHeight() - objectN.getStandardStackHeight() + 1;
 
                         for (int j = n + 1; j <= i; ++j) {
                             // For each object which was declared under this slider, we will offset it to appear *below* the slider end (rather than above).
                             HitObject objectJ = objects.get(j);
                             if (objectN.getEndPosition().getDistance(objectJ.getPosition()) < stackDistance) {
-                                objectJ.setStackHeight(objectJ.getStackHeight() - offset);
+                                objectJ.setStandardStackHeight(objectJ.getStandardStackHeight() - offset);
                             }
                         }
 
@@ -148,7 +148,7 @@ public final class HitObjectStackEvaluator {
                     if (objectN.getPosition().getDistance(objectI.getPosition()) < stackDistance) {
                         // Keep processing as if there are no sliders. If we come across a slider, this gets cancelled out.
                         // NOTE: Sliders with start positions stacking are a special case that is also handled here.
-                        objectN.setStackHeight(objectI.getStackHeight() + 1);
+                        objectN.setStandardStackHeight(objectI.getStandardStackHeight() + 1);
                         objectI = objectN;
                     }
                 }
@@ -167,7 +167,7 @@ public final class HitObjectStackEvaluator {
                     }
 
                     if (objectN.getEndPosition().getDistance(objectI.getPosition()) < stackDistance) {
-                        objectN.setStackHeight(objectI.getStackHeight() + 1);
+                        objectN.setStandardStackHeight(objectI.getStandardStackHeight() + 1);
                         objectI = objectN;
                     }
                 }
@@ -192,7 +192,7 @@ public final class HitObjectStackEvaluator {
         for (int i = 0; i < objects.size(); ++i) {
             HitObject currentObject = objects.get(i);
 
-            if (currentObject.getStackHeight() != 0 && !(currentObject instanceof Slider)) {
+            if (currentObject.getStandardStackHeight() != 0 && !(currentObject instanceof Slider)) {
                 continue;
             }
 
@@ -208,7 +208,7 @@ public final class HitObjectStackEvaluator {
                 }
 
                 if (objects.get(j).getPosition().getDistance(currentObject.getPosition()) < stackDistance) {
-                    currentObject.setStackHeight(currentObject.getStackHeight() + 1);
+                    currentObject.setStandardStackHeight(currentObject.getStandardStackHeight() + 1);
                     startTime = objects.get(j).getStartTime();
 
                     if (objects.get(j) instanceof HitObjectWithDuration) {
@@ -217,7 +217,7 @@ public final class HitObjectStackEvaluator {
                 } else if (objects.get(j).getPosition().getDistance(currentObject.getEndPosition()) < stackDistance) {
                     // Case for sliders - bump notes down and right, rather than up and left.
                     ++sliderStack;
-                    objects.get(j).setStackHeight(objects.get(j).getStackHeight() - sliderStack);
+                    objects.get(j).setStandardStackHeight(objects.get(j).getStandardStackHeight() - sliderStack);
                     startTime = objects.get(j).getStartTime();
 
                     if (objects.get(j) instanceof HitObjectWithDuration) {

@@ -28,9 +28,14 @@ public abstract class HitObject {
     protected Vector2 endPosition;
 
     /**
-     * The stack height of this hit object.
+     * The rimu! stack height of this hit object.
      */
-    protected int stackHeight;
+    private int rimuStackHeight;
+
+    /**
+     * The osu!standard stack height of this hit object.
+     */
+    private int standardStackHeight;
 
     /**
      * The rimu! scale of this hit object with respect to osu!standard scale metric.
@@ -101,19 +106,35 @@ public abstract class HitObject {
     }
 
     /**
-     * Gets the stack height of this hit object.
+     * Gets the rimu! stack height of this hit object.
      */
-    public int getStackHeight() {
-        return stackHeight;
+    public int getRimuStackHeight() {
+        return rimuStackHeight;
     }
 
     /**
-     * Sets the stack height of this hit object.
+     * Sets the new rimu! stack height of this hit object.
      *
-     * @param stackHeight The new stack height.
+     * @param rimuStackHeight The new rimu! stack height.
      */
-    public void setStackHeight(int stackHeight) {
-        this.stackHeight = stackHeight;
+    public void setRimuStackHeight(int rimuStackHeight) {
+        this.rimuStackHeight = rimuStackHeight;
+    }
+
+    /**
+     * Gets the osu!standard stack height of this hit object.
+     */
+    public int getStandardStackHeight() {
+        return standardStackHeight;
+    }
+
+    /**
+     * Sets the osu!standard stack height of this hit object.
+     *
+     * @param standardStackHeight The new stack height.
+     */
+    public void setStandardStackHeight(int standardStackHeight) {
+        this.standardStackHeight = standardStackHeight;
     }
 
     /**
@@ -155,7 +176,7 @@ public abstract class HitObject {
      * @param mode The game mode to calculate for.
      */
     public Vector2 getStackOffset(GameMode mode) {
-        double coordinate = stackHeight;
+        double coordinate = standardStackHeight;
 
         switch (mode) {
             case rimu:
