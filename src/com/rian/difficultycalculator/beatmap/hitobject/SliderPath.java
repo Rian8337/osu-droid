@@ -6,6 +6,7 @@ import com.rian.difficultycalculator.math.Precision;
 import com.rian.difficultycalculator.math.Vector2;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents the path of a slider.
@@ -61,7 +62,7 @@ public class SliderPath {
         for (int i = 0; i < controlPoints.size(); ++i) {
             if (i == controlPoints.size() - 1 || controlPoints.get(i).equals(controlPoints.get(i + 1))) {
                 int spanEnd = i + 1;
-                ArrayList<Vector2> cpSpan = (ArrayList<Vector2>) controlPoints.subList(spanStart, spanEnd);
+                List<Vector2> cpSpan = controlPoints.subList(spanStart, spanEnd);
 
                 calculateSubPath(cpSpan).forEach(t -> {
                     if (calculatedPath.size() == 0 || !calculatedPath.get(calculatedPath.size() - 1).equals(t)) {
@@ -142,7 +143,7 @@ public class SliderPath {
         return interpolateVertices(indexOfDistance(d), d);
     }
 
-    private ArrayList<Vector2> calculateSubPath(ArrayList<Vector2> subControlPoints) {
+    private List<Vector2> calculateSubPath(List<Vector2> subControlPoints) {
         switch (pathType) {
             case Linear:
                 return PathApproximator.approximateLinear(subControlPoints);

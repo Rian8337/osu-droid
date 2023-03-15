@@ -4,6 +4,7 @@ import com.rian.difficultycalculator.math.Precision;
 import com.rian.difficultycalculator.math.Vector2;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -30,7 +31,7 @@ public final class PathApproximator {
      *
      * @param controlPoints The anchor points of the slider.
      */
-    public static ArrayList<Vector2> approximateBezier(ArrayList<Vector2> controlPoints) {
+    public static ArrayList<Vector2> approximateBezier(List<Vector2> controlPoints) {
         ArrayList<Vector2> output = new ArrayList<>();
         int count = controlPoints.size() - 1;
 
@@ -91,7 +92,7 @@ public final class PathApproximator {
      *
      * @param controlPoints The anchor points of the slider.
      */
-    public static ArrayList<Vector2> approximateCatmull(ArrayList<Vector2> controlPoints) {
+    public static ArrayList<Vector2> approximateCatmull(List<Vector2> controlPoints) {
         ArrayList<Vector2> result = new ArrayList<>();
 
         for (int i = 0; i < controlPoints.size() - 1; ++i) {
@@ -116,7 +117,7 @@ public final class PathApproximator {
      *
      * @param controlPoints The anchor points of the slider.
      */
-    public static ArrayList<Vector2> approximateCircularArc(ArrayList<Vector2> controlPoints) {
+    public static ArrayList<Vector2> approximateCircularArc(List<Vector2> controlPoints) {
         Vector2 a = controlPoints.get(0);
         Vector2 b = controlPoints.get(1);
         Vector2 c = controlPoints.get(2);
@@ -191,7 +192,7 @@ public final class PathApproximator {
      *
      * @param controlPoints The anchor points of the slider.
      */
-    public static ArrayList<Vector2> approximateLinear(ArrayList<Vector2> controlPoints) {
+    public static List<Vector2> approximateLinear(List<Vector2> controlPoints) {
         return controlPoints;
     }
 
