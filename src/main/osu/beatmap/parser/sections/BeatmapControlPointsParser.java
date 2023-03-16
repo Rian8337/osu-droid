@@ -23,11 +23,7 @@ public class BeatmapControlPointsParser extends BeatmapSectionParser {
             return false;
         }
 
-        int time = Utils.tryParseInt(pars[0], -1);
-        if (time < 0) {
-            return false;
-        }
-        time = data.getOffsetTime(time);
+        int time = data.getOffsetTime(Utils.tryParseInt(pars[0], -1));
 
         // msPerBeat is allowed to be NaN to handle an edge case in which some
         // beatmaps use NaN slider velocity to disable slider tick generation.

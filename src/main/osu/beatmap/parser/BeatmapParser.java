@@ -180,6 +180,9 @@ public class BeatmapParser {
                     return null;
                 }
             }
+
+            source.close();
+            source = null;
         } catch (IOException e) {
             Log.e("BeatmapParser.parse", e.getMessage());
             return data;

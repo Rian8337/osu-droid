@@ -2,9 +2,11 @@ package main.osu.game;
 
 import android.graphics.PointF;
 
+import com.edlplan.framework.math.FMath;
 import com.edlplan.framework.math.Vec2;
 import com.edlplan.framework.math.line.LinePath;
 import com.edlplan.osu.support.slider.SliderBody2D;
+import com.rian.difficultycalculator.beatmap.timings.DifficultyControlPoint;
 import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
 
 import org.anddev.andengine.entity.modifier.AlphaModifier;
@@ -43,9 +45,10 @@ public class Slider extends GameObject {
     private float passedTime;
     private float preTime;
     private float tickTime;
-    private float maxTime;
+    private float spanDuration;
+    private float lastTickDurationFromEnd;
     private float scale;
-    private int repeatCount;
+    private int remainingRepeats;
     private boolean reverse;
     private int[] soundId = new int[3];
     private int[] sampleSet = new int[3];
@@ -55,7 +58,7 @@ public class Slider extends GameObject {
     private int ticksGot;
     private int ticksTotal;
     private int currentTick;
-    private double tickInterval;
+    private float tickInterval;
 
     private AnimSprite ball;
     private Sprite followcircle;
@@ -127,22 +130,17 @@ public class Slider extends GameObject {
         }
         number = GameObjectPool.getInstance().getNumber(num);
 
-
-        TimingControlPoint timingPoint = GameHelper.controlPoints.timing.controlPointAt(realTime / 1000);
-        double speedMultiplier = GameHelper.controlPoints.difficulty.controlPointAt(realTime / 1000).speedMultiplier;
+        TimingControlPoint timingControlPoint = GameHelper.controlPoints.timing.controlPointAt(realTime);
+        DifficultyControlPoint difficultyControlPoint = GameHelper.controlPoints.difficulty.controlPointAt(realTime);
+        double speedMultiplier = difficultyControlPoint.speedMultiplier;
 
         double scoringDistance = GameHelper.getSpeed() * speedMultiplier;
-        double velocity = scoringDistance / timingPoint.msPerBeat;
-        double spanDuration = length / velocity;
-        //fixed negative length silder bug
-        if (spanDuration <= 0) {
-            spanDuration = 0;
-        }
+        double velocity = scoringDistance / timingControlPoint.msPerBeat;
 
-        maxTime = (float) (spanDuration / 1000);
+        spanDuration = (float) Math.max(0, length / velocity / 1000);
         ball = null;
         followcircle = null;
-        repeatCount = repeats;
+        remainingRepeats = repeats;
         reverse = false;
         startHit = false;
         ticksGot = 0;
@@ -228,7 +226,7 @@ public class Slider extends GameObject {
 
         scene.attachChild(startOverlay, 0);
         // Repeat arrow at start
-        if (repeatCount > 2) {
+        if (repeats > 2) {
             startArrow.setAlpha(0);
             startArrow.setScale(scale);
             startArrow.setRotation(MathUtils.radToDeg(Utils.direction(
@@ -248,7 +246,7 @@ public class Slider extends GameObject {
         scene.attachChild(approachCircle);
         scene.attachChild(endOverlay, 0);
         // Repeat arrow at end
-        if (repeatCount > 1) {
+        if (repeats > 1) {
             //endArrow.setPosition(endPos.x, endPos.y);
             endArrow.setAlpha(0);
             endArrow.setScale(scale);
@@ -260,26 +258,39 @@ public class Slider extends GameObject {
         scene.attachChild(endCircle, 0);
 
         // Ticks
-        // Try to fix incorrect slider tick count bug
-        tickInterval = timing.msPerBeat / 1000 * speedMultiplier;
-        int tickCount = (int) (maxTime * GameHelper.getTickRate() / tickInterval);
-        if (Double.isNaN(tickInterval) || tickInterval < GameHelper.getSliderTickLength() / 1000) {
-            tickCount = 0;
-        }
-        if ((maxTime * GameHelper.getTickRate() / tickInterval)
-                - (int) (maxTime * GameHelper.getTickRate() / tickInterval) < 0.001f) {
-            tickCount--;
-        }
+        double tickDistance = scoringDistance / GameHelper.getTickRate();
+
+        // A very lenient maximum length of a slider for ticks to be generated.
+        // This exists for edge cases such as /b/1573664 where the beatmap has been edited by the user, and should never be reached in normal usage.
+        int maxLength = 100000;
+        double actualLength = Math.min(maxLength, length);
+        tickDistance = FMath.clamp(tickDistance, 0, actualLength);
+
         ticks.clear();
-        for (int i = 1; i <= tickCount; i++) {
-            final Sprite tick = SpritePool.getInstance().getCenteredSprite(
-                    "sliderscorepoint",
-                    getPercentPosition((float) (i * tickInterval
-                            / (maxTime * GameHelper.getTickRate())), null));
-            tick.setScale(scale);
-            tick.setAlpha(0);
-            ticks.add(tick);
-            scene.attachChild(tick, 0);
+        tickInterval = 0;
+        if (tickDistance != 0 && difficultyControlPoint.generateTicks) {
+            double minDistanceFromEnd = velocity * 10;
+
+            for (double d = tickDistance; d <= actualLength; d += tickDistance) {
+                if (d >= actualLength - minDistanceFromEnd) {
+                    break;
+                }
+
+                float distanceProgress = (float) (d / actualLength);
+                final Sprite tick = SpritePool.getInstance().getCenteredSprite(
+                        "sliderscorepoint",
+                        getPercentPosition(distanceProgress, null));
+                tick.setScale(scale);
+                tick.setAlpha(0);
+
+                if (ticks.isEmpty()) {
+                    tickInterval = distanceProgress * spanDuration;
+                }
+
+                ticks.add(tick);
+                lastTickDurationFromEnd = spanDuration * (1 - distanceProgress);
+                scene.attachChild(tick, 0);
+            }
         }
 
         // Slider track
@@ -406,7 +417,7 @@ public class Slider extends GameObject {
 
     private void over() {
         //int type = repeatCount > 0 ? GameObjectListener.SLIDER_REPEAT : GameObjectListener.SLIDER_END;
-        repeatCount--;
+        remainingRepeats--;
         // If alpha > 0 means cursor in slider ball bounds
         if (followcircle.getAlpha() > 0 && replayObjectData == null ||
                 replayObjectData != null && replayObjectData.tickSet.get(tickIndex)) {
@@ -415,14 +426,14 @@ public class Slider extends GameObject {
                         sampleSet[soundIdIndex], addition[soundIdIndex]);
             ticksGot++;
             tickSet.set(tickIndex++, true);
-            if (repeatCount > 0) {
+            if (remainingRepeats > 0) {
                 listener.onSliderHit(id, 30, null,
                         path.points.get(reverse ? 0 : path.points.size() - 1),
                         false, color, GameObjectListener.SLIDER_REPEAT);
             }
         } else {
             tickSet.set(tickIndex++, false);
-            if (repeatCount > 0) {
+            if (remainingRepeats > 0) {
                 listener.onSliderHit(id, -1, null,
                         path.points.get(reverse ? 0 : path.points.size() - 1),
                         false, color, GameObjectListener.SLIDER_REPEAT);
@@ -431,10 +442,10 @@ public class Slider extends GameObject {
         soundIdIndex++;
         ticksTotal++;
         // If slider has more repeats
-        if (repeatCount > 0) {
+        if (remainingRepeats > 0) {
             reverse = !reverse;
-            passedTime -= maxTime;
-            tickTime = passedTime;
+            passedTime -= spanDuration;
+            tickTime = reverse ? tickInterval - lastTickDurationFromEnd + passedTime : passedTime;
             ball.setFlippedHorizontal(reverse);
             // Restore ticks
             for (final Sprite sp : ticks) {
@@ -442,15 +453,15 @@ public class Slider extends GameObject {
             }
             currentTick = reverse ? ticks.size() - 1 : 0;
             // Setting visibility of repeat arrows
-            if (reverse && repeatCount <= 2) {
+            if (reverse && remainingRepeats <= 2) {
                 endArrow.setAlpha(0);
             }
 
-            if (reverse && repeatCount > 1) {
+            if (reverse && remainingRepeats > 1) {
                 startArrow.setAlpha(1);
             }
 
-            if (!reverse && repeatCount <= 2) {
+            if (!reverse && remainingRepeats <= 2) {
                 startArrow.setAlpha(0);
             }
             //if (repeatCount > 1) {
@@ -460,7 +471,7 @@ public class Slider extends GameObject {
             );
             //}
             // and go on...
-            if (passedTime >= maxTime) {
+            if (passedTime >= spanDuration) {
                 over();
             }
             return;
@@ -600,7 +611,7 @@ public class Slider extends GameObject {
                         ticks.get(i).setAlpha(1);
                     }
                 }
-                if (repeatCount > 1) {
+                if (remainingRepeats > 1) {
                     endArrow.setAlpha(percentage);
                 }
 
@@ -626,7 +637,7 @@ public class Slider extends GameObject {
                 for (final Sprite sp : ticks) {
                     sp.setAlpha(1);
                 }
-                if (repeatCount > 1) {
+                if (remainingRepeats > 1) {
                     endArrow.setAlpha(1);
                 }
                 if (Config.isComplexAnimations()) {
@@ -663,7 +674,7 @@ public class Slider extends GameObject {
             ball = SpritePool.getInstance().getAnimSprite("sliderb",
                     SkinManager.getFrames("sliderb"));
             ball.setFps(0.1f * GameHelper.getSpeed() * scale
-                    / (float) timing.msPerBeat);
+                    / (float) (timing.msPerBeat / 1000));
             ball.setScale(scale);
             ball.setFlippedHorizontal(false);
 
@@ -675,7 +686,7 @@ public class Slider extends GameObject {
             scene.attachChild(followcircle);
         }
         // Ball positiong
-        final float percentage = passedTime / maxTime;
+        final float percentage = passedTime / spanDuration;
         final PointF ballpos = getPercentPosition(reverse ? 1 - percentage
                 : percentage, ballAngle);
         // Calculating if cursor in follow circle bounds
@@ -698,14 +709,14 @@ public class Slider extends GameObject {
 
         tickTime += dt;
         //try fixed big followcircle bug
-        float fcscale = scale * (1.1f - 0.1f * tickTime * GameHelper.getTickRate() / (float) timing.msPerBeat);
+        float fcscale = scale * (1.1f - 0.1f * tickTime / (float) (timing.msPerBeat / 1000));
         if (fcscale <= scale * 1.1f && fcscale >= scale * -1.1f) {
             followcircle.setScale(fcscale);
         }
         // Some magic with slider ticks. If it'll crash it's not my fault ^_^"
-        while (ticks.size() > 0 && percentage < 1 - 0.02f / maxTime
-                && tickTime * GameHelper.getTickRate() > tickInterval) {
-            tickTime -= tickInterval / GameHelper.getTickRate();
+        while (ticks.size() > 0 && percentage < 1 - 0.02f / spanDuration && tickTime > tickInterval) {
+            tickTime -= tickInterval;
+
             if (followcircle.getAlpha() > 0 && replayObjectData == null ||
                     replayObjectData != null && replayObjectData.tickSet.get(tickIndex)) {
                 Utils.playHitSound(listener, 16);
@@ -746,7 +757,7 @@ public class Slider extends GameObject {
             return;
         }
         isHiddenFadeOutActive = true;
-        final float realDuration = maxTime * repeatCount * GameHelper.getTimeMultiplier();
+        final float realDuration = spanDuration * remainingRepeats * GameHelper.getTimeMultiplier();
         final EaseQuadOut easing = EaseQuadOut.getInstance();
         startCircle.registerEntityModifier(new AlphaModifier(realDuration,
                 startCircle.getAlpha(), 0, easing));

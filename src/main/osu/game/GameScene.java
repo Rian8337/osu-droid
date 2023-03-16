@@ -824,7 +824,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener, IOnSceneTo
         }
 
         if (!breakPeriods.isEmpty()) {
-            if (!UI.breakOverlay.isBreak() && breakPeriods.peek().getStart() <= secPassed) {
+            if (!UI.breakOverlay.isBreak() && breakPeriods.peek().getStart() / 1000 <= secPassed) {
                 gameStarted = false;
                 UI.breakOverlay.display(breakPeriods.peek());
                 if (GameHelper.isFlashLight()) {
