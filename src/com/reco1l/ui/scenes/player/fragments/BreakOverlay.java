@@ -189,7 +189,7 @@ public class BreakOverlay extends BaseFragment implements IPassiveObject {
             return;
         }
 
-        int left = (int) (mCurrentPeriod.getEndTime() - sec);
+        int left = (int) (mCurrentPeriod.getEndTime() / 1000 - sec);
 
         if (left <= 0) {
             mCurrentPeriod = null;
