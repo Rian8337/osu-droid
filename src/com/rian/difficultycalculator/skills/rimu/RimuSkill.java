@@ -4,8 +4,8 @@ import com.rian.difficultycalculator.math.Interpolation;
 import com.rian.difficultycalculator.math.MathUtils;
 import com.rian.difficultycalculator.skills.StrainSkill;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import main.osu.game.mods.GameMod;
 
@@ -23,7 +23,7 @@ public abstract class RimuSkill extends StrainSkill {
 
     @Override
     public double difficultyValue() {
-        List<Double> strains = strainPeaks.subList(0, strainPeaks.size() - 1);
+        ArrayList<Double> strains = new ArrayList<>(strainPeaks);
 
         if (getReducedSectionCount() > 0) {
             strains.sort((d1, d2) -> Double.compare(d2, d1));

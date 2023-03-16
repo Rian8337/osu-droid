@@ -5,6 +5,7 @@ import android.util.Log;
 import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
 import com.rian.difficultycalculator.beatmap.hitobject.HitObjectWithDuration;
 import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
+import com.rian.difficultycalculator.utils.CircleSizeCalculator;
 import com.rimu.R;
 
 import java.io.File;
@@ -183,6 +184,8 @@ public class BeatmapParser {
 
             source.close();
             source = null;
+
+            populateObjectScale(data);
         } catch (IOException e) {
             Log.e("BeatmapParser.parse", e.getMessage());
             return data;
@@ -245,6 +248,8 @@ public class BeatmapParser {
                 // Remove the last object in raw hit object to undo the process done by the parser.
                 data.rawHitObjects.remove(data.rawHitObjects.size() - 1);
             }
+
+            populateObjectScale(data);
         }
 
         info.setTotalHitObjectCount(data.hitObjects.getObjects().size());
@@ -311,5 +316,24 @@ public class BeatmapParser {
         }
 
         return true;
+    }
+
+    /**
+     * Populates the object scales of a <code>BeatmapData</code>.
+     *
+     * @param data The <code>BeatmapData</code> whose object scales will be populated.
+     */
+    public static void populateObjectScale(final BeatmapData data) {
+        double rimuScale = CircleSizeCalculator.rimuCSToRimuScale(data.difficulty.cs);
+        double rimuRadius = CircleSizeCalculator.rimuScaleToStandardRadius(rimuScale);
+        double rimuStandardBasedCS = CircleSizeCalculator.standardRadiusToStandardCS(rimuRadius);
+        double rimuStandardBasedScale = CircleSizeCalculator.standardCSToStandardScale(rimuStandardBasedCS);
+
+        double standardScale = CircleSizeCalculator.standardCSToStandardScale(data.difficulty.cs);
+
+        for (HitObject object : data.hitObjects.getObjects()) {
+            object.setRimuScale(rimuStandardBasedScale);
+            object.setStandardScale(standardScale);
+        }
     }
 }

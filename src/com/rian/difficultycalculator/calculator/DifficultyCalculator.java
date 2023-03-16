@@ -5,6 +5,7 @@ import com.rian.difficultycalculator.beatmap.DifficultyBeatmap;
 import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
 import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
 import com.rian.difficultycalculator.skills.Skill;
+import com.rian.difficultycalculator.utils.CircleSizeCalculator;
 import com.rian.difficultycalculator.utils.GameMode;
 
 import java.util.ArrayList;
@@ -107,16 +108,28 @@ public abstract class DifficultyCalculator {
 
         double ar = beatmap.getDifficultyManager().getAR();
         double timePreempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
+        double objectScale = CircleSizeCalculator.standardCSToStandardScale(beatmap.getDifficultyManager().getCS());
 
-        for (int i = 0; i < rawObjects.size(); ++i) {
+        for (int i = 1; i < rawObjects.size(); ++i) {
+            switch (mode) {
+                case rimu:
+                    rawObjects.get(i).setRimuScale(objectScale);
+                    rawObjects.get(i - 1).setRimuScale(objectScale);
+                    break;
+                case standard:
+                    rawObjects.get(i).setStandardScale(objectScale);
+                    rawObjects.get(i - 1).setStandardScale(objectScale);
+                    break;
+            }
+
             objects.add(new DifficultyHitObject(
-                    rawObjects.get(i),
-                    beatmap.getHitObjectsManager().getObjects(),
+                    i,
+                    rawObjects,
                     objects,
                     mode,
-                    parameters.getTotalSpeedMultiplier(),
+                    parameters != null ? parameters.getTotalSpeedMultiplier() : 1,
                     timePreempt,
-                    parameters.isForceAR()
+                    parameters != null && parameters.isForceAR()
             ));
         }
 

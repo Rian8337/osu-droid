@@ -41,7 +41,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         double aimRatingNoSliders = calculateRating(skills[1]);
         attributes.aimSliderFactor = attributes.aimDifficulty > 0 ? aimRatingNoSliders / attributes.aimDifficulty : 1;
 
-        if (parameters.mods.contains(GameMod.MOD_RELAX)) {
+        if (parameters != null && parameters.mods.contains(GameMod.MOD_RELAX)) {
             attributes.aimDifficulty *= 0.9;
             attributes.speedDifficulty = 0;
             attributes.flashlightDifficulty *= 0.7;
@@ -51,7 +51,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         double baseSpeedPerformance = Math.pow(5 * Math.max(1, attributes.speedDifficulty / 0.0675) - 4, 3) / 100000;
         double baseFlashlightPerformance = 0;
 
-        if (parameters.mods.contains(GameMod.MOD_FLASHLIGHT)) {
+        if (parameters != null && parameters.mods.contains(GameMod.MOD_FLASHLIGHT)) {
             baseFlashlightPerformance = Math.pow(attributes.flashlightDifficulty, 2) * 25.0;
         }
 
@@ -71,14 +71,14 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         double ar = beatmap.getDifficultyManager().getAR();
         double preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
 
-        if (!parameters.isForceAR()) {
+        if (parameters != null && !parameters.isForceAR()) {
             preempt /= parameters.getTotalSpeedMultiplier();
         }
 
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
         double od = beatmap.getDifficultyManager().getOD();
-        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
+        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1);
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -134,17 +134,19 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
     private void processCS(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double cs = manager.getCS();
 
-        if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-            ++cs;
-        }
-        if (parameters.mods.contains(GameMod.MOD_EASY)) {
-            --cs;
-        }
-        if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-            --cs;
-        }
-        if (parameters.mods.contains(GameMod.MOD_SMALLCIRCLE)) {
-            cs += 4;
+        if (parameters != null) {
+            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
+                ++cs;
+            }
+            if (parameters.mods.contains(GameMod.MOD_EASY)) {
+                --cs;
+            }
+            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
+                --cs;
+            }
+            if (parameters.mods.contains(GameMod.MOD_SMALLCIRCLE)) {
+                cs += 4;
+            }
         }
 
         // 12.14 is the point at which the object radius approaches 0. Use the _very_ minimum value.
@@ -152,11 +154,16 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
     }
 
     private void processAR(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
+        double ar = manager.getAR();
+
+        if (parameters == null) {
+            manager.setAR(Math.min(ar, 10));
+            return;
+        }
+
         if (parameters.isForceAR()) {
             manager.setAR(parameters.forcedAR);
         } else {
-            double ar = manager.getAR();
-
             if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
                 ar *= 1.4;
             }
@@ -180,14 +187,16 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
     private void processOD(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double od = manager.getOD();
 
-        if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-            od *= 1.4;
-        }
-        if (parameters.mods.contains(GameMod.MOD_EASY)) {
-            od /= 2;
-        }
-        if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-            od /= 2;
+        if (parameters != null) {
+            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
+                od *= 1.4;
+            }
+            if (parameters.mods.contains(GameMod.MOD_EASY)) {
+                od /= 2;
+            }
+            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
+                od /= 2;
+            }
         }
 
         manager.setOD(Math.min(od, 10));
@@ -196,14 +205,16 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
     private void processHP(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double hp = manager.getHP();
 
-        if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-            hp *= 1.4;
-        }
-        if (parameters.mods.contains(GameMod.MOD_EASY)) {
-            hp /= 2;
-        }
-        if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-            hp /= 2;
+        if (parameters != null) {
+            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
+                hp *= 1.4;
+            }
+            if (parameters.mods.contains(GameMod.MOD_EASY)) {
+                hp /= 2;
+            }
+            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
+                hp /= 2;
+            }
         }
 
         manager.setHP(Math.min(hp, 10));

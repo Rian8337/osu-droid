@@ -107,7 +107,7 @@ public final class StandardAimEvaluator {
                                 // The maximum velocity we buff is equal to 125 / strainTime.
                                 Math.min(angleBonus, 125 / current.strainTime) *
                                 // Scale buff from 300 BPM 1/2 to 400 BPM 1/2.
-                                Math.pow(Math.sin(Math.PI / 2 *  Math.min(1, (100 - current.strainTime) / 25)), 2) *
+                                Math.pow(Math.sin(Math.PI / 2 * Math.min(1, (100 - current.strainTime) / 25)), 2) *
                                 // Buff distance exceeding 50 (radius) up to 100 (diameter).
                                 Math.pow(Math.sin(Math.PI / 2 * (MathUtils.clamp(current.lazyJumpDistance, 50, 100) - 50) / 50), 2);
             }

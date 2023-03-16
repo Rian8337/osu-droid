@@ -280,17 +280,22 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     }
 
     private void processCS(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        double scale = CircleSizeCalculator.rimuCSToRimuScale(manager.getCS(), parameters.mods);
+        double scale = CircleSizeCalculator.rimuCSToRimuScale(manager.getCS(), parameters != null ? parameters.mods : EnumSet.noneOf(GameMod.class));
         double radius = CircleSizeCalculator.rimuScaleToStandardRadius(scale);
         manager.setCS(CircleSizeCalculator.standardRadiusToStandardCS(radius));
     }
 
     private void processAR(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
+        double ar = manager.getAR();
+
+        if (parameters == null) {
+            manager.setAR(Math.min(ar, 10));
+            return;
+        }
+
         if (parameters.isForceAR()) {
             manager.setAR(parameters.forcedAR);
         } else {
-            double ar = manager.getAR();
-
             if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
                 ar *= 1.4;
             }
@@ -313,20 +318,23 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
 
     private void processOD(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double od = manager.getOD();
-        if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-            od *= 1.4;
-        }
-        if (parameters.mods.contains(GameMod.MOD_EASY)) {
-            od /= 2;
-        }
-        if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-            od /= 2;
+
+        if (parameters != null) {
+            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
+                od *= 1.4;
+            }
+            if (parameters.mods.contains(GameMod.MOD_EASY)) {
+                od /= 2;
+            }
+            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
+                od /= 2;
+            }
         }
 
         od = Math.min(od, 10);
 
         // Convert standard OD to rimu! hit window to take rimu! hit window and the Precise mod in mind.
-        double odMS = RimuHitWindowConverter.odToHitWindow300(od, parameters.mods.contains(GameMod.MOD_PRECISE));
+        double odMS = RimuHitWindowConverter.odToHitWindow300(od, parameters != null && parameters.mods.contains(GameMod.MOD_PRECISE));
 
         // Convert rimu! hit window back to standard OD.
         od = StandardHitWindowConverter.hitWindow300ToOD(odMS);
@@ -337,14 +345,16 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     private void processHP(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double hp = manager.getHP();
 
-        if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-            hp *= 1.4;
-        }
-        if (parameters.mods.contains(GameMod.MOD_EASY)) {
-            hp /= 2;
-        }
-        if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-            hp /= 2;
+        if (parameters != null) {
+            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
+                hp *= 1.4;
+            }
+            if (parameters.mods.contains(GameMod.MOD_EASY)) {
+                hp /= 2;
+            }
+            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
+                hp /= 2;
+            }
         }
 
         manager.setHP(Math.min(hp, 10));

@@ -164,7 +164,7 @@ public class TrackAttributeSet implements ModAcronyms {
             StandardDifficultyAttributes difficultyAttributes =
                     BeatmapDifficultyCalculator.calculateStandardDifficulty(beatmap);
 
-            get(TrackAttribute.STARS).opt(v -> difficultyAttributes.starRating);
+            get(TrackAttribute.STARS).opt(v -> (float) difficultyAttributes.starRating);
         });
     }
 }

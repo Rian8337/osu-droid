@@ -16,6 +16,16 @@ public final class CircleSizeCalculator {
      * Converts rimu! CS to rimu! scale.
      *
      * @param cs The CS to convert.
+     * @return The calculated rimu! scale.
+     */
+    public static double rimuCSToRimuScale(double cs) {
+        return rimuCSToRimuScale(cs, null);
+    }
+
+    /**
+     * Converts rimu! CS to rimu! scale.
+     *
+     * @param cs The CS to convert.
      * @param mods The mods to apply.
      * @return The calculated rimu! scale.
      */
@@ -25,17 +35,19 @@ public final class CircleSizeCalculator {
                 2 / GameObjectSize.BASE_OBJECT_SIZE +
                 0.5 * Config.getScaleMultiplier();
 
-        if (mods.contains(GameMod.MOD_HARDROCK)) {
-            scale -= 0.125;
-        }
-        if (mods.contains(GameMod.MOD_EASY)) {
-            scale += 0.125;
-        }
-        if (mods.contains(GameMod.MOD_REALLYEASY)) {
-            scale += 0.125;
-        }
-        if (mods.contains(GameMod.MOD_SMALLCIRCLE)) {
-            scale -= Config.getRES_HEIGHT() / 480d * 4 * 4.48 * 2 / GameObjectSize.BASE_OBJECT_SIZE;
+        if (mods != null) {
+            if (mods.contains(GameMod.MOD_HARDROCK)) {
+                scale -= 0.125;
+            }
+            if (mods.contains(GameMod.MOD_EASY)) {
+                scale += 0.125;
+            }
+            if (mods.contains(GameMod.MOD_REALLYEASY)) {
+                scale += 0.125;
+            }
+            if (mods.contains(GameMod.MOD_SMALLCIRCLE)) {
+                scale -= Config.getRES_HEIGHT() / 480d * 4 * 4.48 * 2 / GameObjectSize.BASE_OBJECT_SIZE;
+            }
         }
 
         return scale;

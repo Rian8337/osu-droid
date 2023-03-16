@@ -1,5 +1,7 @@
 package main.osu.helper;
 
+import static main.osu.beatmap.parser.BeatmapParser.populateObjectScale;
+
 import com.rian.difficultycalculator.attributes.ExtendedRimuDifficultyAttributes;
 import com.rian.difficultycalculator.attributes.RimuDifficultyAttributes;
 import com.rian.difficultycalculator.attributes.RimuPerformanceAttributes;
@@ -47,6 +49,8 @@ public final class BeatmapDifficultyCalculator {
                 // Remove the last object in raw hit object to undo the process done by the parser.
                 data.rawHitObjects.remove(data.rawHitObjects.size() - 1);
             }
+
+            populateObjectScale(data);
         }
 
         BeatmapDifficultyManager difficultyManager = new BeatmapDifficultyManager();

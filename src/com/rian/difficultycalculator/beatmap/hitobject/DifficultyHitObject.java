@@ -190,11 +190,11 @@ public class DifficultyHitObject {
 
     private final float assumedSliderRadius = normalizedRadius * 1.8f;
 
-    private final DifficultyHitObject lastObject;
-    private final DifficultyHitObject lastLastObject;
+    private final HitObject lastObject;
+    private final HitObject lastLastObject;
 
     /**
-     * @param object The underlying hit object.
+     * @param index The index of the underlying hit object.
      * @param hitObjects All hit objects in the processed beatmap.
      * @param difficultyHitObjects All difficulty hit objects in the processed beatmap.
      * @param mode The game mode being calculated.
@@ -202,10 +202,11 @@ public class DifficultyHitObject {
      * @param timePreempt The preempt time of the hit object.
      * @param isForceAR Whether force AR is used.
      */
-    public DifficultyHitObject(HitObject object, List<HitObject> hitObjects,
+    public DifficultyHitObject(int index, List<HitObject> hitObjects,
                                ArrayList<DifficultyHitObject> difficultyHitObjects, GameMode mode,
                                double clockRate, double timePreempt, boolean isForceAR) {
-        this.object = object;
+        this.index = index - 1;
+        this.object = hitObjects.get(index);
         this.hitObjects = difficultyHitObjects;
         baseTimePreempt = timePreempt;
         this.timePreempt = timePreempt;
@@ -214,13 +215,11 @@ public class DifficultyHitObject {
             this.timePreempt /= clockRate;
         }
 
-        index = difficultyHitObjects.size() - 1;
-
-        lastObject = index > 1 ? difficultyHitObjects.get(index - 1) : null;
-        lastLastObject = index > 2 ? difficultyHitObjects.get(index - 2) : null;
+        lastObject = hitObjects.get(index - 1);
+        lastLastObject = index > 1 ? hitObjects.get(index - 2) : null;
 
         if (lastObject != null) {
-            deltaTime = (object.startTime - lastObject.endTime) / clockRate;
+            deltaTime = (object.startTime - lastObject.getStartTime()) / clockRate;
         }
 
         startTime = object.startTime / clockRate;
@@ -376,20 +375,21 @@ public class DifficultyHitObject {
             travelTime = Math.max(slider.lazyTravelTime / clockRate, minDeltaTime);
         }
 
-        // We don't need to calculate either angle or distance when one of the last->curr objects is a spinner
-        if (object instanceof Spinner || lastObject.object instanceof Spinner) {
+        // We don't need to calculate either angle or distance when one of the last->curr objects
+        // is a spinner or there is no object before the current object.
+        if (object instanceof Spinner || lastObject == null || lastObject instanceof Spinner) {
             return;
         }
 
         double scalingFactor = getScalingFactor(mode);
-        Vector2 lastCursorPosition = getEndCursorPosition(lastObject.object, mode);
+        Vector2 lastCursorPosition = getEndCursorPosition(lastObject, mode);
 
         lazyJumpDistance = object.getStackedPosition(mode).subtract(lastCursorPosition).scale(scalingFactor).getLength();
         minimumJumpTime = strainTime;
         minimumJumpDistance = lazyJumpDistance;
 
-        if (lastObject.object instanceof Slider) {
-            minimumJumpTime = Math.max(strainTime - lastObject.travelTime, minDeltaTime);
+        if (lastObject instanceof Slider) {
+            minimumJumpTime = Math.max(strainTime - ((Slider) lastObject).lazyTravelTime / clockRate, minDeltaTime);
 
             // There are two types of slider-to-object patterns to consider in order to better approximate the real movement a player will take to jump between the hit objects.
             //
@@ -410,7 +410,7 @@ public class DifficultyHitObject {
             // In this case the most natural jump path is better approximated by a new distance called "tailJumpDistance" - the distance between the slider's tail and the next hit object.
             //
             // Thus, the player is assumed to jump the minimum of these two distances in all cases.
-            double tailJumpDistance = ((Slider) lastObject.object).tail
+            double tailJumpDistance = ((Slider) lastObject).tail
                         .getStackedPosition(mode)
                         .subtract(object.getStackedPosition(mode))
                         .getLength() * scalingFactor;
@@ -421,9 +421,9 @@ public class DifficultyHitObject {
             minimumJumpDistance = Math.max(0, Math.min(lazyJumpDistance - (maximumSliderRadius - assumedSliderRadius), tailJumpDistance - maximumSliderRadius));
         }
 
-        if (lastLastObject != null && !(lastLastObject.object instanceof Spinner)) {
-            Vector2 lastLastCursorPosition = getEndCursorPosition(lastLastObject.object, mode);
-            Vector2 v1 = lastLastCursorPosition.subtract(lastObject.object.getStackedPosition(mode));
+        if (lastLastObject != null && !(lastLastObject instanceof Spinner)) {
+            Vector2 lastLastCursorPosition = getEndCursorPosition(lastLastObject, mode);
+            Vector2 v1 = lastLastCursorPosition.subtract(lastObject.getStackedPosition(mode));
             Vector2 v2 = object.getStackedPosition(mode).subtract(lastCursorPosition);
             double dot = v1.dot(v2);
             double det = v1.x * v2.y - v1.y * v2.x;
