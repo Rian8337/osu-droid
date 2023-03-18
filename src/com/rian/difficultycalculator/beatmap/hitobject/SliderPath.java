@@ -66,7 +66,7 @@ public class SliderPath {
 
                 calculateSubPath(cpSpan).forEach(t -> {
                     if (calculatedPath.size() == 0 || !calculatedPath.get(calculatedPath.size() - 1).equals(t)) {
-                        this.calculatedPath.add(t);
+                        calculatedPath.add(t);
                     }
                 });
 
