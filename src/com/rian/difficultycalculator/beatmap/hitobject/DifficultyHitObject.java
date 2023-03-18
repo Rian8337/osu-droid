@@ -416,9 +416,7 @@ public class DifficultyHitObject {
                         .subtract(object.getStackedPosition(mode))
                         .getLength() * scalingFactor;
 
-            float standardMaximumSliderRadius = normalizedRadius * 2.4f;
-            float rimuMaximumSliderRadius = normalizedRadius * 2f;
-            float maximumSliderRadius = mode == GameMode.rimu ? rimuMaximumSliderRadius : standardMaximumSliderRadius;
+            float maximumSliderRadius = normalizedRadius * (mode == GameMode.rimu ? 2f : 2.4f);
             minimumJumpDistance = Math.max(0, Math.min(lazyJumpDistance - (maximumSliderRadius - assumedSliderRadius), tailJumpDistance - maximumSliderRadius));
         }
 

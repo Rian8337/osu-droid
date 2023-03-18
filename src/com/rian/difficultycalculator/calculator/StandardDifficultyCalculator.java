@@ -65,7 +65,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         // Document for formula derivation:
         // https://docs.google.com/document/d/10DZGYYSsT_yjz2Mtp6yIJld0Rqx4E-vVHupCqiM4TNI/edit
         attributes.starRating = basePerformance > 1e-5
-                ? StandardPerformanceCalculator.finalMultiplier * 0.027 * (Math.cbrt(100000 / Math.pow(2, 1 / 1.1) * basePerformance) + 4)
+                ? Math.cbrt(StandardPerformanceCalculator.finalMultiplier) * 0.027 * (Math.cbrt(100000 / Math.pow(2, 1 / 1.1) * basePerformance) + 4)
                 : 0;
 
         double ar = beatmap.getDifficultyManager().getAR();
