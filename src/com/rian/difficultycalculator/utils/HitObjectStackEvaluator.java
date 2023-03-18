@@ -14,20 +14,30 @@ import java.util.List;
 public final class HitObjectStackEvaluator {
     private static final int stackDistance = 3;
 
+    public static void applyStandardStacking(int formatVersion, List<HitObject> objects, double ar,
+                                             float stackLeniency) {
+        applyStandardStacking(formatVersion, objects, ar, stackLeniency, 0, objects.size() - 1);
+    }
+
     /**
      * Applies osu!standard note stacking to hit objects.
      *
      * @param formatVersion The format version of the beatmap containing the hit objects.
-     * @param objects The hit objects to apply stacking to.
-     * @param ar The calculated approach rate of the beatmap.
+     * @param objects       The hit objects to apply stacking to.
+     * @param ar            The calculated approach rate of the beatmap.
      * @param stackLeniency The multiplier for the threshold in time where hit objects
      *                      placed close together stack, ranging from 0 to 1.
-     * @param startIndex The minimum index bound of the hit object to apply stacking to.
-     * @param endIndex The maximum index bound of the hit object to apply stacking to.
+     * @param startIndex    The minimum index bound of the hit object to apply stacking to.
+     * @param endIndex      The maximum index bound of the hit object to apply stacking to.
      */
     public static void applyStandardStacking(int formatVersion, List<HitObject> objects, double ar,
                                              float stackLeniency, int startIndex, int endIndex) {
+        if (objects.isEmpty()) {
+            return;
+        }
+
         if (formatVersion < 6) {
+            // Use the old version of stacking algorithm for beatmap version 5 or lower.
             applyStandardStackingOld(objects, ar, stackLeniency);
             return;
         }
@@ -37,44 +47,45 @@ public final class HitObjectStackEvaluator {
 
         int extendedEndIndex = endIndex;
 
-        for (int i = endIndex; i >= startIndex; --i) {
-            int stackBaseIndex = i;
+        if (endIndex < objects.size() - 1) {
+            // Extend the end index to include objects they are stacked on
+            for (int i = endIndex; i >= startIndex; --i) {
+                int stackBaseIndex = i;
 
-            for (int n = stackBaseIndex + 1; n < objects.size(); ++n) {
-                HitObject stackBaseObject = objects.get(n);
-                if (stackBaseObject instanceof Spinner) {
-                    break;
+                for (int n = stackBaseIndex + 1; n < objects.size(); n++) {
+                    HitObject stackBaseObject = objects.get(stackBaseIndex);
+                    if (stackBaseObject instanceof Spinner) {
+                        break;
+                    }
+
+                    HitObject objectN = objects.get(n);
+                    if (objectN instanceof Spinner) {
+                        continue;
+                    }
+
+                    double endTime = stackBaseObject.getStartTime();
+                    if (stackBaseObject instanceof HitObjectWithDuration) {
+                        endTime = ((HitObjectWithDuration) stackBaseObject).getEndTime();
+                    }
+
+                    if (objectN.getStartTime() - endTime > stackThreshold) {
+                        // We are no longer within stacking range of the next object.
+                        break;
+                    }
+
+                    if (stackBaseObject.getPosition().getDistance(objectN.getPosition()) < stackDistance ||
+                            (stackBaseObject instanceof Slider && stackBaseObject.getEndPosition().getDistance(objectN.getPosition())  < stackDistance)) {
+                        stackBaseIndex = n;
+
+                        // HitObjects after the specified update range haven't been reset yet
+                        objectN.setStandardStackHeight(0);
+                    }
                 }
 
-                HitObject objectN = objects.get(n);
-                if (objectN instanceof Spinner) {
-                    continue;
-                }
-
-                double endTime = stackBaseObject.getStartTime();
-                if (stackBaseObject instanceof HitObjectWithDuration) {
-                    endTime = ((HitObjectWithDuration) stackBaseObject).getEndTime();
-                }
-
-                if (objectN.getStartTime() - endTime > stackThreshold) {
-                    // We are no longer within stacking range of the next object.
-                    continue;
-                }
-
-                if (stackBaseObject.getPosition().getDistance(objectN.getPosition()) < stackDistance ||
-                        (stackBaseObject instanceof Slider &&
-                                stackBaseObject.getEndPosition().getDistance(objectN.getPosition()) < stackDistance)) {
-                    stackBaseIndex = n;
-
-                    // Hit objects after the specified update range haven't been reset yet
-                    objectN.setStandardStackHeight(0);
-                }
-            }
-
-            if (stackBaseIndex > extendedEndIndex) {
-                extendedEndIndex = stackBaseIndex;
-                if (extendedEndIndex == objects.size() - 1) {
-                    break;
+                if (stackBaseIndex > extendedEndIndex) {
+                    extendedEndIndex = stackBaseIndex;
+                    if (extendedEndIndex == objects.size() - 1)
+                        break;
                 }
             }
         }
@@ -205,7 +216,7 @@ public final class HitObjectStackEvaluator {
 
     /**
      * Applies osu!standard note stacking to hit objects.
-     *
+     * <br><br>
      * Used for beatmaps version 5 or older.
      *
      * @param objects The hit objects to apply stacking to.
