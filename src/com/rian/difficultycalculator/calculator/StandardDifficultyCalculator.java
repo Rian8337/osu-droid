@@ -47,7 +47,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
             attributes.flashlightDifficulty *= 0.7;
         }
 
-        double baseAimPerformance = Math.pow(5 * Math.max(1, Math.pow(attributes.aimDifficulty, 0.8) / 0.0675) - 4, 3) / 100000;
+        double baseAimPerformance = Math.pow(5 * Math.max(1, attributes.aimDifficulty / 0.0675) - 4, 3) / 100000;
         double baseSpeedPerformance = Math.pow(5 * Math.max(1, attributes.speedDifficulty / 0.0675) - 4, 3) / 100000;
         double baseFlashlightPerformance = 0;
 
@@ -103,9 +103,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
                 beatmap.getFormatVersion(),
                 beatmap.getHitObjectsManager().getObjects(),
                 manager.getAR(),
-                beatmap.getStackLeniency(),
-                0,
-                beatmap.getHitObjectsManager().getObjects().size() - 1
+                beatmap.getStackLeniency()
         );
     }
 
