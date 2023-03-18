@@ -109,7 +109,7 @@ public class Slider extends HitObjectWithDuration {
      */
     public Slider(double startTime, Vector2 position,
                   TimingControlPoint timingControlPoint, DifficultyControlPoint difficultyControlPoint,
-                  int repeatCount, SliderPath path, double sliderVelocity, int tickRate,
+                  int repeatCount, SliderPath path, double sliderVelocity, double tickRate,
                   double tickDistanceMultiplier) {
         // Temporarily set end time to start time. It will be evaluated later.
         super(startTime, startTime, position);
