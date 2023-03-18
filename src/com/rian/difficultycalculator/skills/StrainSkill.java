@@ -14,16 +14,12 @@ import main.osu.game.mods.GameMod;
  */
 public abstract class StrainSkill extends Skill {
     /**
-     * The current section's strain peak.
-     */
-    protected double currentSectionPeak;
-
-    /**
      * The strain peaks of each sections.
      */
     protected final ArrayList<Double> strainPeaks = new ArrayList<>();
 
-    private double currentSectionEnd = 0;
+    private double currentSectionPeak;
+    private double currentSectionEnd;
 
     /**
      * @param mods The mods that this skill processes.
