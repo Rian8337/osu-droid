@@ -27,12 +27,12 @@ public class BeatmapDifficulty {
     /**
      * The base slider velocity in hundreds of osu! pixels per beat.
      */
-    public float sliderMultiplier = 1;
+    public double sliderMultiplier = 1;
 
     /**
      * The amount of slider ticks per beat.
      */
-    public int sliderTickRate = 1;
+    public double sliderTickRate = 1;
 
     public BeatmapDifficulty() {}
 

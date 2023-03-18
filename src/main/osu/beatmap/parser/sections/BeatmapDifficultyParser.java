@@ -28,10 +28,10 @@ public class BeatmapDifficultyParser extends BeatmapKeyValueSectionParser {
                 data.difficulty.hp = Utils.tryParseFloat(p[1], data.difficulty.hp);
                 break;
             case "SliderMultiplier":
-                data.difficulty.sliderMultiplier = Utils.tryParseFloat(p[1], data.difficulty.sliderMultiplier);
+                data.difficulty.sliderMultiplier = Utils.tryParseDouble(p[1], data.difficulty.sliderMultiplier);
                 break;
             case "SliderTickRate":
-                data.difficulty.sliderTickRate = Utils.tryParseInt(p[1], data.difficulty.sliderTickRate);
+                data.difficulty.sliderTickRate = Utils.tryParseDouble(p[1], data.difficulty.sliderTickRate);
         }
 
         return true;

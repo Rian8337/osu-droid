@@ -336,8 +336,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener, IOnSceneTo
         GameHelper.setStackLeniency(beatmapData.general.stackLeniency);
         scale = Math.max(0.001f, scale);
 
-        GameHelper.setSpeed(beatmapData.difficulty.sliderMultiplier * 100);
-        GameHelper.setTickRate(beatmapData.difficulty.sliderTickRate);
+        GameHelper.setSpeed((float) beatmapData.difficulty.sliderMultiplier * 100);
+        GameHelper.setTickRate((float) beatmapData.difficulty.sliderTickRate);
         GameHelper.setScale(scale);
         GameHelper.setDifficulty(overallDifficulty);
         GameHelper.setDrain(drain);
