@@ -4,8 +4,6 @@ import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
 import com.rian.difficultycalculator.beatmap.hitobject.Slider;
 import com.rian.difficultycalculator.beatmap.hitobject.Spinner;
 
-import java.util.ArrayList;
-
 /**
  * An evaluator for calculating osu!standard rhythm skill.
  * <br><br>
@@ -25,9 +23,8 @@ public final class StandardRhythmEvaluator {
      * @param greatWindow The great hit window of the current object.
      */
     public static double evaluateDifficultyOf(DifficultyHitObject current, double greatWindow) {
-        // Exclude overlapping objects that can be tapped at once.
-        if (current.object instanceof Spinner || current.deltaTime < 5) {
-            return 1;
+        if (current.object instanceof Spinner) {
+            return 0;
         }
 
         int previousIslandSize = 0;
@@ -44,7 +41,8 @@ public final class StandardRhythmEvaluator {
 
         // 5 seconds of calculateRhythmBonus max.
         int historyTimeMax = 5000;
-        while (rhythmStart < historicalNoteCount - 2 && current.startTime - current.previous(rhythmStart).startTime < historyTimeMax) {
+        while (rhythmStart < historicalNoteCount - 2 &&
+                current.startTime - current.previous(rhythmStart).startTime < historyTimeMax) {
             ++rhythmStart;
         }
 
@@ -65,7 +63,7 @@ public final class StandardRhythmEvaluator {
 
             double currentRatio = 1 + 6 * Math.min(0.5, Math.pow(Math.sin(Math.PI / (Math.min(prevDelta, currentDelta) / Math.max(prevDelta, currentDelta))), 2));
 
-            double windowPenalty = Math.min(1, Math.max(0, Math.abs(prevDelta - currentDelta) - greatWindow * 0.4) / (greatWindow * 0.4));
+            double windowPenalty = Math.min(1, Math.max(0, Math.abs(prevDelta - currentDelta) - greatWindow * 0.6) / (greatWindow * 0.6));
 
             double effectiveRatio = windowPenalty * currentRatio;
 
@@ -125,6 +123,6 @@ public final class StandardRhythmEvaluator {
             }
         }
 
-        return Math.sqrt(4 + rhythmComplexitySum * rhythmMultiplier / 2);
+        return Math.sqrt(4 + rhythmComplexitySum * rhythmMultiplier) / 2;
     }
 }

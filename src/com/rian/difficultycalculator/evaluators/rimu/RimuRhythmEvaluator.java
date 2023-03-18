@@ -151,7 +151,7 @@ public final class RimuRhythmEvaluator {
             doubletapness = Math.pow(speedRatio, 1 - windowRatio);
         }
 
-        return Math.sqrt(4 + rhythmComplexitySum * calculateRhythmMultiplier(greatWindow) * doubletapness / 2);
+        return Math.sqrt(4 + rhythmComplexitySum * calculateRhythmMultiplier(greatWindow) * doubletapness) / 2;
     }
 
     /**

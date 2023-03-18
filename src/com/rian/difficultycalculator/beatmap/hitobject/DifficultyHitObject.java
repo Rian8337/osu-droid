@@ -133,9 +133,9 @@ public class DifficultyHitObject {
 
     /**
      * Angle the player has to take to hit this hit object.
-     *
+     * <br><br>
      * Calculated as the angle between the circles (current-2, current-1, current).
-     *
+     * <br><br>
      * Will be <code>NaN</code> if the hit object does not form an angle.
      */
     public double angle = Double.NaN;
@@ -163,11 +163,11 @@ public class DifficultyHitObject {
     /**
      * The note density of the hit object.
      */
-    public double noteDensity;
+    public double noteDensity = 1;
 
     /**
      * The overlapping factor of the hit object.
-     *
+     * <br><br>
      * This is used to scale visual skill.
      */
     public double overlappingFactor;
@@ -218,10 +218,7 @@ public class DifficultyHitObject {
         lastObject = hitObjects.get(index - 1);
         lastLastObject = index > 1 ? hitObjects.get(index - 2) : null;
 
-        if (lastObject != null) {
-            deltaTime = (object.startTime - lastObject.getStartTime()) / clockRate;
-        }
-
+        deltaTime = (object.startTime - lastObject.getStartTime()) / clockRate;
         startTime = object.startTime / clockRate;
 
         if (object instanceof HitObjectWithDuration) {
@@ -240,7 +237,7 @@ public class DifficultyHitObject {
     /**
      * Gets the difficulty hit object at a specific index with respect to the current
      * difficulty hit object's index.
-     *
+     * <br><br>
      * Will return <code>null</code> if the index is out of range.
      *
      * @param backwardsIndex The index to move backwards for.
@@ -249,7 +246,7 @@ public class DifficultyHitObject {
      */
     public DifficultyHitObject previous(int backwardsIndex) {
         try {
-            return hitObjects.get(index - backwardsIndex);
+            return hitObjects.get(index - (backwardsIndex + 1));
         } catch (IndexOutOfBoundsException ignored) {
             return null;
         }
@@ -258,7 +255,7 @@ public class DifficultyHitObject {
     /**
      * Gets the difficulty hit object at a specific index with respect to the current
      * difficulty hit object's index.
-     *
+     * <br><br>
      * Will return <code>null</code> if the index is out of range.
      *
      * @param forwardsIndex The index to move forwards for.
@@ -267,7 +264,7 @@ public class DifficultyHitObject {
      */
     public DifficultyHitObject next(int forwardsIndex) {
         try {
-            return hitObjects.get(index + forwardsIndex + 2);
+            return hitObjects.get(index + forwardsIndex + 1);
         } catch (IndexOutOfBoundsException ignored) {
             return null;
         }
@@ -306,7 +303,7 @@ public class DifficultyHitObject {
 
     /**
      * Determines whether this hit object is considered overlapping with the hit object before it.
-     *
+     * <br><br>
      * Keep in mind that "overlapping" in this case is overlapping to the point where both hit objects
      * can be hit with just a single tap in osu!droid.
      *
@@ -384,7 +381,11 @@ public class DifficultyHitObject {
         double scalingFactor = getScalingFactor(mode);
         Vector2 lastCursorPosition = getEndCursorPosition(lastObject, mode);
 
-        lazyJumpDistance = object.getStackedPosition(mode).subtract(lastCursorPosition).scale(scalingFactor).getLength();
+        lazyJumpDistance = object
+                .getStackedPosition(mode)
+                .subtract(lastCursorPosition)
+                .scale(scalingFactor)
+                .getLength();
         minimumJumpTime = strainTime;
         minimumJumpDistance = lazyJumpDistance;
 
@@ -532,7 +533,7 @@ public class DifficultyHitObject {
             }
         }
 
-        slider.lazyTravelTime = slider.endTime - slider.startTime;
+        slider.lazyTravelTime = slider.nestedHitObjects.get(slider.nestedHitObjects.size() - 1).startTime - slider.startTime;
 
         double endTimeMin = slider.lazyTravelTime / slider.spanDuration;
         if (endTimeMin % 2 >= 1) {
@@ -579,7 +580,7 @@ public class DifficultyHitObject {
                 // This finds the positional delta from the required radius and the current position,
                 // and updates the currentCursorPosition accordingly, as well as rewarding distance.
                 currentCursorPosition = currentCursorPosition.add(currentMovement.scale((currentMovementLength - requiredMovement) / currentMovementLength));
-                currentMovementLength *= (currentMovementLength - requiredMovement) /currentMovementLength;
+                currentMovementLength *= (currentMovementLength - requiredMovement) / currentMovementLength;
                 slider.lazyTravelDistance += currentMovementLength;
             }
 
