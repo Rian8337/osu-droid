@@ -9,6 +9,7 @@ import com.rian.difficultycalculator.beatmap.hitobject.SliderPathType;
 import com.rian.difficultycalculator.beatmap.hitobject.Spinner;
 import com.rian.difficultycalculator.beatmap.timings.DifficultyControlPoint;
 import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
+import com.rian.difficultycalculator.math.Precision;
 import com.rian.difficultycalculator.math.Vector2;
 
 import java.util.ArrayList;
@@ -95,6 +96,7 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
         String[] curvePointsData = pars[5].split("[|]");
         SliderPathType sliderType = SliderPathType.parse(curvePointsData[0].charAt(0));
         ArrayList<Vector2> curvePoints = new ArrayList<>();
+        curvePoints.add(new Vector2(0));
         for (int i = 1; i < curvePointsData.length; i++) {
             String[] curvePointData = curvePointsData[i].split(":");
             Vector2 curvePointPosition = new Vector2(
@@ -106,12 +108,34 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
                 return null;
             }
 
-            curvePoints.add(curvePointPosition);
+            curvePoints.add(curvePointPosition.subtract(position));
+        }
+
+        // A special case for old beatmaps where the first
+        // control point is in the position of the slider.
+        if (curvePoints.size() >= 2 && curvePoints.get(0).equals(curvePoints.get(1))) {
+            curvePoints.remove(0);
+        }
+
+        // Edge-case rules (to match stable).
+        if (sliderType == SliderPathType.PerfectCurve) {
+            if (curvePoints.size() != 3) {
+                sliderType = SliderPathType.Bezier;
+            } else if (
+                    Precision.almostEqualsNumber(
+                            0,
+                            (curvePoints.get(1).y - curvePoints.get(0).y) * (curvePoints.get(2).x - curvePoints.get(0).x) -
+                            (curvePoints.get(1).x - curvePoints.get(0).x) * (curvePoints.get(2).y - curvePoints.get(0).y)
+                    )
+            ) {
+                // osu-stable special-cased co-linear perfect curves to a linear path
+                sliderType = SliderPathType.Linear;
+            }
         }
 
         int repeat = Utils.tryParseInt(pars[6], -1);
-        float rawLength = Utils.tryParseFloat(pars[7], Float.NaN);
-        if (repeat < 0 || Float.isNaN(rawLength)) {
+        double rawLength = Utils.tryParseDouble(pars[7], Double.NaN);
+        if (repeat < 0 || Double.isNaN(rawLength)) {
             return null;
         }
 
