@@ -16,13 +16,13 @@ public class RimuTap extends RimuSkill {
     private double currentStrain;
     private double currentOriginalStrain;
     private final ArrayList<Double> objectStrains = new ArrayList<>();
-    private final double greatWindow;
+    private final float greatWindow;
 
     /**s
      * @param mods The mods that this kill processes.
      * @param greatWindow The 300 hit window.
      */
-    public RimuTap(EnumSet<GameMod> mods, double greatWindow) {
+    public RimuTap(EnumSet<GameMod> mods, float greatWindow) {
         super(mods);
 
         this.greatWindow = greatWindow;

@@ -13,12 +13,12 @@ import main.osu.game.mods.GameMod;
 public class RimuRhythm extends RimuSkill {
     private double currentStrain;
     private double currentRhythm;
-    private final double greatWindow;
+    private final float greatWindow;
 
     /**
      * @param mods The mods that this skill processes.
      */
-    public RimuRhythm(EnumSet<GameMod> mods, double greatWindow) {
+    public RimuRhythm(EnumSet<GameMod> mods, float greatWindow) {
         super(mods);
 
         this.greatWindow = greatWindow;
