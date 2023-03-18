@@ -74,9 +74,9 @@ public final class SliderCheeseChecker {
         this.cursorMoves = cursorMoves;
         this.objectData = objectData;
 
-        double realODMS = StandardHitWindowConverter.odToHitWindow300(difficultyAttributes.overallDifficulty) / difficultyAttributes.clockRate;
+        float realODMS = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / (float) difficultyAttributes.clockRate;
         boolean isPrecise = difficultyAttributes.mods.contains(GameMod.MOD_PRECISE);
-        double rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
+        float rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
 
         mehWindow = RimuHitWindowConverter.odToHitWindow50(rimuOD, isPrecise);
         trueObjectScale = CircleSizeCalculator.rimuCSToRimuScale(beatmap.getDifficultyManager().getCS(), difficultyAttributes.mods);

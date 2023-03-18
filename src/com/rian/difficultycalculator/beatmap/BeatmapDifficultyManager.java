@@ -7,24 +7,24 @@ public class BeatmapDifficultyManager {
     /**
      * The circle size of this beatmap.
      */
-    private double cs = 5;
+    private float cs = 5;
 
     /**
      * The approach of this beatmap.
-     *
+     * <br><br>
      * NaN initially.
      */
-    private double ar = Double.NaN;
+    private float ar = Float.NaN;
 
     /**
      * The overall difficulty of this beatmap.
      */
-    private double od = 5;
+    private float od = 5;
 
     /**
      * The health drain rate of this beatmap.
      */
-    private double hp = 5;
+    private float hp = 5;
 
     /**
      * The base slider velocity in hundreds of osu! pixels per beat.
@@ -64,7 +64,7 @@ public class BeatmapDifficultyManager {
     /**
      * Gets the circle size of this beatmap.
      */
-    public double getCS() {
+    public float getCS() {
         return cs;
     }
 
@@ -73,15 +73,15 @@ public class BeatmapDifficultyManager {
      *
      * @param cs The new circle size.
      */
-    public void setCS(double cs) {
+    public void setCS(float cs) {
         this.cs = cs;
     }
 
     /**
      * Gets the approach rate of this beatmap.
      */
-    public double getAR() {
-        return Double.isNaN(ar) ? od : ar;
+    public float getAR() {
+        return Float.isNaN(ar) ? od : ar;
     }
 
     /**
@@ -89,14 +89,14 @@ public class BeatmapDifficultyManager {
      *
      * @param ar The new approach rate.
      */
-    public void setAR(double ar) {
+    public void setAR(float ar) {
         this.ar = ar;
     }
 
     /**
      * Gets the overall difficulty of this beatmap.
      */
-    public double getOD() {
+    public float getOD() {
         return od;
     }
 
@@ -105,14 +105,14 @@ public class BeatmapDifficultyManager {
      *
      * @param od The new overall difficulty.
      */
-    public void setOD(double od) {
+    public void setOD(float od) {
         this.od = od;
     }
 
     /**
      * Gets the health drain rate of this beatmap.
      */
-    public double getHP() {
+    public float getHP() {
         return hp;
     }
 
@@ -121,7 +121,7 @@ public class BeatmapDifficultyManager {
      * 
      * @param hp The new health drain rate.
      */
-    public void setHP(double hp) {
+    public void setHP(float hp) {
         this.hp = hp;
     }
 

@@ -86,7 +86,7 @@ public final class ThreeFingerChecker {
 
     /**
      * A cursor occurrence nested array that only contains `movementType.DOWN` movement ID occurrences.
-     *
+     * <br><br>
      * Each index represents the cursor index.
      */
     private final ArrayList<ArrayList<Replay.ReplayMovement>> downCursorMoves;
@@ -121,9 +121,9 @@ public final class ThreeFingerChecker {
             downCursorMoves.add(new ArrayList<>());
         }
 
-        double realODMS = StandardHitWindowConverter.odToHitWindow300(difficultyAttributes.overallDifficulty) / difficultyAttributes.clockRate;
+        float realODMS = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / (float) difficultyAttributes.clockRate;
         boolean isPrecise = difficultyAttributes.mods.contains(GameMod.MOD_PRECISE);
-        double rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
+        float rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
 
         greatWindow = RimuHitWindowConverter.odToHitWindow300(rimuOD, isPrecise);
         okWindow = RimuHitWindowConverter.odToHitWindow100(rimuOD, isPrecise);
@@ -162,7 +162,7 @@ public final class ThreeFingerChecker {
 
     /**
      * Generates a new set of "accurate break periods".
-     *
+     * <br><br>
      * This is done to increase detection accuracy since break periods do not start right at the
      * start of the hit object before it and do not end right at the first hit object after it.
      */

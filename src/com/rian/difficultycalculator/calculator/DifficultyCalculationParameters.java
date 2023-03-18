@@ -16,25 +16,25 @@ public class DifficultyCalculationParameters {
     /**
      * The custom speed multiplier to calculate for.
      */
-    public double customSpeedMultiplier = 1;
+    public float customSpeedMultiplier = 1;
 
     /**
      * The forced AR setting to calculate for. Set to <code>Double.NaN</code> to disable.
      */
-    public double forcedAR = Double.NaN;
+    public float forcedAR = Float.NaN;
 
     /**
      * Retrieves the overall speed multiplier to calculate for.
      */
-    public double getTotalSpeedMultiplier() {
-        double speedMultiplier = customSpeedMultiplier;
+    public float getTotalSpeedMultiplier() {
+        float speedMultiplier = customSpeedMultiplier;
 
         if (mods.contains(GameMod.MOD_DOUBLETIME) || mods.contains(GameMod.MOD_NIGHTCORE)) {
-            speedMultiplier *= 1.5;
+            speedMultiplier *= 1.5f;
         }
 
         if (mods.contains(GameMod.MOD_HALFTIME)) {
-            speedMultiplier *= 0.75;
+            speedMultiplier *= 0.75f;
         }
 
         return speedMultiplier;
@@ -44,6 +44,6 @@ public class DifficultyCalculationParameters {
      * Whether force AR is used in this parameter.
      */
     public boolean isForceAR() {
-        return !Double.isNaN(forcedAR);
+        return !Float.isNaN(forcedAR);
     }
 }

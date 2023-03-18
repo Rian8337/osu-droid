@@ -24,7 +24,7 @@ public final class RimuRhythmEvaluator {
      * @param current The current object.
      * @param greatWindow The great hit window of the current object.
      */
-    public static double evaluateDifficultyOf(DifficultyHitObject current, double greatWindow) {
+    public static double evaluateDifficultyOf(DifficultyHitObject current, float greatWindow) {
         // Exclude overlapping objects that can be tapped at once.
         if (current.object instanceof Spinner || current.deltaTime < 5) {
             return 1;
@@ -159,8 +159,8 @@ public final class RimuRhythmEvaluator {
      *
      * @param greatWindow The great hit window.
      */
-    private static double calculateRhythmMultiplier(double greatWindow) {
-        double od = StandardHitWindowConverter.hitWindow300ToOD(greatWindow);
+    private static double calculateRhythmMultiplier(float greatWindow) {
+        float od = StandardHitWindowConverter.hitWindow300ToOD(greatWindow);
         double odScaling = Math.pow(od, 2) / 400;
 
         return 0.75 + (od >= 0 ? odScaling : -odScaling);

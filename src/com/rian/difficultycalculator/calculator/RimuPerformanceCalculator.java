@@ -224,15 +224,15 @@ public class RimuPerformanceCalculator extends PerformanceCalculator {
     /**
      * Estimates the player's tap deviation based on the OD, number of circles and sliders,
      * and number of 300s, 100s, 50s, and misses, assuming the player's mean hit error is 0.
-     *
+     * <br><br>
      * The estimation is consistent in that two SS scores on the same map
      * with the same settings will always return the same deviation.
-     *
+     * <br><br>
      * Sliders are treated as circles with a 50 hit window.
-     *
+     * <br><br>
      * Misses are ignored because they are usually due to misaiming, and 50s
      * are grouped with 100s since they are usually due to misreading.
-     *
+     * <br><br>
      * Inaccuracies are capped to the number of circles in the map.
      */
     private double calculateDeviation() {
@@ -240,12 +240,12 @@ public class RimuPerformanceCalculator extends PerformanceCalculator {
             return Double.POSITIVE_INFINITY;
         }
 
-        double greatWindow = StandardHitWindowConverter.odToHitWindow300(difficultyAttributes.overallDifficulty);
+        float greatWindow = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty);
 
         // Obtain the meh hit window for rimu!.
         double clockRate = ((RimuDifficultyAttributes) difficultyAttributes).clockRate;
-        double realGreatWindow = greatWindow * clockRate;
-        double realStandardOD = StandardHitWindowConverter.hitWindow300ToOD(realGreatWindow);
+        float realGreatWindow = (float) (greatWindow * clockRate);
+        float realStandardOD = StandardHitWindowConverter.hitWindow300ToOD(realGreatWindow);
         double mehWindow = RimuHitWindowConverter.odToHitWindow50(realStandardOD, difficultyAttributes.mods.contains(GameMod.MOD_PRECISE)) / clockRate;
 
         int greatCountOnCircles = difficultyAttributes.hitCircleCount - countOk - countMeh - countMiss;
@@ -275,7 +275,7 @@ public class RimuPerformanceCalculator extends PerformanceCalculator {
 
     /**
      * Estimates the player's tap deviation, but only for notes and inaccuracies that are relevant to tap difficulty.
-     *
+     * <br><br>
      * Treats all difficult speed notes as circles, so this method can sometimes return a lower deviation than considering all notes.
      * This is fine though, since this method is only used to scale tap pp.
      */
@@ -284,7 +284,7 @@ public class RimuPerformanceCalculator extends PerformanceCalculator {
             return Double.POSITIVE_INFINITY;
         }
 
-        double greatWindow = StandardHitWindowConverter.hitWindow300ToOD(difficultyAttributes.overallDifficulty);
+        double greatWindow = StandardHitWindowConverter.hitWindow300ToOD((float) difficultyAttributes.overallDifficulty);
         double relevantTotalDiff = getTotalHits() - difficultyAttributes.speedNoteCount;
         double relevantCountGreat = Math.max(0, countGreat - relevantTotalDiff);
 

@@ -101,8 +101,8 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
 
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
-        double od = beatmap.getDifficultyManager().getOD();
-        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
+        float od = beatmap.getDifficultyManager().getOD();
+        float odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -282,14 +282,14 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     private void processCS(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
         double scale = CircleSizeCalculator.rimuCSToRimuScale(manager.getCS(), parameters != null ? parameters.mods : EnumSet.noneOf(GameMod.class));
         double radius = CircleSizeCalculator.rimuScaleToStandardRadius(scale);
-        manager.setCS(CircleSizeCalculator.standardRadiusToStandardCS(radius));
+        manager.setCS((float) CircleSizeCalculator.standardRadiusToStandardCS(radius));
     }
 
     private void processAR(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        double ar = manager.getAR();
+        float ar = manager.getAR();
 
         if (parameters == null) {
-            manager.setAR(Math.min(ar, 10));
+            manager.setAR(Math.min(ar, 10f));
             return;
         }
 
@@ -297,44 +297,44 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
             manager.setAR(parameters.forcedAR);
         } else {
             if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                ar *= 1.4;
+                ar *= 1.4f;
             }
             if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                ar /= 2;
+                ar /= 2f;
             }
             if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
                 if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                    ar *= 2;
-                    ar -= 0.5;
+                    ar *= 2f;
+                    ar -= 0.5f;
                 }
 
-                ar -= 0.5;
-                ar -= parameters.customSpeedMultiplier - 1;
+                ar -= 0.5f;
+                ar -= parameters.customSpeedMultiplier - 1f;
             }
 
-            manager.setAR(Math.min(ar, 10));
+            manager.setAR(Math.min(ar, 10f));
         }
     }
 
     private void processOD(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        double od = manager.getOD();
+        float od = manager.getOD();
 
         if (parameters != null) {
             if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                od *= 1.4;
+                od *= 1.4f;
             }
             if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                od /= 2;
+                od /= 2f;
             }
             if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                od /= 2;
+                od /= 2f;
             }
         }
 
-        od = Math.min(od, 10);
+        od = Math.min(od, 10f);
 
         // Convert standard OD to rimu! hit window to take rimu! hit window and the Precise mod in mind.
-        double odMS = RimuHitWindowConverter.odToHitWindow300(od, parameters != null && parameters.mods.contains(GameMod.MOD_PRECISE));
+        float odMS = RimuHitWindowConverter.odToHitWindow300(od, parameters != null && parameters.mods.contains(GameMod.MOD_PRECISE));
 
         // Convert rimu! hit window back to standard OD.
         od = StandardHitWindowConverter.hitWindow300ToOD(odMS);
@@ -343,20 +343,20 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     }
 
     private void processHP(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        double hp = manager.getHP();
+        float hp = manager.getHP();
 
         if (parameters != null) {
             if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                hp *= 1.4;
+                hp *= 1.4f;
             }
             if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                hp /= 2;
+                hp /= 2f;
             }
             if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                hp /= 2;
+                hp /= 2f;
             }
         }
 
-        manager.setHP(Math.min(hp, 10));
+        manager.setHP(Math.min(hp, 10f));
     }
 }

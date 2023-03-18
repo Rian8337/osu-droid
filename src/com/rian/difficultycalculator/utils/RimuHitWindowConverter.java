@@ -14,7 +14,7 @@ public final class RimuHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static double hitWindow300ToOD(double value) {
+    public static float hitWindow300ToOD(float value) {
         return hitWindow300ToOD(value, false);
     }
 
@@ -25,7 +25,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The overall difficulty value.
      */
-    public static double hitWindow300ToOD(double value, boolean isPrecise) {
+    public static float hitWindow300ToOD(float value, boolean isPrecise) {
         if (isPrecise) {
             return 5 - (value - 55) / 6;
         } else {
@@ -39,7 +39,7 @@ public final class RimuHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static double hitWindow100ToOD(double value) {
+    public static float hitWindow100ToOD(float value) {
         return hitWindow100ToOD(value, false);
     }
 
@@ -50,7 +50,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The overall difficulty value.
      */
-    public static double hitWindow100ToOD(double value, boolean isPrecise) {
+    public static float hitWindow100ToOD(float value, boolean isPrecise) {
         if (isPrecise) {
             return 5 - (value - 120) / 8;
         } else {
@@ -64,7 +64,7 @@ public final class RimuHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static double hitWindow50ToOD(double value) {
+    public static float hitWindow50ToOD(float value) {
         return hitWindow50ToOD(value, false);
     }
 
@@ -75,7 +75,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The overall difficulty value.
      */
-    public static double hitWindow50ToOD(double value, boolean isPrecise) {
+    public static float hitWindow50ToOD(float value, boolean isPrecise) {
         if (isPrecise) {
             return 5 - (value - 180) / 10;
         } else {
@@ -90,7 +90,7 @@ public final class RimuHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow300(double od) {
+    public static float odToHitWindow300(float od) {
         return odToHitWindow300(od, false);
     }
 
@@ -101,7 +101,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow300(double od, boolean isPrecise) {
+    public static float odToHitWindow300(float od, boolean isPrecise) {
         if (isPrecise) {
             return 55 + 6 * (5 - od);
         } else {
@@ -116,7 +116,7 @@ public final class RimuHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow100(double od) {
+    public static float odToHitWindow100(float od) {
         return odToHitWindow100(od, false);
     }
 
@@ -127,7 +127,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow100(double od, boolean isPrecise) {
+    public static float odToHitWindow100(float od, boolean isPrecise) {
         if (isPrecise) {
             return 120 + 8 * (5 - od);
         } else {
@@ -142,7 +142,7 @@ public final class RimuHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow50(double od) {
+    public static float odToHitWindow50(float od) {
         return odToHitWindow50(od, false);
     }
 
@@ -153,7 +153,7 @@ public final class RimuHitWindowConverter {
      * @param isPrecise Whether to calculate for Precise mod.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow50(double od, boolean isPrecise) {
+    public static float odToHitWindow50(float od, boolean isPrecise) {
         if (isPrecise) {
             return 180 + 10 * (5 - od);
         } else {
