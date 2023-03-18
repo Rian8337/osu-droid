@@ -29,7 +29,7 @@ public class HitCircle extends HitObject {
      * @param source The source to copy from.
      */
     private HitCircle(HitCircle source) {
-        this(source.startTime, source.position.x, source.position.y);
+        super(source);
     }
 
     @Override

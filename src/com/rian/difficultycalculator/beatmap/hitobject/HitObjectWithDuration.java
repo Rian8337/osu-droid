@@ -1,8 +1,6 @@
 package com.rian.difficultycalculator.beatmap.hitobject;
 
 import com.rian.difficultycalculator.math.Vector2;
-import com.rian.difficultycalculator.beatmap.timings.DifficultyControlPoint;
-import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
 
 /**
  * Represents a hit object that ends at a different time than its start time.
@@ -32,6 +30,17 @@ public abstract class HitObjectWithDuration extends HitObject {
      */
     public HitObjectWithDuration(double startTime, double endTime, double x, double y) {
         this(startTime, endTime, new Vector2(x, y));
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    protected HitObjectWithDuration(HitObjectWithDuration source) {
+        super(source);
+
+        endTime = source.endTime;
     }
 
     /**

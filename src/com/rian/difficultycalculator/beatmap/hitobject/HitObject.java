@@ -67,6 +67,21 @@ public abstract class HitObject {
     }
 
     /**
+     * Copy constructor.
+     *
+     * @param source The source to copy from.
+     */
+    protected HitObject(HitObject source) {
+        startTime = source.startTime;
+        position = new Vector2(source.position.x, source.position.y);
+        endPosition = new Vector2(source.endPosition.x, source.endPosition.y);
+        rimuStackHeight = source.rimuStackHeight;
+        standardStackHeight = source.standardStackHeight;
+        rimuScale = source.rimuScale;
+        standardScale = source.standardScale;
+    }
+
+    /**
      * Gets the rimu! scale of this hit object with respect to osu!standard scale metric.
      */
     public double getRimuScale() {
@@ -219,7 +234,7 @@ public abstract class HitObject {
 
     /**
      * Deep clones this hit object.
-     *
+     * <br><br>
      * This method only deep clones fields that may be changed during difficulty calculation.
      *
      * @return The deep cloned hit object.

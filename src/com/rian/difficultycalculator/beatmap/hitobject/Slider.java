@@ -197,7 +197,7 @@ public class Slider extends HitObjectWithDuration {
      * @param source The source to copy from.
      */
     private Slider(Slider source) {
-        super(source.startTime, source.endTime, source.position.x, source.position.y);
+        super(source);
 
         repeatCount = source.repeatCount;
         endPosition = new Vector2(source.endPosition.x, source.endPosition.y);
