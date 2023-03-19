@@ -91,10 +91,10 @@ public final class ThreeFingerChecker {
      */
     private final ArrayList<ArrayList<Replay.ReplayMovement>> downCursorMoves;
 
-    private final double greatWindow;
-    private final double okWindow;
-    private final double mehWindow;
-    private final double trueObjectScale;
+    private final float greatWindow;
+    private final float okWindow;
+    private final float mehWindow;
+    private final float trueObjectScale;
 
     /**
      * @param beatmap The beatmap that is being analyzed.

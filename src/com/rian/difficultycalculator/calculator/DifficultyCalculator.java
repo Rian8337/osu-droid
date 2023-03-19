@@ -106,9 +106,9 @@ public abstract class DifficultyCalculator {
         ArrayList<DifficultyHitObject> objects = new ArrayList<>();
         List<HitObject> rawObjects = beatmap.getHitObjectsManager().getObjects();
 
-        double ar = beatmap.getDifficultyManager().getAR();
-        double timePreempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
-        double objectScale = CircleSizeCalculator.standardCSToStandardScale(beatmap.getDifficultyManager().getCS());
+        float ar = beatmap.getDifficultyManager().getAR();
+        float timePreempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
+        float objectScale = CircleSizeCalculator.standardCSToStandardScale(beatmap.getDifficultyManager().getCS());
 
         for (int i = 1; i < rawObjects.size(); ++i) {
             switch (mode) {

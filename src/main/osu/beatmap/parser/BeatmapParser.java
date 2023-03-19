@@ -325,12 +325,12 @@ public class BeatmapParser {
      * @param data The <code>BeatmapData</code> whose object scales will be populated.
      */
     public static void populateObjectData(final BeatmapData data) {
-        double rimuScale = CircleSizeCalculator.rimuCSToRimuScale(data.difficulty.cs);
+        float rimuScale = CircleSizeCalculator.rimuCSToRimuScale(data.difficulty.cs);
         double rimuRadius = CircleSizeCalculator.rimuScaleToStandardRadius(rimuScale);
-        double rimuStandardBasedCS = CircleSizeCalculator.standardRadiusToStandardCS(rimuRadius);
-        double rimuStandardBasedScale = CircleSizeCalculator.standardCSToStandardScale(rimuStandardBasedCS);
+        float rimuStandardBasedCS = CircleSizeCalculator.standardRadiusToStandardCS(rimuRadius);
+        float rimuStandardBasedScale = CircleSizeCalculator.standardCSToStandardScale(rimuStandardBasedCS);
 
-        double standardScale = CircleSizeCalculator.standardCSToStandardScale(data.difficulty.cs);
+        float standardScale = CircleSizeCalculator.standardCSToStandardScale(data.difficulty.cs);
 
         for (HitObject object : data.hitObjects.getObjects()) {
             object.setRimuScale(rimuStandardBasedScale);

@@ -280,9 +280,9 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     }
 
     private void processCS(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        double scale = CircleSizeCalculator.rimuCSToRimuScale(manager.getCS(), parameters != null ? parameters.mods : EnumSet.noneOf(GameMod.class));
+        float scale = CircleSizeCalculator.rimuCSToRimuScale(manager.getCS(), parameters != null ? parameters.mods : EnumSet.noneOf(GameMod.class));
         double radius = CircleSizeCalculator.rimuScaleToStandardRadius(scale);
-        manager.setCS((float) CircleSizeCalculator.standardRadiusToStandardCS(radius));
+        manager.setCS(CircleSizeCalculator.standardRadiusToStandardCS(radius));
     }
 
     private void processAR(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {

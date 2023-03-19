@@ -54,9 +54,8 @@ public final class SliderCheeseChecker {
     /**
      * The meh osu!droid hit window of the analyzed beatmap.
      */
-    private final double mehWindow;
-
-    private final double trueObjectScale;
+    private final float mehWindow;
+    private final float trueObjectScale;
 
     /**
      * @param beatmap The beatmap that is being analyzed.

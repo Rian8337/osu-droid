@@ -68,8 +68,8 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
                 ? Math.cbrt(StandardPerformanceCalculator.finalMultiplier) * 0.027 * (Math.cbrt(100000 / Math.pow(2, 1 / 1.1) * basePerformance) + 4)
                 : 0;
 
-        double ar = beatmap.getDifficultyManager().getAR();
-        double preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
+        float ar = beatmap.getDifficultyManager().getAR();
+        float preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
 
         if (parameters != null && !parameters.isForceAR()) {
             preempt /= parameters.getTotalSpeedMultiplier();

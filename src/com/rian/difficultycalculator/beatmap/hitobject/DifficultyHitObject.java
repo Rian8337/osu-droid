@@ -30,12 +30,12 @@ public class DifficultyHitObject {
     /**
      * The preempt time of the hit object.
      */
-    public double baseTimePreempt;
+    public float baseTimePreempt;
 
     /**
      * Adjusted preempt time of the hit object, taking speed multiplier into account.
      */
-    public double timePreempt;
+    public float timePreempt;
 
     /**
      * The fade in time of the hit object.
@@ -204,7 +204,7 @@ public class DifficultyHitObject {
      */
     public DifficultyHitObject(int index, List<HitObject> hitObjects,
                                ArrayList<DifficultyHitObject> difficultyHitObjects, GameMode mode,
-                               double clockRate, double timePreempt, boolean isForceAR) {
+                               double clockRate, float timePreempt, boolean isForceAR) {
         this.index = index - 1;
         this.object = hitObjects.get(index);
         this.hitObjects = difficultyHitObjects;
@@ -577,9 +577,9 @@ public class DifficultyHitObject {
             if (currentMovementLength > requiredMovement) {
                 // This finds the positional delta from the required radius and the current position,
                 // and updates the currentCursorPosition accordingly, as well as rewarding distance.
-                currentCursorPosition = currentCursorPosition.add(currentMovement.scale((currentMovementLength - requiredMovement) / currentMovementLength));
+                currentCursorPosition = currentCursorPosition.add(currentMovement.scale((float) ((currentMovementLength - requiredMovement) / currentMovementLength)));
                 currentMovementLength *= (currentMovementLength - requiredMovement) / currentMovementLength;
-                slider.lazyTravelDistance += currentMovementLength;
+                slider.lazyTravelDistance += (float) currentMovementLength;
             }
 
             if (i == slider.nestedHitObjects.size() - 1) {
@@ -588,10 +588,10 @@ public class DifficultyHitObject {
         }
     }
 
-    private double getScalingFactor(GameMode mode) {
+    private float getScalingFactor(GameMode mode) {
         // We will scale distances by this factor, so we can assume a uniform CircleSize among beatmaps.
-        double radius = object.getRadius(mode);
-        double scalingFactor = normalizedRadius / radius;
+        float radius = (float) object.getRadius(mode);
+        float scalingFactor = normalizedRadius / radius;
 
         // High circle size (small CS) bonus
         switch (mode) {

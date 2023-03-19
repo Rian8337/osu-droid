@@ -65,7 +65,7 @@ public class Slider extends HitObjectWithDuration {
      * The distance travelled by the cursor upon completion of this slider if it was hit
      * with as few movements as possible. This is set and used by difficulty calculation.
      */
-    protected double lazyTravelDistance;
+    protected float lazyTravelDistance;
 
     /**
      * The time taken by the cursor upon completion of this slider if it was hit with
@@ -242,7 +242,7 @@ public class Slider extends HitObjectWithDuration {
     }
 
     @Override
-    public void setRimuScale(double rimuScale) {
+    public void setRimuScale(float rimuScale) {
         super.setRimuScale(rimuScale);
 
         for (SliderHitObject object : nestedHitObjects) {
@@ -251,7 +251,7 @@ public class Slider extends HitObjectWithDuration {
     }
 
     @Override
-    public void setStandardScale(double standardScale) {
+    public void setStandardScale(float standardScale) {
         super.setStandardScale(standardScale);
 
         for (SliderHitObject object : nestedHitObjects) {
