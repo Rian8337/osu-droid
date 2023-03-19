@@ -337,7 +337,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         float odMS = RimuHitWindowConverter.odToHitWindow300(od, parameters != null && parameters.mods.contains(GameMod.MOD_PRECISE));
 
         // Convert rimu! hit window back to standard OD.
-        od = StandardHitWindowConverter.hitWindow300ToOD(odMS);
+        od = (float) StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
         manager.setOD(od);
     }

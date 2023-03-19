@@ -50,7 +50,7 @@ public final class RimuAimEvaluator {
     private static double aimStrainOf(DifficultyHitObject current, boolean withSliders) {
         DifficultyHitObject last = current.previous(0);
 
-        if (current.index <= 1 || (last != null && last.object instanceof Spinner)) {
+        if (current.index <= 1 || last.object instanceof Spinner) {
             return 0;
         }
 
@@ -65,9 +65,7 @@ public final class RimuAimEvaluator {
             double travelVelocity = last.travelDistance / last.travelTime;
 
             // Calculate the movement velocity from slider end to current object.
-            double movementVelocity = current.minimumJumpTime != 0
-                    ? current.minimumJumpDistance / current.minimumJumpTime
-                    : 0;
+            double movementVelocity = current.minimumJumpDistance / current.minimumJumpTime;
 
             // Take the larger total combined velocity.
             currentVelocity = Math.max(currentVelocity, movementVelocity + travelVelocity);
@@ -78,9 +76,7 @@ public final class RimuAimEvaluator {
 
         if (lastLast.object instanceof Slider && withSliders) {
             double travelVelocity = lastLast.travelDistance / lastLast.travelTime;
-            double movementVelocity = last.minimumJumpTime != 0
-                    ? last.minimumJumpDistance / last.minimumJumpTime
-                    : 0;
+            double movementVelocity = last.minimumJumpDistance / last.minimumJumpTime;
 
             prevVelocity = Math.max(prevVelocity, movementVelocity + travelVelocity);
         }
@@ -95,11 +91,10 @@ public final class RimuAimEvaluator {
 
         if (
             // If rhythms are the same.
-            Math.max(current.strainTime, last.strainTime) <
-                    1.25 * Math.min(current.strainTime, last.strainTime) &&
-                    !Double.isNaN(current.angle) &&
-                    !Double.isNaN(last.angle) &&
-                    !Double.isNaN(lastLast.angle)
+            Math.max(current.strainTime, last.strainTime) < 1.25 * Math.min(current.strainTime, last.strainTime) &&
+            !Double.isNaN(current.angle) &&
+            !Double.isNaN(last.angle) &&
+            !Double.isNaN(lastLast.angle)
         ) {
             // Rewarding angles, take the smaller velocity as base.
             double angleBonus = Math.min(currentVelocity, prevVelocity);

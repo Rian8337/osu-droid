@@ -33,14 +33,9 @@ public final class StandardAimEvaluator {
      * @param withSliders Whether to take slider difficulty into account.
      */
     public static double evaluateDifficultyOf(DifficultyHitObject current, boolean withSliders) {
-        // Exclude overlapping objects that can be tapped at once.
-        if (current.object instanceof Spinner || current.isOverlapping(true)) {
-            return 0;
-        }
-
         DifficultyHitObject last = current.previous(0);
 
-        if (current.index <= 1 || (last != null && last.object instanceof Spinner)) {
+        if (current.object instanceof Spinner || current.index <= 1 || last.object instanceof Spinner) {
             return 0;
         }
 
@@ -55,9 +50,7 @@ public final class StandardAimEvaluator {
             double travelVelocity = last.travelDistance / last.travelTime;
 
             // Calculate the movement velocity from slider end to current object.
-            double movementVelocity = current.minimumJumpTime != 0
-                    ? current.minimumJumpDistance / current.minimumJumpTime
-                    : 0;
+            double movementVelocity = current.minimumJumpDistance / current.minimumJumpTime;
 
             // Take the larger total combined velocity.
             currentVelocity = Math.max(currentVelocity, movementVelocity + travelVelocity);
@@ -68,9 +61,7 @@ public final class StandardAimEvaluator {
 
         if (lastLast.object instanceof Slider && withSliders) {
             double travelVelocity = lastLast.travelDistance / lastLast.travelTime;
-            double movementVelocity = last.minimumJumpTime != 0
-                    ? last.minimumJumpDistance / last.minimumJumpTime
-                    : 0;
+            double movementVelocity = last.minimumJumpDistance / last.minimumJumpTime;
 
             prevVelocity = Math.max(prevVelocity, movementVelocity + travelVelocity);
         }
@@ -85,11 +76,10 @@ public final class StandardAimEvaluator {
 
         if (
             // If rhythms are the same.
-                Math.max(current.strainTime, last.strainTime) <
-                        1.25 * Math.min(current.strainTime, last.strainTime) &&
-                        !Double.isNaN(current.angle) &&
-                        !Double.isNaN(last.angle) &&
-                        !Double.isNaN(lastLast.angle)
+            Math.max(current.strainTime, last.strainTime) < 1.25 * Math.min(current.strainTime, last.strainTime) &&
+            !Double.isNaN(current.angle) &&
+            !Double.isNaN(last.angle) &&
+            !Double.isNaN(lastLast.angle)
         ) {
             // Rewarding angles, take the smaller velocity as base.
             double angleBonus = Math.min(currentVelocity, prevVelocity);
@@ -104,12 +94,12 @@ public final class StandardAimEvaluator {
                 acuteAngleBonus *=
                         // Multiply by previous angle, we don't want to buff unless this is a wiggle type pattern.
                         calculateAcuteAngleBonus(last.angle) *
-                                // The maximum velocity we buff is equal to 125 / strainTime.
-                                Math.min(angleBonus, 125 / current.strainTime) *
-                                // Scale buff from 300 BPM 1/2 to 400 BPM 1/2.
-                                Math.pow(Math.sin(Math.PI / 2 * Math.min(1, (100 - current.strainTime) / 25)), 2) *
-                                // Buff distance exceeding 50 (radius) up to 100 (diameter).
-                                Math.pow(Math.sin(Math.PI / 2 * (MathUtils.clamp(current.lazyJumpDistance, 50, 100) - 50) / 50), 2);
+                        // The maximum velocity we buff is equal to 125 / strainTime.
+                        Math.min(angleBonus, 125 / current.strainTime) *
+                        // Scale buff from 300 BPM 1/2 to 400 BPM 1/2.
+                        Math.pow(Math.sin(Math.PI / 2 * Math.min(1, (100 - current.strainTime) / 25)), 2) *
+                        // Buff distance exceeding 50 (radius) up to 100 (diameter).
+                        Math.pow(Math.sin(Math.PI / 2 * (MathUtils.clamp(current.lazyJumpDistance, 50, 100) - 50) / 50), 2);
             }
 
             // Penalize wide angles if they're repeated, reducing the penalty as last.angle gets more acute.

@@ -171,7 +171,7 @@ public class SliderPath {
      * Interpolates vertices of the slider.
      */
     private Vector2 interpolateVertices(int i, double d) {
-        if (calculatedPath.size() == 0) {
+        if (calculatedPath.isEmpty()) {
             return new Vector2(0);
         }
 
@@ -205,7 +205,7 @@ public class SliderPath {
      * @return The index.
      */
     private int indexOfDistance(double d) {
-        if (cumulativeLength.size() == 0 ||d < cumulativeLength.get(0)) {
+        if (cumulativeLength.isEmpty() || d < cumulativeLength.get(0)) {
             return 0;
         }
 

@@ -30,12 +30,12 @@ public class DifficultyHitObject {
     /**
      * The preempt time of the hit object.
      */
-    public float baseTimePreempt;
+    public double baseTimePreempt;
 
     /**
      * Adjusted preempt time of the hit object, taking speed multiplier into account.
      */
-    public float timePreempt;
+    public double timePreempt;
 
     /**
      * The fade in time of the hit object.
@@ -364,9 +364,9 @@ public class DifficultyHitObject {
 
             // Bonus for repeat sliders until a better per nested object strain system can be achieved.
             if (mode == GameMode.rimu) {
-                travelDistance *= Math.pow(1 + (slider.repeatCount - 1) / 4d, 1 / 4d);
+                travelDistance *= (float) Math.pow(1 + (slider.repeatCount - 1) / 4d, 1 / 4d);
             } else {
-                travelDistance *= Math.pow(1 + (slider.repeatCount - 1) / 2.5, 1 / 2.5);
+                travelDistance *= (float) Math.pow(1 + (slider.repeatCount - 1) / 2.5, 1 / 2.5);
             }
 
             travelTime = Math.max(slider.lazyTravelTime / clockRate, minDeltaTime);
@@ -411,7 +411,7 @@ public class DifficultyHitObject {
             // In this case the most natural jump path is better approximated by a new distance called "tailJumpDistance" - the distance between the slider's tail and the next hit object.
             //
             // Thus, the player is assumed to jump the minimum of these two distances in all cases.
-            double tailJumpDistance = ((Slider) lastObject).tail
+            float tailJumpDistance = ((Slider) lastObject).tail
                         .getStackedPosition(mode)
                         .subtract(object.getStackedPosition(mode))
                         .getLength() * scalingFactor;
@@ -424,8 +424,8 @@ public class DifficultyHitObject {
             Vector2 lastLastCursorPosition = getEndCursorPosition(lastLastObject, mode);
             Vector2 v1 = lastLastCursorPosition.subtract(lastObject.getStackedPosition(mode));
             Vector2 v2 = object.getStackedPosition(mode).subtract(lastCursorPosition);
-            double dot = v1.dot(v2);
-            double det = v1.x * v2.y - v1.y * v2.x;
+            float dot = v1.dot(v2);
+            float det = v1.x * v2.y - v1.y * v2.x;
 
             angle = Math.abs(Math.atan2(det, dot));
         }

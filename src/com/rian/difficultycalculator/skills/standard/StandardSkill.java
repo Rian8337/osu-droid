@@ -30,7 +30,7 @@ public abstract class StandardSkill extends StrainSkill {
         if (getReducedSectionCount() > 0) {
             // We are reducing the highest strains first to account for extreme difficulty spikes.
             for (int i = 0; i < Math.min(strains.size(), getReducedSectionCount()); ++i) {
-                double scale = Math.log10(Interpolation.linear(1, 10, MathUtils.clamp((double) i / getReducedSectionCount(), 0, 1)));
+                double scale = Math.log10(Interpolation.linear(1, 10, MathUtils.clamp((float) i / getReducedSectionCount(), 0, 1)));
 
                 strains.set(i, strains.get(i) * Interpolation.linear(getReducedSectionBaseline(), 1, scale));
             }

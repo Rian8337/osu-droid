@@ -52,7 +52,7 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
             return true;
         }
 
-        int time = data.getOffsetTime(Utils.tryParseInt(pars[2], -1));
+        int time = data.getOffsetTime(Utils.tryParseInt(pars[2], 0));
 
         HitObjectType type = HitObjectType.valueOf(Utils.tryParseInt(pars[3], -1) % 16);
         Vector2 position = new Vector2(
@@ -60,9 +60,10 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
             Utils.tryParseFloat(pars[1], Float.NaN)
         );
 
-        if (Double.isNaN(position.x) || Double.isNaN(position.y)) {
+        if (Float.isNaN(position.x) || Float.isNaN(position.y)) {
             return false;
         }
+        position = new Vector2((int) position.x, (int) position.y);
 
         HitObject object = null;
 

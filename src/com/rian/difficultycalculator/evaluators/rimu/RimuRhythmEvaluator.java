@@ -160,7 +160,7 @@ public final class RimuRhythmEvaluator {
      * @param greatWindow The great hit window.
      */
     private static double calculateRhythmMultiplier(double greatWindow) {
-        float od = StandardHitWindowConverter.hitWindow300ToOD(greatWindow);
+        double od = StandardHitWindowConverter.hitWindow300ToOD(greatWindow);
         double odScaling = Math.pow(od, 2) / 400;
 
         return 0.75 + (od >= 0 ? odScaling : -odScaling);

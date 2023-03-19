@@ -240,12 +240,12 @@ public class RimuPerformanceCalculator extends PerformanceCalculator {
             return Double.POSITIVE_INFINITY;
         }
 
-        double greatWindow = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty);
+        double greatWindow = StandardHitWindowConverter.odToHitWindow300(difficultyAttributes.overallDifficulty);
 
         // Obtain the meh hit window for rimu!.
         double clockRate = ((RimuDifficultyAttributes) difficultyAttributes).clockRate;
         double realGreatWindow = greatWindow * clockRate;
-        float realStandardOD = StandardHitWindowConverter.hitWindow300ToOD(realGreatWindow);
+        float realStandardOD = (float) StandardHitWindowConverter.hitWindow300ToOD(realGreatWindow);
         double mehWindow = RimuHitWindowConverter.odToHitWindow50(realStandardOD, difficultyAttributes.mods.contains(GameMod.MOD_PRECISE)) / clockRate;
 
         int greatCountOnCircles = difficultyAttributes.hitCircleCount - countOk - countMeh - countMiss;

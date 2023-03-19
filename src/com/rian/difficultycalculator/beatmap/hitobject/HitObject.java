@@ -190,14 +190,14 @@ public abstract class HitObject {
      * @param mode The game mode to calculate for.
      */
     public Vector2 getStackOffset(GameMode mode) {
-        float coordinate = standardStackHeight;
+        float coordinate = 0;
 
         switch (mode) {
             case rimu:
-                coordinate *= rimuScale * -4;
+                coordinate *= rimuStackHeight * rimuScale * 4;
                 break;
             case standard:
-                coordinate *= standardScale * -6.4;
+                coordinate *= standardStackHeight * standardScale * -6.4f;
         }
 
         return new Vector2(coordinate);

@@ -62,8 +62,8 @@ public final class StandardFlashlightEvaluator {
                 double stackNerf = Math.min(1, currentObject.lazyJumpDistance / scalingFactor / 25);
 
                 // Bonus based on how visible the object is.
-                double opacityBonus =
-                        1 + 0.4 * (1 - current.opacityAt(currentObject.object.getStartTime(), isHiddenMod, GameMode.standard));
+                double opacityBonusMultiplier = 0.4;
+                double opacityBonus = 1 + opacityBonusMultiplier * (1 - current.opacityAt(currentObject.object.getStartTime(), isHiddenMod, GameMode.standard));
 
                 result += (stackNerf * opacityBonus * scalingFactor * jumpDistance) / cumulativeStrainTime;
 

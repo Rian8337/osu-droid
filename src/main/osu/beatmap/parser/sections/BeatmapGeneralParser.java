@@ -22,7 +22,7 @@ public class BeatmapGeneralParser extends BeatmapKeyValueSectionParser {
                 data.general.audioLeadIn = Utils.tryParseInt(p[1], data.general.audioLeadIn);
                 break;
             case "PreviewTime":
-                data.general.previewTime = Utils.tryParseInt(p[1], data.general.previewTime);
+                data.general.previewTime = data.getOffsetTime(Utils.tryParseInt(p[1], data.general.previewTime));
                 break;
             case "Countdown":
                 data.general.countdown = BeatmapCountdown.parse(p[1]);

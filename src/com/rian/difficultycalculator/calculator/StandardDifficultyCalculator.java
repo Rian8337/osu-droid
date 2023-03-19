@@ -78,7 +78,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
         float od = beatmap.getDifficultyManager().getOD();
-        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1f);
+        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1);
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -216,6 +216,6 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
             }
         }
 
-        manager.setHP(Math.min(hp, 10));
+        manager.setHP(Math.min(hp, 10f));
     }
 }

@@ -52,7 +52,7 @@ public class StandardSpeed extends StandardSkill {
 
     @Override
     protected double strainValueAt(DifficultyHitObject current) {
-        currentStrain *= strainDecay(current.deltaTime);
+        currentStrain *= strainDecay(current.strainTime);
         double skillMultiplier = 1375;
         currentStrain += StandardSpeedEvaluator.evaluateDifficultyOf(current, greatWindow) * skillMultiplier;
         currentRhythm = StandardRhythmEvaluator.evaluateDifficultyOf(current, greatWindow);

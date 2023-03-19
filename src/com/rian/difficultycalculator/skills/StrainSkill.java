@@ -31,7 +31,7 @@ public abstract class StrainSkill extends Skill {
     @Override
     public void process(DifficultyHitObject current) {
         // The first object doesn't generate a strain, so we begin with an incremented section end
-        double sectionLength = 400;
+        int sectionLength = 400;
         if (current.index == 0) {
             currentSectionEnd = Math.ceil(current.startTime / sectionLength) * sectionLength;
         }
