@@ -177,7 +177,7 @@ public final class PathApproximator {
         for (int i = 0; i < amountPoints; ++i) {
             double fraction = (double) i / (amountPoints - 1);
             double theta = thetaStart + dir * fraction * thetaRange;
-            Vector2 o = new Vector2(Math.cos(theta), Math.sin(theta)).scale(r);
+            Vector2 o = new Vector2((float) Math.cos(theta), (float) Math.sin(theta)).scale(r);
             output.add(center.add(o));
         }
 

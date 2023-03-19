@@ -14,8 +14,8 @@ public final class StandardHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow300ToOD(float value) {
-        return (80 - value) / 6;
+    public static float hitWindow300ToOD(double value) {
+        return (float) (80 - value) / 6;
     }
 
     /**
@@ -24,8 +24,8 @@ public final class StandardHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow100ToOD(float value) {
-        return (140 - value) / 8;
+    public static float hitWindow100ToOD(double value) {
+        return (float) (140 - value) / 8;
     }
 
     /**
@@ -34,8 +34,8 @@ public final class StandardHitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow50ToOD(float value) {
-        return (200 - value) / 10;
+    public static float hitWindow50ToOD(double value) {
+        return (float) (200 - value) / 10;
     }
 
     /**
@@ -44,7 +44,7 @@ public final class StandardHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static float odToHitWindow300(float od) {
+    public static double odToHitWindow300(float od) {
         return 80 - 6 * od;
     }
 
@@ -54,7 +54,7 @@ public final class StandardHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static float odToHitWindow100(float od) {
+    public static double odToHitWindow100(float od) {
         return 140 - 8 * od;
     }
 
@@ -64,7 +64,7 @@ public final class StandardHitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static float odToHitWindow50(float od) {
+    public static double odToHitWindow50(float od) {
         return 200 - 10 * od;
     }
 }

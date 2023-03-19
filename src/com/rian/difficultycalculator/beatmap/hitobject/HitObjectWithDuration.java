@@ -28,7 +28,7 @@ public abstract class HitObjectWithDuration extends HitObject {
      * @param x         The X position of the hit object relative to the play field.
      * @param y         The Y position of the hit object relative to the play field.
      */
-    public HitObjectWithDuration(double startTime, double endTime, double x, double y) {
+    public HitObjectWithDuration(double startTime, double endTime, float x, float y) {
         this(startTime, endTime, new Vector2(x, y));
     }
 

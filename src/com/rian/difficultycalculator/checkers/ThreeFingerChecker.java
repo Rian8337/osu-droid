@@ -121,7 +121,7 @@ public final class ThreeFingerChecker {
             downCursorMoves.add(new ArrayList<>());
         }
 
-        float realODMS = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / (float) difficultyAttributes.clockRate;
+        float realODMS = (float) (StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / difficultyAttributes.clockRate);
         boolean isPrecise = difficultyAttributes.mods.contains(GameMod.MOD_PRECISE);
         float rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
 
@@ -423,7 +423,7 @@ public final class ThreeFingerChecker {
 
                 if (nextMovement.getTouchType() == TouchType.MOVE) {
                     for (int mSecPassed = movement.getTime(); mSecPassed <= nextMovement.getTime(); ++mSecPassed) {
-                        double t = (double) (mSecPassed - movement.getTime()) / (nextMovement.getTime() - movement.getTime());
+                        float t = (float) (mSecPassed - movement.getTime()) / (nextMovement.getTime() - movement.getTime());
 
                         Vector2 currentCursorPosition = new Vector2(
                                 Interpolation.linear(cursorPosition.x, nextMovement.getPoint().x, t),

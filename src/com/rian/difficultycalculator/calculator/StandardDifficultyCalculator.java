@@ -69,7 +69,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
                 : 0;
 
         float ar = beatmap.getDifficultyManager().getAR();
-        float preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
+        double preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
 
         if (parameters != null && !parameters.isForceAR()) {
             preempt /= parameters.getTotalSpeedMultiplier();
@@ -78,7 +78,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
         float od = beatmap.getDifficultyManager().getOD();
-        float odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1f);
+        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1f);
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -111,7 +111,7 @@ public class StandardDifficultyCalculator extends DifficultyCalculator {
     protected Skill[] createSkills(DifficultyBeatmap beatmap, DifficultyCalculationParameters parameters) {
         EnumSet<GameMod> mods = EnumSet.noneOf(GameMod.class);
         float od = beatmap.getDifficultyManager().getOD();
-        float greatWindow = StandardHitWindowConverter.odToHitWindow300(od);
+        double greatWindow = StandardHitWindowConverter.odToHitWindow300(od);
 
         if (parameters != null) {
             mods = parameters.mods;

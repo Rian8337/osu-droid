@@ -11,7 +11,7 @@ public class SliderRepeat extends SliderHitObject {
      * @param x                      The X position of this slider head relative to the play field.
      * @param y                      The Y position of this slider head relative to the play field.
      */
-    public SliderRepeat(double startTime, double x, double y, int spanIndex, double spanStartTime) {
+    public SliderRepeat(double startTime, float x, float y, int spanIndex, double spanStartTime) {
         this(startTime, new Vector2(x, y), spanIndex, spanStartTime);
     }
 

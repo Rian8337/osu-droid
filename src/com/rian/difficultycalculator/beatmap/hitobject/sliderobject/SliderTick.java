@@ -13,7 +13,7 @@ public class SliderTick extends SliderHitObject {
      * @param spanIndex              The index of the span at which this slider hit object lies.
      * @param spanStartTime          The start time of the span at which this slider hit object lies, in milliseconds.
      */
-    public SliderTick(double startTime, double x, double y, int spanIndex, double spanStartTime) {
+    public SliderTick(double startTime, float x, float y, int spanIndex, double spanStartTime) {
         this(startTime, new Vector2(x, y), spanIndex, spanStartTime);
     }
 

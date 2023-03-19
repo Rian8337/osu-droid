@@ -19,4 +19,16 @@ public final class Interpolation {
     public static double linear(double start, double end, double amount) {
         return start + (end - start) * amount;
     }
+
+    /**
+     * Performs a linear interpolation.
+     *
+     * @param start The starting point of the interpolation.
+     * @param end The final point of the interpolation.
+     * @param amount The interpolation multiplier.
+     * @return The interpolated value.
+     */
+    public static float linear(float start, float end, float amount) {
+        return start + (end - start) * amount;
+    }
 }

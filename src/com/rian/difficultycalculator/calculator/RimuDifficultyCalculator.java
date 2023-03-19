@@ -102,7 +102,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
         float od = beatmap.getDifficultyManager().getOD();
-        float odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
+        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -132,7 +132,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
     @Override
     protected Skill[] createSkills(DifficultyBeatmap beatmap, DifficultyCalculationParameters parameters) {
         EnumSet<GameMod> mods = EnumSet.noneOf(GameMod.class);
-        float greatWindow = StandardHitWindowConverter.odToHitWindow300(beatmap.getDifficultyManager().getOD());
+        double greatWindow = StandardHitWindowConverter.odToHitWindow300(beatmap.getDifficultyManager().getOD());
 
         if (parameters != null) {
             mods = parameters.mods;

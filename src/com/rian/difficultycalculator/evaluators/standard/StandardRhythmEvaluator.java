@@ -22,7 +22,7 @@ public final class StandardRhythmEvaluator {
      * @param current The current object.
      * @param greatWindow The great hit window of the current object.
      */
-    public static double evaluateDifficultyOf(DifficultyHitObject current, float greatWindow) {
+    public static double evaluateDifficultyOf(DifficultyHitObject current, double greatWindow) {
         if (current.object instanceof Spinner) {
             return 0;
         }

@@ -11,7 +11,7 @@ public class SliderHead extends SliderHitObject {
      * @param x                      The X position of this slider head relative to the play field.
      * @param y                      The Y position of this slider head relative to the play field.
      */
-    public SliderHead(double startTime, double x, double y) {
+    public SliderHead(double startTime, float x, float y) {
         this(startTime, new Vector2(x, y));
     }
 

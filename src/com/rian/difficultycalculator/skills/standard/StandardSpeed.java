@@ -17,13 +17,13 @@ public class StandardSpeed extends StandardSkill {
     private double currentStrain;
     private double currentRhythm;
     private final ArrayList<Double> objectStrains = new ArrayList<>();
-    private final float greatWindow;
+    private final double greatWindow;
 
     /**
      * @param mods The mods that this skill processes.
      * @param greatWindow The 300 hit window.
      */
-    public StandardSpeed(EnumSet<GameMod> mods, float greatWindow) {
+    public StandardSpeed(EnumSet<GameMod> mods, double greatWindow) {
         super(mods);
 
         this.greatWindow = greatWindow;

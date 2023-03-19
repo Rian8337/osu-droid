@@ -73,7 +73,7 @@ public final class SliderCheeseChecker {
         this.cursorMoves = cursorMoves;
         this.objectData = objectData;
 
-        float realODMS = StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / (float) difficultyAttributes.clockRate;
+        float realODMS = (float) (StandardHitWindowConverter.odToHitWindow300((float) difficultyAttributes.overallDifficulty) / difficultyAttributes.clockRate);
         boolean isPrecise = difficultyAttributes.mods.contains(GameMod.MOD_PRECISE);
         float rimuOD = RimuHitWindowConverter.hitWindow300ToOD(realODMS, isPrecise);
 
@@ -138,12 +138,12 @@ public final class SliderCheeseChecker {
             double maxTimeLimit = object.getStartTime() + mehWindow;
 
             // Get the closest tap distance across all cursors.
-            double[] closestDistances = new double[cursorMoves.size()];
+            float[] closestDistances = new float[cursorMoves.size()];
             int[] closestIndices = new int[cursorMoves.size()];
 
             for (int i = 0; i < cursorMoves.size(); ++i) {
                 Replay.MoveArray cursorMove = cursorMoves.get(i);
-                double closestDistance = Double.POSITIVE_INFINITY;
+                float closestDistance = Float.POSITIVE_INFINITY;
                 int closestIndex = cursorMove.size;
 
                 for (int j = cursorLoopIndices[i]; j < cursorMove.size; j = ++cursorLoopIndices[i]) {
@@ -159,7 +159,7 @@ public final class SliderCheeseChecker {
                     }
 
                     if (prevMovement.getTouchType() == TouchType.DOWN && prevMovement.getTime() >= minTimeLimit) {
-                        double distance = new Vector2(prevMovement.getPoint()).getDistance(objectStartPosition);
+                        float distance = new Vector2(prevMovement.getPoint()).getDistance(objectStartPosition);
 
                         if (closestDistance > distance) {
                             closestDistance = distance;
@@ -189,12 +189,12 @@ public final class SliderCheeseChecker {
                                 break;
                             }
 
-                            double distance = Double.POSITIVE_INFINITY;
+                            float distance = Float.POSITIVE_INFINITY;
 
                             // We will not consider presses here as it has already been processed above.
                             switch (movement.getTouchType()) {
                                 case MOVE:
-                                    double t = (double) (press.getTime() - prevMovement.getTime()) / (movement.getTime() - prevMovement.getTime());
+                                    float t = (float) (press.getTime() - prevMovement.getTime()) / (movement.getTime() - prevMovement.getTime());
                                     Vector2 cursorPosition = new Vector2(
                                             Interpolation.linear(prevMovement.getPoint().x, movement.getPoint().x, t),
                                             Interpolation.linear(prevMovement.getPoint().y, movement.getPoint().y, t)
@@ -277,13 +277,13 @@ public final class SliderCheeseChecker {
                 switch (currentMovement.getTouchType()) {
                     case MOVE:
                         // Interpolate cursor position during nested object time.
-                        double t = (nestedObject.getStartTime() - prevMovement.getTime()) / (currentMovement.getTime() - prevMovement.getTime());
+                        float t = (float) (nestedObject.getStartTime() - prevMovement.getTime()) / (currentMovement.getTime() - prevMovement.getTime());
                         Vector2 cursorPosition = new Vector2(
                                 Interpolation.linear(prevMovement.getPoint().x, currentMovement.getPoint().x, t),
                                 Interpolation.linear(prevMovement.getPoint().y, currentMovement.getPoint().y, t)
                         );
 
-                        double distance = cursorPosition.getDistance(nestedPosition);
+                        float distance = cursorPosition.getDistance(nestedPosition);
                         isCheesed = distance > sliderBallRadius;
                         break;
                     case UP:

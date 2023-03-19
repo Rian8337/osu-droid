@@ -14,7 +14,7 @@ public class SliderTail extends SliderHitObject {
      * @param spanIndex              The index of the span at which this slider tail lies.
      * @param spanStartTime          The start time of the span at which this slider tail lies, in milliseconds.
      */
-    public SliderTail(double startTime, double x, double y, int spanIndex, double spanStartTime) {
+    public SliderTail(double startTime, float x, float y, int spanIndex, double spanStartTime) {
         super(startTime, new Vector2(x, y), spanIndex, spanStartTime);
     }
 

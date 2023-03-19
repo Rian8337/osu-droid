@@ -62,7 +62,7 @@ public abstract class HitObject {
      * @param x         The X position of the hit object relative to the play field.
      * @param y         The Y position of the hit object relative to the play field.
      */
-    public HitObject(double startTime, double x, double y) {
+    public HitObject(double startTime, float x, float y) {
         this(startTime, new Vector2(x, y));
     }
 
@@ -190,7 +190,7 @@ public abstract class HitObject {
      * @param mode The game mode to calculate for.
      */
     public Vector2 getStackOffset(GameMode mode) {
-        double coordinate = standardStackHeight;
+        float coordinate = standardStackHeight;
 
         switch (mode) {
             case rimu:

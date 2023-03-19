@@ -24,7 +24,7 @@ public abstract class SliderHitObject extends HitObject {
      * @param spanIndex              The index of the span at which this slider hit object lies.
      * @param spanStartTime          The start time of the span at which this slider hit object lies, in milliseconds.
      */
-    public SliderHitObject(double startTime, double x, double y, int spanIndex, double spanStartTime) {
+    public SliderHitObject(double startTime, float x, float y, int spanIndex, double spanStartTime) {
         this(startTime, new Vector2(x, y), spanIndex, spanStartTime);
     }
 

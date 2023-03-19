@@ -19,7 +19,7 @@ public class HitCircle extends HitObject {
      * @param x         The X position of this hit circle relative to the play field.
      * @param y         The Y position of this hit circle relative to the play field.
      */
-    public HitCircle(double startTime, double x, double y) {
+    public HitCircle(double startTime, float x, float y) {
         super(startTime, new Vector2(x, y));
     }
 

@@ -124,7 +124,7 @@ public class SliderPath {
                     pathEndIndex,
                     calculatedPath
                             .get(pathEndIndex - 1)
-                            .add(dir.scale(expectedDistance - cumulativeLength.get(cumulativeLength.size() - 1)))
+                            .add(dir.scale((float) (expectedDistance - cumulativeLength.get(cumulativeLength.size() - 1))))
             );
 
             cumulativeLength.add(expectedDistance);
@@ -194,7 +194,7 @@ public class SliderPath {
         }
 
         double w = (d - d0) / (d1 - d0);
-        return p0.add(p1.subtract(p0).scale(w));
+        return p0.add(p1.subtract(p0).scale((float) w));
     }
 
     /**

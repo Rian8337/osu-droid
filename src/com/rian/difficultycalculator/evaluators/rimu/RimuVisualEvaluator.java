@@ -137,7 +137,7 @@ public final class RimuVisualEvaluator {
                     continue;
                 }
 
-                double jumpDistance = current.object
+                float jumpDistance = current.object
                         .getStackedPosition(GameMode.rimu)
                         .getDistance(
                                 previous.object.getStackedEndPosition(GameMode.rimu)

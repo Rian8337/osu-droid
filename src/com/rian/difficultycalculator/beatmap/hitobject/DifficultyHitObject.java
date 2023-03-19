@@ -328,7 +328,7 @@ public class DifficultyHitObject {
         if (considerDistance) {
             Vector2 endPosition = object.getStackedPosition(GameMode.rimu);
 
-            double distance;
+            float distance;
 
             if (previous.object instanceof Slider) {
                 distance = previous.object
@@ -378,7 +378,7 @@ public class DifficultyHitObject {
             return;
         }
 
-        double scalingFactor = getScalingFactor(mode);
+        float scalingFactor = getScalingFactor(mode);
         Vector2 lastCursorPosition = getEndCursorPosition(lastObject, mode);
 
         lazyJumpDistance = object
@@ -476,7 +476,7 @@ public class DifficultyHitObject {
         }
 
         for (HitObject currentObject : prevVisibleObjects) {
-            double distance = object.getStackedPosition(mode).getDistance(currentObject.getStackedEndPosition(mode));
+            float distance = object.getStackedPosition(mode).getDistance(currentObject.getStackedEndPosition(mode));
             double deltaTime = object.startTime;
 
             if (currentObject instanceof HitObjectWithDuration) {
@@ -490,7 +490,7 @@ public class DifficultyHitObject {
         }
 
         for (HitObject currentObject : nextVisibleObjects) {
-            double distance = currentObject.getStackedPosition(mode).getDistance(object.getStackedEndPosition(mode));
+            float distance = currentObject.getStackedPosition(mode).getDistance(object.getStackedEndPosition(mode));
             double deltaTime = currentObject.startTime;
 
             if (object instanceof HitObjectWithDuration) {
@@ -622,7 +622,7 @@ public class DifficultyHitObject {
         return pos;
     }
 
-    private void applyToOverlappingFactor(GameMode mode, double distance, double deltaTime) {
+    private void applyToOverlappingFactor(GameMode mode, float distance, double deltaTime) {
         // Penalize objects that are too close to the object in both distance
         // and delta time to prevent stream maps from being overweight.
         overlappingFactor +=

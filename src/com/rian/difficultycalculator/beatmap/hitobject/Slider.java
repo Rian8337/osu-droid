@@ -89,9 +89,9 @@ public class Slider extends HitObjectWithDuration {
      * @param tickRate               The tick rate of the beatmap containing this slider.
      * @param tickDistanceMultiplier The multiplier for calculating slider ticks.
      */
-    public Slider(double startTime, double x, double y,
-                  TimingControlPoint timingControlPoint, DifficultyControlPoint difficultyControlPoint,
-                  int repeatCount, SliderPath path, double sliderVelocity, int tickRate, double tickDistanceMultiplier) {
+    public Slider(double startTime, float x, float y, TimingControlPoint timingControlPoint,
+                  DifficultyControlPoint difficultyControlPoint, int repeatCount, SliderPath path,
+                  double sliderVelocity, int tickRate, double tickDistanceMultiplier) {
         this(startTime, new Vector2(x, y), timingControlPoint, difficultyControlPoint, repeatCount,
                 path, sliderVelocity, tickRate, tickDistanceMultiplier);
     }
