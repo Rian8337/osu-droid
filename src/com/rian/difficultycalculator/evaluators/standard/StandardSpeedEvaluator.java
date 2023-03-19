@@ -28,7 +28,7 @@ public final class StandardSpeedEvaluator {
      * @param current The current object.
      * @param greatWindow The great hit window of the current object.
      */
-    public static double evaluateDifficultyOf(DifficultyHitObject current, double greatWindow) {
+    public static double evaluateDifficultyOf(DifficultyHitObject current, float greatWindow) {
         if (current.object instanceof Spinner) {
             return 0;
         }
@@ -36,7 +36,7 @@ public final class StandardSpeedEvaluator {
         DifficultyHitObject prev = current.previous(0);
 
         double strainTime = current.strainTime;
-        double greatWindowFull = greatWindow * 2;
+        float greatWindowFull = greatWindow * 2;
 
         // Nerf double-tappable doubles.
         DifficultyHitObject next = current.next(0);
