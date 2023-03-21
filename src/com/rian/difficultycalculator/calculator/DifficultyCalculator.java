@@ -122,12 +122,17 @@ public abstract class DifficultyCalculator {
                     break;
             }
 
+            HitObject lastLast = i > 1 ? rawObjects.get(i - 2) : null;
+
             objects.add(new DifficultyHitObject(
-                    i,
+                    rawObjects.get(i),
+                    rawObjects.get(i - 1),
+                    lastLast,
+                    parameters != null ? parameters.getTotalSpeedMultiplier() : 1,
                     rawObjects,
                     objects,
+                    objects.size(),
                     mode,
-                    parameters != null ? parameters.getTotalSpeedMultiplier() : 1,
                     timePreempt,
                     parameters != null && parameters.isForceAR()
             ));

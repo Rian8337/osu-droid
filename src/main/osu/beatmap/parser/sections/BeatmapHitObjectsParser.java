@@ -155,7 +155,8 @@ public class BeatmapHitObjectsParser extends BeatmapSectionParser {
                 data.difficulty.sliderTickRate,
                 // Prior to v8, speed multipliers don't adjust for how many ticks are generated over the same distance.
                 // this results in more (or less) ticks being generated in <v8 maps for the same time duration.
-                data.getFormatVersion() < 8 ? 1 / difficultyControlPoint.speedMultiplier : 1
+                data.getFormatVersion() < 8 ? 1 / difficultyControlPoint.speedMultiplier : 1,
+                difficultyControlPoint.generateTicks
         );
     }
 

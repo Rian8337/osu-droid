@@ -76,10 +76,20 @@ public class Vector2 {
     }
 
     /**
-     * The length of this vector.
+     * Gets the length of this vector.
      */
     public float getLength() {
-        return (float) Math.hypot(x, y);
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
+    /**
+     * Gets the square of this vector's length (magnitude).
+     * <br><br>
+     * This method eliminates the costly square root operation required by the
+     * <code>Length</code> property. This makes it more suitable for comparisons.
+     */
+    public float getLengthSquared() {
+        return x * x + y * y;
     }
 
     /**
@@ -109,9 +119,9 @@ public class Vector2 {
      * @return The distance between this vector and the other vector.
      */
     public float getDistance(Vector2 vec) {
-        return (float) Math.hypot(x - vec.x, y - vec.y);
+        return (float) Math.sqrt((vec.x - x) * (vec.x - x) + (vec.y - y) * (vec.y - y));
     }
-    
+
     /**
      * Normalizes the vector.
      */

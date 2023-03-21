@@ -262,7 +262,7 @@ public class Slider extends GameObject {
 
         // A very lenient maximum length of a slider for ticks to be generated.
         // This exists for edge cases such as /b/1573664 where the beatmap has been edited by the user, and should never be reached in normal usage.
-        int maxLength = 100000;
+        double maxLength = 100000;
         double actualLength = Math.min(maxLength, length);
         tickDistance = FMath.clamp(tickDistance, 0, actualLength);
 

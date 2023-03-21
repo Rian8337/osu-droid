@@ -51,7 +51,7 @@ public class RimuTap extends RimuSkill {
 
     @Override
     protected double strainValueAt(DifficultyHitObject current) {
-        double decay = strainDecay(current.deltaTime);
+        double decay = strainDecay(current.strainTime);
         double skillMultiplier = 1375;
 
         currentStrain *= decay;

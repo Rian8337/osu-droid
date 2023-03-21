@@ -88,12 +88,13 @@ public class Slider extends HitObjectWithDuration {
      * @param path                   The path of this slider.
      * @param tickRate               The tick rate of the beatmap containing this slider.
      * @param tickDistanceMultiplier The multiplier for calculating slider ticks.
+     * @param generateTicks          Whether to generate ticks for this slider.
      */
     public Slider(double startTime, float x, float y, TimingControlPoint timingControlPoint,
                   DifficultyControlPoint difficultyControlPoint, int repeatCount, SliderPath path,
-                  double sliderVelocity, int tickRate, double tickDistanceMultiplier) {
+                  double sliderVelocity, int tickRate, double tickDistanceMultiplier, boolean generateTicks) {
         this(startTime, new Vector2(x, y), timingControlPoint, difficultyControlPoint, repeatCount,
-                path, sliderVelocity, tickRate, tickDistanceMultiplier);
+                path, sliderVelocity, tickRate, tickDistanceMultiplier, generateTicks);
     }
 
     /**
@@ -106,11 +107,12 @@ public class Slider extends HitObjectWithDuration {
      * @param sliderVelocity         The slider velocity of the beatmap containing this slider.
      * @param tickRate               The tick rate of the beatmap containing this slider.
      * @param tickDistanceMultiplier The multiplier for calculating slider ticks.
+     * @param generateTicks          Whether to generate ticks for this slider.
      */
     public Slider(double startTime, Vector2 position,
                   TimingControlPoint timingControlPoint, DifficultyControlPoint difficultyControlPoint,
                   int repeatCount, SliderPath path, double sliderVelocity, double tickRate,
-                  double tickDistanceMultiplier) {
+                  double tickDistanceMultiplier, boolean generateTicks) {
         // Temporarily set end time to start time. It will be evaluated later.
         super(startTime, startTime, position);
 
@@ -130,11 +132,11 @@ public class Slider extends HitObjectWithDuration {
 
         // A very lenient maximum length of a slider for ticks to be generated.
         // This exists for edge cases such as /b/1573664 where the beatmap has been edited by the user, and should never be reached in normal usage.
-        int maxLength = 100000;
+        double maxLength = 100000;
         double length = Math.min(maxLength, path.expectedDistance);
         double tickDistance = MathUtils.clamp(scoringDistance * tickRate / tickDistanceMultiplier, 0, length);
 
-        if (tickDistance != 0) {
+        if (tickDistance != 0 && generateTicks) {
             double minDistanceFromEnd = velocity * 10;
 
             for (int span = 0; span < repeatCount; ++span) {

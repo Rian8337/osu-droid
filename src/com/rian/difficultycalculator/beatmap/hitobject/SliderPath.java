@@ -57,15 +57,22 @@ public class SliderPath {
     public void calculatePath() {
         calculatedPath.clear();
 
+        if (controlPoints.isEmpty()) {
+            return;
+        }
+
+        calculatedPath.add(controlPoints.get(0));
+
         int spanStart = 0;
 
         for (int i = 0; i < controlPoints.size(); ++i) {
             if (i == controlPoints.size() - 1 || controlPoints.get(i).equals(controlPoints.get(i + 1))) {
                 int spanEnd = i + 1;
                 List<Vector2> cpSpan = controlPoints.subList(spanStart, spanEnd);
+                List<Vector2> subPath = calculateSubPath(cpSpan);
 
-                calculateSubPath(cpSpan).forEach(t -> {
-                    if (calculatedPath.size() == 0 || !calculatedPath.get(calculatedPath.size() - 1).equals(t)) {
+                subPath.forEach(t -> {
+                    if (calculatedPath.isEmpty() || !calculatedPath.get(calculatedPath.size() - 1).equals(t)) {
                         calculatedPath.add(t);
                     }
                 });

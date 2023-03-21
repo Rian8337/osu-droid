@@ -194,10 +194,10 @@ public abstract class HitObject {
 
         switch (mode) {
             case rimu:
-                coordinate *= rimuStackHeight * rimuScale * 4;
+                coordinate = rimuStackHeight * rimuScale * 4;
                 break;
             case standard:
-                coordinate *= standardStackHeight * standardScale * -6.4f;
+                coordinate = standardStackHeight * standardScale * -6.4f;
         }
 
         return new Vector2(coordinate);

@@ -180,7 +180,7 @@ public class DifficultyHitObject {
     /**
      * Other hit objects in the beatmap, including this hit object.
      */
-    private final ArrayList<DifficultyHitObject> hitObjects;
+    private final ArrayList<DifficultyHitObject> difficultyHitObjects;
 
     /**
      * A distance by which all distances should be scaled in order to assume a uniform circle size.
@@ -194,29 +194,31 @@ public class DifficultyHitObject {
     private final HitObject lastLastObject;
 
     /**
-     * @param index The index of the underlying hit object.
-     * @param hitObjects All hit objects in the processed beatmap.
-     * @param difficultyHitObjects All difficulty hit objects in the processed beatmap.
-     * @param mode The game mode being calculated.
+     * @param object The <code>HitObject</code> which this <code>DifficultyHitObject</code> wraps.
+     * @param lastObject The <code>HitObject</code> which occurs before <code>object</code>.
+     * @param lastLastObject The <code>HitObject</code> which occurs before <code>lastObject</code>.
      * @param clockRate The clock rate being calculated.
-     * @param timePreempt The preempt time of the hit object.
+     * @param difficultyHitObjects All <code>DifficultyHitObject</code>s in the processed beatmap.
+     * @param index The index of the underlying <code>HitObject</code>.
+     * @param mode The game mode being calculated.
+     * @param timePreempt The preempt time of the <code>HitObject</code>.
      * @param isForceAR Whether force AR is used.
      */
-    public DifficultyHitObject(int index, List<HitObject> hitObjects,
-                               ArrayList<DifficultyHitObject> difficultyHitObjects, GameMode mode,
-                               double clockRate, float timePreempt, boolean isForceAR) {
-        this.index = index - 1;
-        this.object = hitObjects.get(index);
-        this.hitObjects = difficultyHitObjects;
+    public DifficultyHitObject(HitObject object, HitObject lastObject, HitObject lastLastObject,
+                               double clockRate, List<HitObject> hitObjects,
+                               ArrayList<DifficultyHitObject> difficultyHitObjects, int index,
+                               GameMode mode, float timePreempt, boolean isForceAR) {
+        this.object = object;
+        this.lastObject = lastObject;
+        this.lastLastObject = lastLastObject;
+        this.index = index;
+        this.difficultyHitObjects = difficultyHitObjects;
         baseTimePreempt = timePreempt;
         this.timePreempt = timePreempt;
 
         if (!isForceAR) {
             this.timePreempt /= clockRate;
         }
-
-        lastObject = hitObjects.get(index - 1);
-        lastLastObject = index > 1 ? hitObjects.get(index - 2) : null;
 
         deltaTime = (object.startTime - lastObject.getStartTime()) / clockRate;
         startTime = object.startTime / clockRate;
@@ -246,7 +248,7 @@ public class DifficultyHitObject {
      */
     public DifficultyHitObject previous(int backwardsIndex) {
         try {
-            return hitObjects.get(index - (backwardsIndex + 1));
+            return difficultyHitObjects.get(index - (backwardsIndex + 1));
         } catch (IndexOutOfBoundsException ignored) {
             return null;
         }
@@ -264,7 +266,7 @@ public class DifficultyHitObject {
      */
     public DifficultyHitObject next(int forwardsIndex) {
         try {
-            return hitObjects.get(index + forwardsIndex + 1);
+            return difficultyHitObjects.get(index + forwardsIndex + 1);
         } catch (IndexOutOfBoundsException ignored) {
             return null;
         }
@@ -374,18 +376,17 @@ public class DifficultyHitObject {
 
         // We don't need to calculate either angle or distance when one of the last->curr objects
         // is a spinner or there is no object before the current object.
-        if (object instanceof Spinner || lastObject == null || lastObject instanceof Spinner) {
+        if (object instanceof Spinner || lastObject instanceof Spinner) {
             return;
         }
 
         float scalingFactor = getScalingFactor(mode);
         Vector2 lastCursorPosition = getEndCursorPosition(lastObject, mode);
 
-        lazyJumpDistance = object
-                .getStackedPosition(mode)
-                .subtract(lastCursorPosition)
+        Vector2 lazyJumpVector = object.getStackedPosition(mode)
                 .scale(scalingFactor)
-                .getLength();
+                .subtract(lastCursorPosition.scale(scalingFactor));
+        lazyJumpDistance = lazyJumpVector.getLength();
         minimumJumpTime = strainTime;
         minimumJumpDistance = lazyJumpDistance;
 

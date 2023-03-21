@@ -130,9 +130,9 @@ public final class PathApproximator {
 
         // See: https://en.wikipedia.org/wiki/Circumscribed_circle#Cartesian_coordinates_2
         float d = 2 * (float) (a.x * b.subtract(c).y + b.x * c.subtract(a).y + c.x * a.subtract(b).y);
-        float aSq = (float) Math.pow(a.getLength(), 2);
-        float bSq = (float) Math.pow(b.getLength(), 2);
-        float cSq = (float) Math.pow(c.getLength(), 2);
+        float aSq = a.getLengthSquared();
+        float bSq = b.getLengthSquared();
+        float cSq = c.getLengthSquared();
 
         Vector2 center = new Vector2(
                 aSq * b.subtract(c).y + bSq * c.subtract(a).y + cSq * a.subtract(b).y,
@@ -142,7 +142,7 @@ public final class PathApproximator {
         Vector2 dA = a.subtract(center);
         Vector2 dC = c.subtract(center);
 
-        float r = (float) dA.getLength();
+        float radius = dA.getLength();
 
         double thetaStart = Math.atan2(dA.y, dA.x);
         double thetaEnd = Math.atan2(dC.y, dC.x);
@@ -151,7 +151,7 @@ public final class PathApproximator {
             thetaEnd += 2 * Math.PI;
         }
 
-        double dir = 1;
+        double direction = 1;
         double thetaRange = thetaEnd - thetaStart;
 
         // Decide in which direction to draw the circle, depending on which side of
@@ -159,25 +159,25 @@ public final class PathApproximator {
         Vector2 orthoAtoC = c.subtract(a);
         orthoAtoC = new Vector2(orthoAtoC.y, -orthoAtoC.x);
         if (orthoAtoC.dot(b.subtract(a)) < 0) {
-            dir = -dir;
+            direction = -direction;
             thetaRange = 2 * Math.PI - thetaRange;
         }
 
         // We select the amount of points for the approximation by requiring the discrete curvature
         // to be smaller than the provided tolerance. The exact angle required to meet the tolerance
-        // is: 2 * Math.acos(1 - TOLERANCE / r)
+        // is: 2 * Math.acos(1 - TOLERANCE / radius)
         // The special case is required for extremely short sliders where the radius is smaller than
         // the tolerance. This is a pathological rather than a realistic case.
-        int amountPoints = 2 * r <= circularArcTolerance
+        int amountPoints = 2 * radius <= circularArcTolerance
                 ? 2
-                : (int) Math.max(2, Math.ceil(thetaRange / (2 * Math.acos(1 - circularArcTolerance / r))));
+                : Math.max(2, (int) Math.ceil(thetaRange / (2 * Math.acos(1 - circularArcTolerance / radius))));
 
         ArrayList<Vector2> output = new ArrayList<>();
 
         for (int i = 0; i < amountPoints; ++i) {
             double fraction = (double) i / (amountPoints - 1);
-            double theta = thetaStart + dir * fraction * thetaRange;
-            Vector2 o = new Vector2((float) Math.cos(theta), (float) Math.sin(theta)).scale(r);
+            double theta = thetaStart + direction * fraction * thetaRange;
+            Vector2 o = new Vector2((float) Math.cos(theta), (float) Math.sin(theta)).scale(radius);
             output.add(center.add(o));
         }
 
