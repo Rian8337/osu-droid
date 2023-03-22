@@ -44,6 +44,11 @@ public abstract class StrainSkill extends Skill {
 
         currentSectionPeak = Math.max(strainValueAt(current), currentSectionPeak);
         saveToHitObject(current);
+
+        if (current.next(0) == null) {
+            // Don't forget to save the last section peak, which would otherwise be ignored.
+            saveCurrentPeak();
+        }
     }
 
     /**

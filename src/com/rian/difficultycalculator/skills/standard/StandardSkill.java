@@ -25,6 +25,7 @@ public abstract class StandardSkill extends StrainSkill {
     @Override
     public double difficultyValue() {
         ArrayList<Double> strains = new ArrayList<>(strainPeaks);
+        strains.removeIf(p -> p == 0);
         strains.sort((d1, d2) -> Double.compare(d2, d1));
 
         if (getReducedSectionCount() > 0) {
@@ -44,13 +45,7 @@ public abstract class StandardSkill extends StrainSkill {
         double weight = 1;
 
         for (double strain : strains) {
-            double addition = strain * weight;
-
-            if (difficulty + addition == difficulty) {
-                break;
-            }
-
-            difficulty += addition;
+            difficulty += strain * weight;
             weight *= getDecayWeight();
         }
 
