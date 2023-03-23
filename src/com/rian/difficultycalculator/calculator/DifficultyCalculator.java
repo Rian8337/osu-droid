@@ -45,13 +45,10 @@ public abstract class DifficultyCalculator {
      * @return A structure describing the difficulty of the beatmap.
      */
     public DifficultyAttributes calculate(final DifficultyBeatmap beatmap, final DifficultyCalculationParameters parameters) {
-        DifficultyBeatmap beatmapToCalculate = beatmap;
+        // Always operate on a clone of the original beatmap, to not modify it game-wide
+        DifficultyBeatmap beatmapToCalculate = beatmap.deepClone();
 
-        if (parameters != null) {
-            // Always operate on a clone of the original beatmap, to not modify it game-wide
-            beatmapToCalculate = beatmap.deepClone();
-            applyParameters(beatmapToCalculate, parameters);
-        }
+        applyParameters(beatmapToCalculate, parameters);
 
         Skill[] skills = createSkills(beatmapToCalculate, parameters);
 

@@ -177,8 +177,10 @@ public abstract class HitObject {
         switch (mode) {
             case rimu:
                 radius *= rimuScale;
+                break;
             case standard:
                 radius *= standardScale;
+                break;
         }
 
         return radius;

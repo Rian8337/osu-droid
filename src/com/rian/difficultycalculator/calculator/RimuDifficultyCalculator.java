@@ -59,13 +59,15 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         double aimRatingNoSliders = calculateRating(skills[1]);
         attributes.aimSliderFactor = attributes.aimDifficulty > 0 ? aimRatingNoSliders / attributes.aimDifficulty : 1;
 
-        if (parameters.mods.contains(GameMod.MOD_RELAX)) {
+        if (parameters != null && parameters.mods.contains(GameMod.MOD_RELAX)) {
             attributes.aimDifficulty *= 0.9;
             attributes.tapDifficulty = 0;
             attributes.rhythmDifficulty = 0;
             attributes.flashlightDifficulty *= 0.7;
             attributes.visualDifficulty = 0;
-        } else {
+        }
+
+        if (parameters == null || !parameters.mods.contains(GameMod.MOD_RELAX)) {
             attributes.possibleThreeFingeredSections = calculateTapHighStrainSections(objects);
         }
 
@@ -74,7 +76,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         double baseFlashlightPerformance = 0;
         double baseVisualPerformance = Math.pow(attributes.visualDifficulty, 1.6) * 22.5;
 
-        if (parameters.mods.contains(GameMod.MOD_FLASHLIGHT)) {
+        if (parameters != null && parameters.mods.contains(GameMod.MOD_FLASHLIGHT)) {
             baseFlashlightPerformance = Math.pow(attributes.flashlightDifficulty, 1.6) * 25.0;
         }
 
@@ -92,17 +94,17 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
                 ? 0.027 * (Math.cbrt(100000 / Math.pow(2, 1 / 1.1) * basePerformance) + 4)
                 : 0;
 
-        double ar = beatmap.getDifficultyManager().getAR();
+        float ar = beatmap.getDifficultyManager().getAR();
         double preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
 
-        if (!parameters.isForceAR()) {
+        if (parameters != null && !parameters.isForceAR()) {
             preempt /= parameters.getTotalSpeedMultiplier();
         }
 
         attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
 
         float od = beatmap.getDifficultyManager().getOD();
-        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / parameters.getTotalSpeedMultiplier();
+        double odMS = StandardHitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1);
 
         attributes.overallDifficulty = StandardHitWindowConverter.hitWindow300ToOD(odMS);
 
@@ -110,7 +112,7 @@ public class RimuDifficultyCalculator extends DifficultyCalculator {
         attributes.hitCircleCount = beatmap.getHitObjectsManager().getCircleCount();
         attributes.sliderCount = beatmap.getHitObjectsManager().getSliderCount();
         attributes.spinnerCount = beatmap.getHitObjectsManager().getSpinnerCount();
-        attributes.clockRate = parameters.getTotalSpeedMultiplier();
+        attributes.clockRate = parameters != null ? parameters.getTotalSpeedMultiplier() : 1;
 
         attributes.difficultSliders = calculateDifficultSliders(objects, attributes.sliderCount);
 

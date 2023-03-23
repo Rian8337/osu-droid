@@ -12,6 +12,8 @@ import main.osu.game.mods.GameMod;
  * A utility for calculating circle sizes across all modes (rimu! and osu!standard).
  */
 public final class CircleSizeCalculator {
+    private static final int assumedHeight = 681;
+
     /**
      * Converts rimu! CS to rimu! scale.
      *
@@ -30,7 +32,7 @@ public final class CircleSizeCalculator {
      * @return The calculated rimu! scale.
      */
     public static float rimuCSToRimuScale(float cs, EnumSet<GameMod> mods) {
-        float scale = (Config.getRES_HEIGHT() / 480f) *
+        float scale = (assumedHeight / 480f) *
                 (54.42f - cs * 4.48f) *
                 2 / GameObjectSize.BASE_OBJECT_SIZE +
                 0.5f * Config.getScaleMultiplier();
@@ -46,7 +48,7 @@ public final class CircleSizeCalculator {
                 scale += 0.125f;
             }
             if (mods.contains(GameMod.MOD_SMALLCIRCLE)) {
-                scale -= Config.getRES_HEIGHT() / 480f * 4 * 4.48f * 2 / GameObjectSize.BASE_OBJECT_SIZE;
+                scale -= assumedHeight / 480f * 4 * 4.48f * 2 / GameObjectSize.BASE_OBJECT_SIZE;
             }
         }
 
@@ -60,7 +62,7 @@ public final class CircleSizeCalculator {
      * @return The osu!standard radius of the given rimu! scale.
      */
     public static double rimuScaleToStandardRadius(float scale) {
-        return HitObject.OBJECT_RADIUS * Math.max(1e-3, scale) / (Config.getRES_HEIGHT() * 0.85 / 384);
+        return HitObject.OBJECT_RADIUS * Math.max(1e-3, scale) / (assumedHeight * 0.85 / 384);
     }
 
     /**
@@ -70,7 +72,7 @@ public final class CircleSizeCalculator {
      * @return The rimu! scale of the given osu!standard radius.
      */
     public static float standardRadiusToRimuScale(double radius) {
-        return (float) (radius * ((Config.getRES_HEIGHT() * 0.85f) / 384) / HitObject.OBJECT_RADIUS);
+        return (float) (radius * ((assumedHeight * 0.85f) / 384) / HitObject.OBJECT_RADIUS);
     }
 
     /**

@@ -24,13 +24,14 @@ public abstract class RimuSkill extends StrainSkill {
     @Override
     public double difficultyValue() {
         ArrayList<Double> strains = new ArrayList<>(strainPeaks);
+        strains.removeIf(p -> p == 0);
 
         if (getReducedSectionCount() > 0) {
             strains.sort((d1, d2) -> Double.compare(d2, d1));
 
             // We are reducing the highest strains first to account for extreme difficulty spikes.
             for (int i = 0; i < Math.min(strains.size(), getReducedSectionCount()); ++i) {
-                double scale = Math.log10(Interpolation.linear(1, 10, MathUtils.clamp((double) i / getReducedSectionCount(), 0, 1)));
+                double scale = Math.log10(Interpolation.linear(1, 10, MathUtils.clamp((float) i / getReducedSectionCount(), 0, 1)));
 
                 strains.set(i, strains.get(i) * Interpolation.linear(getReducedSectionBaseline(), 1, scale));
             }
