@@ -37,7 +37,7 @@ public class SpectatorDataManager {
 
     private final Timer submissionTimer = new Timer();
     private final long submissionPeriod = 5000;
-    private boolean isPaused = false;
+    private boolean isPaused;
     private final TimerTask task = new TimerTask() {
         @Override
         public void run() {

@@ -835,7 +835,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             });
         }
 
-        stat = new StatisticV2();
         stat.setMod(ModMenu.getInstance().getMod());
         float multiplier = 1 + rawDifficulty / 10f + rawDrain / 10f;
         multiplier += (beatmapData.difficulty.cs - 3) / 4f;
