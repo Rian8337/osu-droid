@@ -2,15 +2,15 @@ package ru.nsu.ccfit.zuev.osu;
 
 import android.app.Activity;
 
+import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
+import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.helper.FileUtils;
 import org.anddev.andengine.util.Debug;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -21,7 +21,6 @@ import java.util.Comparator;
 // import java.util.HashSet;
 // import java.util.Set;
 
-import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.helper.StringTable;
 import ru.nsu.ccfit.zuev.osuplus.R;
 
@@ -387,7 +386,7 @@ public class LibraryManager {
             return;
         }
         for (final File file : filelist) {
-            final OSUParser parser = new OSUParser(file);
+            final BeatmapParser parser = new BeatmapParser(file);
             if (!parser.openFile()) {
                 continue;
             }
@@ -395,7 +394,9 @@ public class LibraryManager {
             final TrackInfo track = new TrackInfo(info);
             track.setFilename(file.getPath());
             track.setCreator("unknown");
-            if (!parser.readMetaData(track, info)) {
+
+            final BeatmapData data = parser.parse(true);
+            if (data == null || !data.populateMetadata(info, track)) {
                 continue;
             }
             if (track.getBackground() != null) {

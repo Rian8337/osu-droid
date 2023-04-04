@@ -383,6 +383,8 @@ public class MainActivity extends BaseGameActivity implements
 
         if ("pre_release".equals(BuildConfig.BUILD_TYPE) || BuildConfig.DEBUG) {
             BuildTypeNoticeFragment.single.get().show();
+        } else if (Config.isDisplayReleaseNotify()) {
+            BuildTypeNoticeFragment.single.get().show();
         }
     }
 

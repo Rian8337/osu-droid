@@ -75,6 +75,8 @@ public class Config {
         enableStoryboard,
         safeBeatmapBg,
         trianglesAnimation,
+        displayRealTimePPCounter,
+        displayReleaseNotify,
         useSliderAccuracy;
 
     private static int RES_WIDTH,
@@ -223,6 +225,8 @@ public class Config {
         receiveAnnouncements = prefs.getBoolean("receiveAnnouncements", true);
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
         useSliderAccuracy = prefs.getBoolean("useSliderAccuracy", false);
+        displayRealTimePPCounter = prefs.getBoolean("displayRealTimePPCounter", true);
+        displayReleaseNotify = prefs.getBoolean("displayReleaseNotify", true); //This needs to be removed later its just for now...
 
         //Init
         onlineDeviceID = prefs.getString("installID", null);
@@ -296,6 +300,14 @@ public class Config {
 
     public static boolean isDisplayScoreStatistics() {
         return displayScoreStatistics;
+    }
+
+    public static boolean isDisplayRealTimePPCounter() {
+        return displayRealTimePPCounter;
+    }
+
+    public static boolean isDisplayReleaseNotify() {
+        return displayReleaseNotify;
     }
 
     public static boolean isEnableExtension() {

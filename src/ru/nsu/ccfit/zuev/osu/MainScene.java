@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PointF;
 import android.net.Uri;
-import android.os.Build;
 import android.os.PowerManager;
 import android.util.Log;
 
@@ -58,9 +57,10 @@ import javax.microedition.khronos.opengles.GL10;
 
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
-import ru.nsu.ccfit.zuev.audio.serviceAudio.SongService;
 import ru.nsu.ccfit.zuev.osu.async.AsyncTaskLoader;
 import ru.nsu.ccfit.zuev.osu.async.OsuAsyncCallback;
+import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
+import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.game.SongProgressBar;
 import ru.nsu.ccfit.zuev.osu.game.TimingPoint;
 import ru.nsu.ccfit.zuev.osu.helper.ModifierFactory;
@@ -307,7 +307,7 @@ public class MainScene implements IUpdateHandler {
                 .getInstance().getFont("font"),
                 String.format(
                         Locale.getDefault(),
-                        "osu!droid %s\nclient by osu!droid Team, modified by Rian8337\nosu! is \u00a9 peppy 2007-2022",
+                        "osu!droid %s\nclient by osu!droid Team, modified by Rian8337\nosu! is \u00a9 peppy 2007-2023",
                         BuildConfig.VERSION_NAME + " (" + BuildConfig.BUILD_TYPE + ")"
                         )) {
 
@@ -1080,16 +1080,14 @@ public class MainScene implements IUpdateHandler {
             Arrays.fill(peakDownRate, 1f);
             Arrays.fill(peakAlpha, 0f);
 
-            OSUParser parser = new OSUParser(selectedTrack.getFilename());
-            if (parser.openFile()) {
-                beatmapData = parser.readData();
-
-                timingPoints = new LinkedList<TimingPoint>();
-                currentTimingPoint = null;
-                for (final String s : beatmapData.getData("TimingPoints")) {
+            BeatmapParser parser = new BeatmapParser(selectedTrack.getFilename());
+            beatmapData = parser.parse(false);
+            if (beatmapData != null) {
+                timingPoints = new LinkedList<>();
+                for (final String s : beatmapData.rawTimingPoints) {
                     final TimingPoint tp = new TimingPoint(s.split("[,]"), currentTimingPoint);
                     timingPoints.add(tp);
-                    if (tp.wasInderited() == false || currentTimingPoint == null) {
+                    if (!tp.wasInderited() || currentTimingPoint == null) {
                         currentTimingPoint = tp;
                     }
                 }
@@ -1155,16 +1153,14 @@ public class MainScene implements IUpdateHandler {
                 ModifierFactory.newScaleModifier(3.0f, 1f, 0.8f)
         ));
 
+        if (GlobalManager.getInstance().getSongService() != null) {
+            GlobalManager.getInstance().getSongService().stop();
+        }
+
         ScheduledExecutorService taskPool = Executors.newScheduledThreadPool(1);
         taskPool.schedule(new TimerTask() {
             @Override
             public void run() {
-                if (GlobalManager.getInstance().getSongService() != null) {
-                    GlobalManager.getInstance().getSongService().hideNotification();
-                    GlobalManager.getInstance().getMainActivity().unbindService(GlobalManager.getInstance().getMainActivity().connection);
-                    GlobalManager.getInstance().getMainActivity().stopService(new Intent(GlobalManager.getInstance().getMainActivity(), SongService.class));
-                    musicStarted = false;
-                }
                 GlobalManager.getInstance().getMainActivity().finish();
             }
         }, 3000, TimeUnit.MILLISECONDS);

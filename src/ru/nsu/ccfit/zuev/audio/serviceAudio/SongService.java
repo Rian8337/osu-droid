@@ -1,5 +1,6 @@
 package ru.nsu.ccfit.zuev.audio.serviceAudio;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import java.io.File;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.GlobalManager;
+import ru.nsu.ccfit.zuev.osu.LibraryManager;
 import ru.nsu.ccfit.zuev.osu.MainActivity;
 
 
@@ -47,6 +49,21 @@ public class SongService extends Service {
     }
 
     @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        forceHideNotification();
+    }
+
+    @Override
+    public void onLowMemory() {
+        forceHideNotification();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_NOT_STICKY;
+    }
+
+    @Override
     public void onRebind(Intent intent) {
         super.onRebind(intent);
         System.out.println("onReBind");
@@ -73,8 +90,11 @@ public class SongService extends Service {
 
     public boolean preLoad(String filePath, float speed, boolean enableNC) {
         if (checkFileExist(filePath)) {
-            if (audioFunc == null) return false;
-                audioFunc.setLoop(false);
+            if (audioFunc == null) {
+                return false;
+            }
+
+            audioFunc.setLoop(false);
             return audioFunc.preLoad(filePath, speed, enableNC);
         }
         return false;
@@ -211,6 +231,12 @@ public class SongService extends Service {
         return notify.hide();
     }
 
+    public void forceHideNotification() {
+        if (notify != null) {
+            notify.forceHide();
+        }
+    }
+
     public void setReceiverStuff(BroadcastReceiver receiver, IntentFilter filter) {
         if (audioFunc != null) audioFunc.setReciverStuff(receiver, filter, this);
     }
@@ -230,20 +256,21 @@ public class SongService extends Service {
     }
 
     private void reloadCurrentAudio() {
-        // Do not attempt to reload if there is no audio playing.
-        if (getStatus() == Status.STOPPED) {
-            return;
-        }
+        Status pastStatus = getStatus();
 
         pause();
+        setVolume(Config.getBgmVolume());
 
         // Reload audio, otherwise it will be choppy or offset for whatever reason.
-        int position = getPosition();
-        preLoad(GlobalManager.getInstance().getMainScene().getBeatmapInfo().getMusic());
-        setVolume(Config.getBgmVolume());
-        seekTo(position);
+        if (LibraryManager.getInstance().getBeatmap() != null) {
+            int position = getPosition();
+            preLoad(LibraryManager.getInstance().getBeatmap().getMusic());
+            seekTo(position);
+        }
 
-        audioFunc.resume();
+        if (audioFunc != null && pastStatus != Status.STOPPED && pastStatus != Status.PAUSED) {
+            audioFunc.resume();
+        }
     }
 
     public class ReturnBindObject extends Binder {
