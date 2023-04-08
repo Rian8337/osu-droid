@@ -2,22 +2,11 @@ package ru.nsu.ccfit.zuev.osu.online;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.ProgressDialog;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 
-import androidx.preference.PreferenceManager;
-
-import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.ToastLogger;
-import ru.nsu.ccfit.zuev.osu.async.AsyncTaskLoader;
-import ru.nsu.ccfit.zuev.osu.async.OsuAsyncCallback;
 import ru.nsu.ccfit.zuev.osu.helper.StringTable;
-import ru.nsu.ccfit.zuev.osu.online.OnlineManager.OnlineManagerException;
 import ru.nsu.ccfit.zuev.osuplus.R;
 
 public class OnlineInitializer implements View.OnClickListener {
@@ -33,9 +22,9 @@ public class OnlineInitializer implements View.OnClickListener {
         registerDialog.setContentView(R.layout.register_dialog);
         registerDialog.setTitle(StringTable.get(R.string.online_registration));
 
-        Button btn = (Button) registerDialog.findViewById(R.id.register_btn);
+        Button btn = registerDialog.findViewById(R.id.register_btn);
         if (btn != null) btn.setOnClickListener(this);
-        btn = (Button) registerDialog.findViewById(R.id.cancel_btn);
+        btn = registerDialog.findViewById(R.id.cancel_btn);
         if (btn != null) btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 registerDialog.dismiss();

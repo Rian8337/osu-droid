@@ -74,8 +74,7 @@ import ru.nsu.ccfit.zuev.skins.SkinManager;
 import ru.nsu.ccfit.zuev.osu.ToastLogger;
 import ru.nsu.ccfit.zuev.osu.TrackInfo;
 import ru.nsu.ccfit.zuev.osu.Utils;
-import ru.nsu.ccfit.zuev.osu.async.AsyncTaskLoader;
-import ru.nsu.ccfit.zuev.osu.async.OsuAsyncCallback;
+import ru.nsu.ccfit.zuev.osu.async.AsyncTask;
 import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
 import ru.nsu.ccfit.zuev.osu.beatmap.constants.BeatmapCountdown;
 import ru.nsu.ccfit.zuev.osu.beatmap.constants.SampleBank;
@@ -266,14 +265,11 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         } else
             this.replayFile = rFile;
 
-        // Only parse beatmap if the track changed or real-time PP counter is active and there are
-        // no timed difficulty attributes.
-        if (track != lastTrack || (Config.isDisplayRealTimePPCounter() && timedDifficultyAttributes.isEmpty())) {
+        // Avoid parsing beatmap if the track didn't change.
+        if (track != lastTrack) {
             BeatmapParser parser = new BeatmapParser(track.getFilename());
             if (parser.openFile()) {
-                // We want to calculate timed difficulty attributes for live pp counter.
-                // In that case, we need to parse hit objects.
-                beatmapData = parser.parse(Config.isDisplayRealTimePPCounter());
+                beatmapData = parser.parse(true);
             } else {
                 Debug.e("startGame: cannot open file");
                 ToastLogger.showText(
@@ -711,9 +707,10 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 storyboardSprite = new StoryboardSprite(Config.getRES_WIDTH(), Config.getRES_HEIGHT());
                 storyboardOverlayProxy = new ProxySprite(Config.getRES_WIDTH(), Config.getRES_HEIGHT());
                 storyboardSprite.setOverlayDrawProxy(storyboardOverlayProxy);
-                scene.attachChild(storyboardSprite);
+            } else {
+                storyboardSprite.detachSelf();
             }
-            storyboardSprite.detachSelf();
+
             scene.attachChild(storyboardSprite);
         }
         bgScene = new Scene();
@@ -744,12 +741,13 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         Replay.oldEnableForceAR = ModMenu.getInstance().isEnableForceAR();
         Replay.oldFLFollowDelay = ModMenu.getInstance().getFLfollowDelay();
 
-        new AsyncTaskLoader().execute(new OsuAsyncCallback() {
-
+        new AsyncTask() {
+            @Override
             public void run() {
                 loadComplete = loadGame(track != null ? track : lastTrack, rfile);
             }
 
+            @Override
             public void onComplete() {
                 if (loadComplete) {
                     prepareScene();
@@ -762,7 +760,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                     quit();
                 }
             }
-        });
+        }.execute();
+
         ResourceManager.getInstance().getSound("failsound").stop();
     }
 
@@ -2005,6 +2004,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         passiveObjects.clear();
         breakPeriods.clear();
         cursorSprites = null;
+        scoreBoard = null;
 
         if (spectatorDataManager != null) {
             spectatorDataManager.pauseTimer();
