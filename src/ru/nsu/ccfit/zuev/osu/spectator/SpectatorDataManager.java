@@ -1,6 +1,6 @@
 package ru.nsu.ccfit.zuev.osu.spectator;
 
-import org.anddev.andengine.util.Debug;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -125,17 +125,17 @@ public class SpectatorDataManager {
 
                 postDataSend(message.equals("SUCCESS"));
             } catch (final IOException e) {
-                Debug.e("IOException: " + e.getMessage(), e);
+                Log.e("SpectatorDataManager", "IOException: " + e.getMessage(), e);
                 postDataSend(false);
             } catch (OnlineManager.OnlineManagerException e) {
-                Debug.e("OnlineManagerException: " + e.getMessage(), e);
+                Log.e("SpectatorDataManager", "OnlineManagerException: " + e.getMessage(), e);
                 postDataSend(false);
             } finally {
                 try {
                     byteArrayOutputStream.flush();
                     byteArrayOutputStream.close();
                 } catch (IOException e) {
-                    Debug.e("IOException: " + e.getMessage(), e);
+                    Log.e("SpectatorDataManager", "IOException: " + e.getMessage(), e);
                 }
             }
         }
@@ -147,7 +147,7 @@ public class SpectatorDataManager {
 
             if (endObjectDataIndex == replay.objectData.length) {
                 // End the submission after the latest object data has been submitted.
-                cancel();
+                gameScene.stopSpectatorDataSubmission();
                 return;
             }
 
