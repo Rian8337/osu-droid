@@ -44,6 +44,7 @@ public class SpectatorDataManager {
         @Override
         public void run() {
             float secPassed = gameScene.getSecPassed();
+            boolean gameHasEnded = gameEnded;
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             DataOutputStream ds;
 
@@ -125,13 +126,13 @@ public class SpectatorDataManager {
                     return;
                 }
 
-                postDataSend(message.equals("SUCCESS"));
+                postDataSend(message.equals("SUCCESS"), gameHasEnded);
             } catch (final IOException e) {
                 Log.e("SpectatorDataManager", "IOException: " + e.getMessage(), e);
-                postDataSend(false);
+                postDataSend(false, false);
             } catch (OnlineManager.OnlineManagerException e) {
                 Log.e("SpectatorDataManager", "OnlineManagerException: " + e.getMessage(), e);
-                postDataSend(false);
+                postDataSend(false, false);
             } finally {
                 try {
                     byteArrayOutputStream.flush();
@@ -142,12 +143,12 @@ public class SpectatorDataManager {
             }
         }
 
-        private void postDataSend(final boolean success) {
+        private void postDataSend(final boolean success, final boolean gameHasEnded) {
             if (!success) {
                 return;
             }
 
-            if (gameEnded) {
+            if (gameHasEnded) {
                 cancel();
                 gameScene.stopSpectatorDataSubmission();
                 return;
