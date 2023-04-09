@@ -1898,6 +1898,10 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 }
             }
             if (scoringScene != null) {
+                if (spectatorDataManager != null) {
+                    spectatorDataManager.setGameEnded(true);
+                }
+
                 if (replaying) {
                     ModMenu.getInstance().setMod(Replay.oldMod);
                     ModMenu.getInstance().setChangeSpeed(Replay.oldChangeSpeed);

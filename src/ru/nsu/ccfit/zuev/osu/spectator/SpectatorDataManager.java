@@ -38,6 +38,8 @@ public class SpectatorDataManager {
     private final Timer submissionTimer = new Timer();
     private final long submissionPeriod = 5000;
     private boolean isPaused;
+    private boolean gameEnded;
+
     private final TimerTask task = new TimerTask() {
         @Override
         public void run() {
@@ -145,8 +147,8 @@ public class SpectatorDataManager {
                 return;
             }
 
-            if (endObjectDataIndex == replay.objectData.length) {
-                // End the submission after the latest object data has been submitted.
+            if (gameEnded) {
+                cancel();
                 gameScene.stopSpectatorDataSubmission();
                 return;
             }
@@ -217,6 +219,10 @@ public class SpectatorDataManager {
      */
     public void setRoomId(final String id) {
         roomId = id;
+    }
+
+    public void setGameEnded(boolean gameEnded) {
+        this.gameEnded = gameEnded;
     }
 
     @Override
