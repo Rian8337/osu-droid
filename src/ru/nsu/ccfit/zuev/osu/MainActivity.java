@@ -695,9 +695,10 @@ public class MainActivity extends BaseGameActivity implements
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-
         handler.removeCallbacks(doubleBackToExitRunnable);
+        NotificationManagerCompat.from(getApplicationContext()).cancelAll();
+
+        super.onDestroy();
     }
 
     @Override
@@ -897,11 +898,5 @@ public class MainActivity extends BaseGameActivity implements
             finish();
             return false;
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        NotificationManagerCompat.from(getApplicationContext()).cancelAll();
-        super.onDestroy();
     }
 }
