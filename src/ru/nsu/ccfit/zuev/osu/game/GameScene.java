@@ -614,7 +614,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         }*/
 
         ppText = null;
-        if (Config.isDisplayRealTimePPCounter() && track != lastTrack) {
+        if (Config.isDisplayRealTimePPCounter()) {
             // Calculate timed difficulty attributes
             DifficultyCalculationParameters parameters = new DifficultyCalculationParameters();
 
@@ -629,7 +629,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                     BeatmapDifficultyCalculator.constructDifficultyBeatmap(beatmapData),
                     parameters
             );
-        } else if (!Config.isDisplayRealTimePPCounter()) {
+        } else {
             timedDifficultyAttributes.clear();
         }
 
@@ -794,7 +794,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             fgScene.attachChild(urText);
 
             if (Config.isDisplayRealTimePPCounter()) {
-                ppText = new ChangeableText(Utils.toRes(720), Utils.toRes(440), font, "0.00pp  ");
+                ppText = new ChangeableText(Utils.toRes(720),
+                        Utils.toRes(440), font, "0.00pp           ");
                 fgScene.attachChild(ppText);
             }
 
@@ -2901,7 +2902,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             time = ((HitObjectWithDuration) object).getEndTime();
         }
 
-        ppText.setText(String.format(Locale.ENGLISH, "%.2fpp  ", getPPAtTime(time)));
+        ppText.setText(String.format(Locale.ENGLISH, "%.2fpp           ", getPPAtTime(time)));
     }
 
     private double getPPAtTime(double time) {
