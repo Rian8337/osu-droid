@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.edlplan.ui.fragment.ConfirmDialogFragment;
 
+import com.reco1l.legacy.ui.ChimuWebView;
 import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.entity.IEntity;
 import org.anddev.andengine.entity.modifier.IEntityModifier;
@@ -58,6 +59,7 @@ import javax.microedition.khronos.opengles.GL10;
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.async.AsyncTask;
+import ru.nsu.ccfit.zuev.osu.async.SyncTaskManager;
 import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
 import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.game.SongProgressBar;
@@ -542,6 +544,30 @@ public class MainScene implements IUpdateHandler {
             scene.attachChild(particleSystem[1]);
         }
 
+        TextureRegion chimuTex = ResourceManager.getInstance().getTexture("chimu");
+        Sprite chimu = new Sprite(Config.getRES_WIDTH() - chimuTex.getWidth(), (Config.getRES_HEIGHT() - chimuTex.getHeight()) / 2f, chimuTex)
+        {
+            public boolean onAreaTouched(TouchEvent pSceneTouchEvent, float pTouchAreaLocalX, float pTouchAreaLocalY)
+            {
+                if (pSceneTouchEvent.isActionDown())
+                {
+                    setColor(0.7f, 0.7f, 0.7f);
+                    doStop = true;
+                    return true;
+                }
+
+                if (pSceneTouchEvent.isActionUp())
+                {
+                    setColor(1, 1, 1);
+                    musicControl(MusicOption.STOP);
+                    new ChimuWebView().show();
+                    return true;
+                }
+
+                return super.onAreaTouched(pSceneTouchEvent, pTouchAreaLocalX, pTouchAreaLocalY);
+            }
+        };
+
         play.setAlpha(0f);
         options.setAlpha(0f);
         exit.setAlpha(0f);
@@ -576,9 +602,11 @@ public class MainScene implements IUpdateHandler {
         scene.attachChild(music_pause);
         scene.attachChild(music_stop);
         scene.attachChild(music_next);
+        scene.attachChild(chimu);
 
         scene.registerTouchArea(logo);
         scene.registerTouchArea(author);
+        scene.registerTouchArea(chimu);
         scene.registerTouchArea(yasonline);
         scene.registerTouchArea(music_prev);
         scene.registerTouchArea(music_play);
@@ -593,94 +621,7 @@ public class MainScene implements IUpdateHandler {
         createOnlinePanel(scene);
         scene.registerUpdateHandler(this);
 
-        String[] welcomeSounds = {"welcome", "welcome_piano"};
-        int randNum = new Random().nextInt((1 - 0) + 1) + 0;
-        String welcomeSound = welcomeSounds[randNum];
-        ResourceManager.getInstance().loadSound(welcomeSound, String.format("sfx/%s.ogg", welcomeSound), false).play();
         hitsound = ResourceManager.getInstance().loadSound("menuhit", "sfx/menuhit.ogg", false);
-
-        /*if (BuildConfig.DEBUG) {
-            SupportSprite supportSprite = new SupportSprite(Config.getRES_WIDTH(), Config.getRES_HEIGHT()) {
-
-                TextureQuad[] quads;
-
-                {
-                    Bitmap bitmap = Bitmap.createBitmap(4, 1, Bitmap.Config.ARGB_8888);
-                    for (int i = 0; i < 4; i++) {
-                        bitmap.setPixel(i, 0, Color.argb(i * 80 + 10, i * 80 + 10, i * 80 + 10, i * 80 + 10));
-                    }
-                    //bitmap.setPremultiplied(true);
-                    TextureRegion region = TextureHelper.createRegion(bitmap);
-                    quads = new TextureQuad[4];
-                    {
-                        TextureQuad quad = new TextureQuad();
-                        quad.setTextureAndSize(region);
-                        quad.enableScale().scale.set(10, 10);
-                        quad.position.set(0, 0);
-                        quads[0] = quad;
-                    }
-                    {
-                        TextureQuad quad = new TextureQuad();
-                        quad.setTextureAndSize(region);
-                        quad.enableScale().scale.set(10, 10);
-                        quad.position.set(640, 480);
-                        quads[1] = quad;
-                    }
-                    {
-                        TextureQuad quad = new TextureQuad();
-                        quad.setTextureAndSize(region);
-                        quad.enableScale().scale.set(10, 10);
-                        quad.position.set(640, 0);
-                        quads[2] = quad;
-                    }
-                    {
-                        TextureQuad quad = new TextureQuad();
-                        quad.setTextureAndSize(region);
-                        quad.enableScale().scale.set(10, 10);
-                        quad.position.set(0, 480);
-                        quads[3] = quad;
-                    }
-                    *//*for (int i = 0; i < quads.length; i++) {
-                        TextureQuad quad = new TextureQuad();
-                        quad.setTextureAndSize(region);
-                        quad.position.set((float) Math.random() * 1000, (float) Math.random() * 1000);
-                        if (Math.random() > 0.2) {
-                            //quad.enableColor().accentColor.set((float) Math.random(), (float) Math.random(), (float) Math.random(), 1);
-                        }
-                        if (Math.random() > 0.5) {
-                            //quad.enableRotation().rotation.value = (float) (Math.PI * 2 * Math.random());
-                        }
-                        //if (Math.random() > 0.7) {
-                        quad.enableScale().scale.set(10, 10);
-                                    //.set((float) Math.random() * 5, (float) Math.random() * 5);
-                        //}
-                        quads[i] = quad;
-                    }*//*
-                }
-
-                @Override
-                protected void onSupportDraw(BaseCanvas canvas) {
-                    super.onSupportDraw(canvas);
-                    canvas.save();
-                    float scale = Math.max(640 / canvas.getWidth(), 480 / canvas.getHeight());
-                    Vec2 startOffset = new Vec2(canvas.getWidth() / 2, canvas.getHeight() / 2)
-                            .minus(640 * 0.5f / scale, 480 * 0.5f / scale);
-
-                    canvas.translate(startOffset.x, startOffset.y).expendAxis(scale);//.translate(64, 48);
-
-
-
-                    TextureQuadBatch batch = TextureQuadBatch.getDefaultBatch();
-                    for (TextureQuad quad : quads) {
-                        batch.add(quad);
-                    }
-
-
-                    canvas.restore();
-                }
-            };
-            scene.attachChild(supportSprite);
-        }*/
     }
 
     private void createOnlinePanel(Scene scene) {
@@ -700,8 +641,11 @@ public class MainScene implements IUpdateHandler {
     }
 
     public void reloadOnlinePanel() {
-        scene.detachChild(OnlineScoring.getInstance().getPanel());
-        createOnlinePanel(scene);
+        // IndexOutOfBoundsException 141 fix
+        SyncTaskManager.getInstance().run(() -> {
+            scene.detachChild(OnlineScoring.getInstance().getPanel());
+            createOnlinePanel(scene);
+        });
     }
 
     public void musicControl(MusicOption option) {

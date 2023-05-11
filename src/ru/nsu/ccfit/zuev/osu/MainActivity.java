@@ -42,7 +42,6 @@ import androidx.core.content.PermissionChecker;
 import androidx.preference.PreferenceManager;
 
 import com.edlplan.ui.ActivityOverlay;
-import com.edlplan.ui.fragment.BuildTypeNoticeFragment;
 import com.edlplan.ui.fragment.ConfirmDialogFragment;
 
 import net.lingala.zip4j.ZipFile;
@@ -255,10 +254,6 @@ public class MainActivity extends BaseGameActivity implements
             Editor editor = prefs.edit();
             editor.putBoolean("onlineSet", true);
             editor.commit();
-
-            //TODO removed auto registration at first launch
-            /*OnlineInitializer initializer = new OnlineInitializer(this);
-            initializer.createInitDialog();*/
         }
     }
 
@@ -267,10 +262,18 @@ public class MainActivity extends BaseGameActivity implements
         Config.setTextureQuality(1);
         ResourceManager.getInstance().Init(mEngine, this);
         ResourceManager.getInstance().loadHighQualityAsset("logo", "logo.png");
+        ResourceManager.getInstance().loadHighQualityAsset("welcome", "gfx/welcome.png");
+        ResourceManager.getInstance().loadHighQualityAsset("loading_start", "gfx/loading.png");
+
+        ResourceManager.getInstance().loadSound("welcome", "sfx/welcome.ogg", false);
+        ResourceManager.getInstance().loadSound("welcome_piano", "sfx/welcome_piano.ogg", false);
+
+        // Setting the logo as fast as we can
+        getEngine().setScene(SplashScene.INSTANCE.getScene());
+
         ResourceManager.getInstance().loadHighQualityAsset("play", "play.png");
-        //ResourceManager.getInstance().loadHighQualityAsset("multiplayer", "multiplayer.png");
-        //ResourceManager.getInstance().loadHighQualityAsset("solo", "solo.png");
         ResourceManager.getInstance().loadHighQualityAsset("exit", "exit.png");
+        ResourceManager.getInstance().loadHighQualityAsset("chimu", "chimu.png");
         ResourceManager.getInstance().loadHighQualityAsset("options", "options.png");
         ResourceManager.getInstance().loadHighQualityAsset("offline-avatar", "offline-avatar.png");
         ResourceManager.getInstance().loadHighQualityAsset("star", "gfx/star.png");
@@ -294,7 +297,7 @@ public class MainActivity extends BaseGameActivity implements
 
     @Override
     public Scene onLoadScene() {
-        return new SplashScene().getScene();
+        return SplashScene.INSTANCE.getScene();
     }
 
     @Override
@@ -311,6 +314,15 @@ public class MainActivity extends BaseGameActivity implements
                 if (!LibraryManager.getInstance().loadLibraryCache(MainActivity.this, true)) {
                     LibraryManager.getInstance().scanLibrary(MainActivity.this);
                     System.gc();
+                }
+                SplashScene.INSTANCE.playWelcomeAnimation();
+                try
+                {
+                    // Allow the welcome animation to progress before entering onComplete state.
+                    Thread.sleep(2500);
+                }
+                catch (InterruptedException ignored)
+                {
                 }
             }
 
@@ -388,12 +400,6 @@ public class MainActivity extends BaseGameActivity implements
                 }});
 
         ActivityOverlay.initial(this, frameLayout.getId());
-
-        if ("pre_release".equals(BuildConfig.BUILD_TYPE) || BuildConfig.DEBUG) {
-            BuildTypeNoticeFragment.single.get().show();
-        } else if (Config.isDisplayReleaseNotify()) {
-            BuildTypeNoticeFragment.single.get().show();
-        }
     }
 
     public void checkNewBeatmaps() {
@@ -406,14 +412,7 @@ public class MainActivity extends BaseGameActivity implements
                         StringTable.get(R.string.message_lib_importing),
                         false);
 
-                if(FileUtils.extractZip(beatmapToAdd, Config.getBeatmapPath())) {
-                    String folderName = beatmapToAdd.substring(0, beatmapToAdd.length() - 4);
-                    // We have imported the beatmap!
-                    ToastLogger.showText(
-                            StringTable.format(R.string.message_lib_imported, folderName),
-                            true);
-                }
-
+                FileUtils.extractZip(beatmapToAdd, Config.getBeatmapPath());
                 // LibraryManager.getInstance().sort();
                 LibraryManager.getInstance().savetoCache(MainActivity.this);
             } else if (file.getName().endsWith(".odr")) {
@@ -421,7 +420,7 @@ public class MainActivity extends BaseGameActivity implements
             }
         } else if (mainDir.exists() && mainDir.isDirectory()) {
             File[] filelist = FileUtils.listFiles(mainDir, ".osz");
-            final ArrayList<String> beatmaps = new ArrayList<String>();
+            final ArrayList<String> beatmaps = new ArrayList<>();
             for (final File file : filelist) {
                 ZipFile zip = new ZipFile(file);
                 if(zip.isValidZipFile()) {
@@ -461,13 +460,7 @@ public class MainActivity extends BaseGameActivity implements
                         R.string.message_lib_importing_several,
                         beatmaps.size()), false);
                 for (final String beatmap : beatmaps) {
-                    if(FileUtils.extractZip(beatmap, Config.getBeatmapPath())) {
-                        String folderName = beatmap.substring(0, beatmap.length() - 4);
-                        // We have imported the beatmap!
-                        ToastLogger.showText(
-                                StringTable.format(R.string.message_lib_imported, folderName),
-                                true);
-                    }
+                    FileUtils.extractZip(beatmap, Config.getBeatmapPath());
                 }
                 // Config.setDELETE_OSZ(deleteOsz);
 

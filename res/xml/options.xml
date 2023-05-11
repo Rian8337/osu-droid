@@ -65,6 +65,13 @@
         <CheckBoxPreference android:key="complexanimations" android:defaultValue="true"
             android:title="@string/opt_complexanimations_title"
             android:summary="@string/opt_complexanimations_summary"/>
+
+        <CheckBoxPreference
+                android:key="snakingInSliders"
+                android:defaultValue="true"
+                android:title="@string/opt_snakingInSliders_title"
+                android:summary="@string/opt_snakingInSliders_summary"/>
+
         <CheckBoxPreference android:summary="@string/opt_showcursor_summary"
             android:title="@string/opt_showcursor_title" android:key="showcursor"
             android:defaultValue="false"/>
@@ -84,8 +91,6 @@
             <!-- android:title="@string/opt_long_trail_title" android:defaultValue="false"/> -->
         <CheckBoxPreference android:key="dither" android:title="@string/opt_dither_title"
             android:summary="@string/opt_dither_summary" android:defaultValue="true"/>
-        <CheckBoxPreference android:key="superSlider" android:summary="@string/opt_superSlider_summary"
-            android:title="@string/opt_superSlider_title" android:defaultValue="true"/>
         <CheckBoxPreference android:key="trianglesAnimation" android:title="@string/opt_triangles_animation_title"
             android:summary="@string/opt_triangles_animation_summary" android:defaultValue="true"/>
 
@@ -120,7 +125,7 @@
             android:summary="@string/opt_sound_volume_summary" android:key="soundvolume"
             android:defaultValue="100"/> -->
         <SeekBarPreference android:summary="@string/opt_offset_summary" android:title="@string/opt_offset_title"
-            android:key="offset" app:min="-100" app:showSeekBarValue="true" android:defaultValue="0"/>
+            android:key="offset" app:min="-250" android:max="250" app:showSeekBarValue="true" android:defaultValue="0"/>
         <!-- <EditTextPreference android:title="@string/opt_offset_title" android:summary="@string/opt_offset_summary"
             android:key="offset" android:defaultValue="0"/> -->
         <ListPreference android:entries="@array/metronome_switch_names" android:title="@string/opt_metronome_switch_title"
@@ -144,6 +149,8 @@
             android:defaultValue="/sdcard/osu!droid/Songs"/>
         <CheckBoxPreference android:key="scandownload" android:summary="@string/opt_scandownload_summary"
             android:title="@string/opt_scandownload_title" android:defaultValue="false"/>
+        <CheckBoxPreference android:key="deleteUnimportedBeatmaps" android:title="@string/opt_deleteUnimportedBeatmaps_title"
+            android:summary="@string/opt_deleteUnimportedBeatmaps_summary" android:defaultValue="false"/>
         <Preference android:key="clear" android:title="@string/opt_clear_title"
             android:summary="@string/opt_clear_summary"/>
         <Preference android:key="clear_properties" android:title="@string/opt_clearprops_title"
@@ -158,10 +165,6 @@
         <EditTextPreference android:key="skinTopPath"
             android:title="@string/opt_skin_top_path_title"
             android:summary="@string/opt_skin_top_path_summary"/>
-        <CheckBoxPreference android:key="displayReleaseNotify"
-            android:title="@string/opt_displayReleaseNotify_title"
-            android:summary="@string/opt_displayReleaseNotify_summary"
-            android:defaultValue="true" />
         <CheckBoxPreference android:key="syncMusic" android:defaultValue="true"
             android:summary="@string/opt_syncmusic_summary"
             android:title="@string/opt_syncmusic_title"/>

@@ -69,8 +69,6 @@ import ru.nsu.ccfit.zuev.osu.RGBColor;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager;
 import ru.nsu.ccfit.zuev.osu.spectator.SpectatorDataManager;
-import ru.nsu.ccfit.zuev.skins.OsuSkin;
-import ru.nsu.ccfit.zuev.skins.SkinManager;
 import ru.nsu.ccfit.zuev.osu.ToastLogger;
 import ru.nsu.ccfit.zuev.osu.TrackInfo;
 import ru.nsu.ccfit.zuev.osu.Utils;
@@ -200,6 +198,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
     private long previousFrameTime;
 
+    private boolean mIsAuto;
+
     public GameScene(final Engine engine) {
         this.engine = engine;
         scene = new Scene();
@@ -221,7 +221,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
     private void setBackground() {
         boolean bgset = false;
-        Sprite bgSprite;
+        bgSprite = null;
         if (storyboardSprite != null) {
             if (storyboardSprite.isStoryboardAvailable()) {
                 storyboardSprite.setBrightness(Config.getBackgroundBrightness());
@@ -626,7 +626,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             }
 
             timedDifficultyAttributes = BeatmapDifficultyCalculator.calculateTimedDifficulty(
-                    BeatmapDifficultyCalculator.constructDifficultyBeatmap(beatmapData),
+                    beatmapData,
                     parameters
             );
         } else {
@@ -735,12 +735,6 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         final String rfile = track != null ? replayFile : this.replayFile;
 
-        Replay.oldMod = ModMenu.getInstance().getMod();
-        Replay.oldChangeSpeed = ModMenu.getInstance().getChangeSpeed();
-        Replay.oldForceAR = ModMenu.getInstance().getForceAR();
-        Replay.oldEnableForceAR = ModMenu.getInstance().isEnableForceAR();
-        Replay.oldFLFollowDelay = ModMenu.getInstance().getFLfollowDelay();
-
         new AsyncTask() {
             @Override
             public void run() {
@@ -795,7 +789,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
             if (Config.isDisplayRealTimePPCounter()) {
                 ppText = new ChangeableText(Utils.toRes(720),
-                        Utils.toRes(440), font, "0.00pp           ");
+                        Utils.toRes(440), font, "0.00pp", 100);
                 fgScene.attachChild(ppText);
             }
 
@@ -836,6 +830,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         }
 
         stat.setMod(ModMenu.getInstance().getMod());
+        mIsAuto = stat.getMod() != null && stat.getMod().contains(GameMod.MOD_AUTO);
+
         float multiplier = 1 + rawDifficulty / 10f + rawDrain / 10f;
         multiplier += (beatmapData.difficulty.cs - 3) / 4f;
 
@@ -858,7 +854,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         GameHelper.setAutopilotMod(stat.getMod().contains(GameMod.MOD_AUTOPILOT));
         GameHelper.setSuddenDeath(stat.getMod().contains(GameMod.MOD_SUDDENDEATH));
         GameHelper.setPerfect(stat.getMod().contains(GameMod.MOD_PERFECT));
-        GameHelper.setScoreV2((stat.getMod().contains(GameMod.MOD_SCOREV2)));
+        GameHelper.setScoreV2(stat.getMod().contains(GameMod.MOD_SCOREV2));
         difficultyHelper = stat.getMod().contains(GameMod.MOD_PRECISE) ?
                 DifficultyHelper.HighDifficulty : DifficultyHelper.StdDifficulty;
         GameHelper.setDifficultyHelper(difficultyHelper);
@@ -2399,7 +2395,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
 
     public boolean isMousePressed(final GameObject object, final int index) {
-        if (stat.getMod().contains(GameMod.MOD_AUTO)) {
+        // EnumSet.contains() internally uses an iterator, and it can be expensive to use everytime we want to use this method.
+        if (mIsAuto) {
             return false;
         }
         if (Config.isRemoveSliderLock()){
@@ -2417,10 +2414,12 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     }
 
     private GameObject getLastTobeclickObject(){
-        Iterator iterator = activeObjects.iterator();
-        while(iterator.hasNext()){
-            GameObject note = (GameObject)iterator.next();
-            if(note.isStartHit() == false)return note;
+        for (GameObject note : activeObjects)
+        {
+            if (!note.isStartHit())
+            {
+                return note;
+            }
         }
         return null;
     }
@@ -2869,6 +2868,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             replay.save(replayFile);
             ScoreLibrary.getInstance().addScore(lastTrack.getFilename(), stat, replayFile);
             ToastLogger.showText(StringTable.get(R.string.message_save_replay_successful), true);
+            replayFile = null;
             return true;
         }
         else{
@@ -2902,7 +2902,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             time = ((HitObjectWithDuration) object).getEndTime();
         }
 
-        ppText.setText(String.format(Locale.ENGLISH, "%.2fpp           ", getPPAtTime(time)));
+        ppText.setText(String.format(Locale.ENGLISH, "%.2fpp", getPPAtTime(time)));
     }
 
     private double getPPAtTime(double time) {

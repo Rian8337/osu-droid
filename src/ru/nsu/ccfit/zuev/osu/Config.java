@@ -10,6 +10,8 @@ import android.util.DisplayMetrics;
 import androidx.preference.PreferenceManager;
 
 import com.edlplan.favorite.FavoriteLibrary;
+import com.edlplan.framework.math.FMath;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.File;
 import java.util.HashMap;
@@ -38,17 +40,17 @@ public class Config {
 
     private static boolean DELETE_OSZ,
         SCAN_DOWNLOAD,
+        deleteUnimportedBeatmaps,
         showFirstApproachCircle,
         comboburst,
         useCustomSkins,
         useCustomSounds,
         corovans,
         showFPS,
-        sliderBorders,
         complexAnimations,
+        snakingInSliders,
         playMusicPreview,
         showCursor,
-        accurateSlider,
         shrinkPlayfieldDownwards,
         hideNaviBar,
         showScoreboard,
@@ -71,12 +73,10 @@ public class Config {
         hideReplayMarquee,
         hideInGameUI,
         receiveAnnouncements,
-        useSuperSlider,
         enableStoryboard,
         safeBeatmapBg,
         trianglesAnimation,
         displayRealTimePPCounter,
-        displayReleaseNotify,
         useSliderAccuracy;
 
     private static int RES_WIDTH,
@@ -127,15 +127,11 @@ public class Config {
         setPlayfieldSize(Integer.parseInt(prefs.getString(
             "playfieldsize", "100")) / 100f);
         shrinkPlayfieldDownwards = prefs.getBoolean("shrinkPlayfieldDownwards", true);
-        sliderBorders = prefs.getBoolean("sliderborders", true);
         complexAnimations = prefs.getBoolean("complexanimations", true);
-        accurateSlider = true;
-
-        useSuperSlider = prefs.getBoolean("superSlider", false);
+        snakingInSliders = prefs.getBoolean("snakingInSliders", true);
 
         try {
-            int off = prefs.getInt("offset", 0);
-            offset = (int) (Math.signum(off) * Math.min(250, Math.abs(off)));
+            offset = (int) FMath.clamp(prefs.getInt("offset", 0), -250, 250);
             backgroundBrightness = prefs.getInt("bgbrightness", 25) / 100f;
             soundVolume = prefs.getInt("soundvolume", 100) / 100f;
             bgmVolume = prefs.getInt("bgmvolume", 100) / 100f;
@@ -201,6 +197,7 @@ public class Config {
         // beatmaps
         DELETE_OSZ = prefs.getBoolean("deleteosz", true);
         SCAN_DOWNLOAD = prefs.getBoolean("scandownload", false);
+        deleteUnimportedBeatmaps = prefs.getBoolean("deleteUnimportedBeatmaps", false);
         forceRomanized = prefs.getBoolean("forceromanized", false);
         beatmapPath = prefs.getString("directory", corePath + "Songs/");
         if (beatmapPath.length() == 0) {
@@ -226,7 +223,6 @@ public class Config {
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
         useSliderAccuracy = prefs.getBoolean("useSliderAccuracy", false);
         displayRealTimePPCounter = prefs.getBoolean("displayRealTimePPCounter", true);
-        displayReleaseNotify = prefs.getBoolean("displayReleaseNotify", true); //This needs to be removed later its just for now...
 
         //Init
         onlineDeviceID = prefs.getString("installID", null);
@@ -278,10 +274,6 @@ public class Config {
         Config.enableStoryboard = enableStoryboard;
     }
 
-    public static boolean isUseSuperSlider() {
-        return useSuperSlider;
-    }
-
     public static boolean isFixFrameOffset() {
         return fixFrameOffset;
     }
@@ -304,10 +296,6 @@ public class Config {
 
     public static boolean isDisplayRealTimePPCounter() {
         return displayRealTimePPCounter;
-    }
-
-    public static boolean isDisplayReleaseNotify() {
-        return displayReleaseNotify;
     }
 
     public static boolean isEnableExtension() {
@@ -422,6 +410,14 @@ public class Config {
         SCAN_DOWNLOAD = sCAN_DOWNLOAD;
     }
 
+    public static boolean isDeleteUnimportedBeatmaps() {
+        return deleteUnimportedBeatmaps;
+    }
+
+    public static void setDeleteUnimportedBeatmaps(boolean deleteUnimportedBeatmaps) {
+        Config.deleteUnimportedBeatmaps = deleteUnimportedBeatmaps;
+    }
+
     public static boolean isUseCustomSkins() {
         return useCustomSkins;
     }
@@ -454,16 +450,13 @@ public class Config {
         Config.backgroundBrightness = backgroundBrightness;
     }
 
-    public static boolean isSliderBorders() {
-        return sliderBorders;
-    }
-
-    public static void setSliderBorders(final boolean sliderBorders) {
-        Config.sliderBorders = sliderBorders;
-    }
-
     public static boolean isComplexAnimations() {
         return complexAnimations;
+    }
+
+    public static boolean isSnakingInSliders()
+    {
+        return snakingInSliders;
     }
 
     public static void setComplexAnimations(final boolean complexAnimations) {
@@ -492,14 +485,6 @@ public class Config {
 
     public static void setShowCursor(final boolean showCursor) {
         Config.showCursor = showCursor;
-    }
-
-    public static boolean isAccurateSlider() {
-        return accurateSlider;
-    }
-
-    public static void setAccurateSlider(final boolean accurateSlider) {
-        Config.accurateSlider = accurateSlider;
     }
 
     public static float getScaleMultiplier() {

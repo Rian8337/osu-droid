@@ -61,6 +61,7 @@ import ru.nsu.ccfit.zuev.osu.online.OnlineManager;
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager.OnlineManagerException;
 import ru.nsu.ccfit.zuev.osu.online.OnlinePanel;
 import ru.nsu.ccfit.zuev.osu.online.OnlineScoring;
+import ru.nsu.ccfit.zuev.osu.scoring.Replay;
 import ru.nsu.ccfit.zuev.osu.scoring.ScoreLibrary;
 import ru.nsu.ccfit.zuev.osu.scoring.ScoringScene;
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
@@ -195,7 +196,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
 
         if (items.size() == 0) {
             final Text text = new Text(0, 0, ResourceManager.getInstance()
-                    .getFont("CaptionFont"), "There are no songs in library",
+                    .getFont("CaptionFont"), "There are no songs in library, try using chimu.moe",
                     HorizontalAlign.CENTER);
             text.setPosition(Config.getRES_WIDTH() / 2f - text.getWidth() / 2,
                     Config.getRES_HEIGHT() / 2f - text.getHeight() / 2);
@@ -986,7 +987,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
                 }
 
                 DifficultyAttributes attributes = BeatmapDifficultyCalculator.calculateDifficulty(
-                        BeatmapDifficultyCalculator.constructDifficultyBeatmap(beatmapData),
+                        beatmapData,
                         parameters
                 );
 
@@ -1016,6 +1017,13 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
 
             ResourceManager.getInstance().getSound("menuhit").play();
             stopMusic();
+
+            Replay.oldMod = ModMenu.getInstance().getMod();
+            Replay.oldChangeSpeed = ModMenu.getInstance().getChangeSpeed();
+            Replay.oldForceAR = ModMenu.getInstance().getForceAR();
+            Replay.oldEnableForceAR = ModMenu.getInstance().isEnableForceAR();
+            Replay.oldFLFollowDelay = ModMenu.getInstance().getFLfollowDelay();
+
             game.startGame(track, null);
             unload();
             return;

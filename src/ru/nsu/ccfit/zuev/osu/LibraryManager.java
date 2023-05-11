@@ -25,7 +25,7 @@ import ru.nsu.ccfit.zuev.osu.helper.StringTable;
 import ru.nsu.ccfit.zuev.osuplus.R;
 
 public class LibraryManager {
-    private static final String VERSION = "library3.4";
+    private static final String VERSION = "library3.5";
     private static LibraryManager mgr = new LibraryManager();
     private ArrayList<BeatmapInfo> library;
     private Integer fileCount = 0;
@@ -44,7 +44,7 @@ public class LibraryManager {
 
     @SuppressWarnings("unchecked")
     public boolean loadLibraryCache(final Activity activity, boolean forceUpdate) {
-        library = new ArrayList<BeatmapInfo>();
+        library = new ArrayList<>();
         ToastLogger.addToLog("Loading library...");
         if (!FileUtils.canUseSD()) {
             ToastLogger.addToLog("Can't use SD card!");
@@ -388,6 +388,9 @@ public class LibraryManager {
         for (final File file : filelist) {
             final BeatmapParser parser = new BeatmapParser(file);
             if (!parser.openFile()) {
+                if (Config.isDeleteUnimportedBeatmaps()) {
+                    file.delete();
+                }
                 continue;
             }
 
@@ -397,6 +400,9 @@ public class LibraryManager {
 
             final BeatmapData data = parser.parse(true);
             if (data == null || !data.populateMetadata(info, track)) {
+                if (Config.isDeleteUnimportedBeatmaps()) {
+                    file.delete();
+                }
                 continue;
             }
             if (track.getBackground() != null) {
@@ -406,11 +412,13 @@ public class LibraryManager {
             info.addTrack(track);
         }
 
-        Collections.sort(info.getTracks(), new Comparator<TrackInfo>() {
-            public int compare(final TrackInfo object1, final TrackInfo object2) {
-                return Float.valueOf(object1.getDifficulty()).compareTo(object2.getDifficulty());
-            }
-        });
+        if (info.getCount() > 0) {
+            ToastLogger.showText(StringTable.format(R.string.message_lib_imported, dir.getName()), false);
+        } else if (Config.isDeleteUnimportedBeatmaps()) {
+            deleteDir(dir);
+        }
+
+        Collections.sort(info.getTracks(), (object1, object2) -> Float.compare(object1.getDifficulty(), object2.getDifficulty()));
     }
 
     public ArrayList<BeatmapInfo> getLibrary() {
@@ -503,5 +511,17 @@ public class LibraryManager {
             }
         }
         return null;
+    }
+
+    public void updateLibrary(boolean force)
+    {
+        Activity context = GlobalManager.getInstance().getMainActivity();
+
+        savetoCache(context);
+
+        if (!loadLibraryCache(context, force))
+        {
+            scanLibrary(context);
+        }
     }
 }
