@@ -11,7 +11,6 @@ import androidx.preference.PreferenceManager;
 
 import com.edlplan.favorite.FavoriteLibrary;
 import com.edlplan.framework.math.FMath;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.File;
 import java.util.HashMap;
