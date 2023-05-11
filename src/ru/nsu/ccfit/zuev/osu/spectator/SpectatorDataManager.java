@@ -20,7 +20,7 @@ import ru.nsu.ccfit.zuev.osu.scoring.TouchType;
  * Holds spectator data that will be sent to the server periodically.
  */
 public class SpectatorDataManager {
-    public static final int spectatorDataVersion = 1;
+    public static final int spectatorDataVersion = 2;
 
     private final ArrayList<SpectatorObjectData> objectData = new ArrayList<>();
 
