@@ -55,7 +55,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
     private boolean isCanceled = false;
     private boolean isScroll = false;
 
-    private AsyncTask onlineTask;
+    private AsyncTask loadingTask;
     private final LinkedList<AsyncTask> avatarTasks;
     private final Context context;
 
@@ -264,7 +264,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
     private void initFromOnline(final TrackInfo track) {
         final long currentNumber = viewNumber;
         loadingText.setText("Loading scores...");
-        onlineTask = new AsyncTask() {
+        loadingTask = new AsyncTask() {
             @Override
             public void run() {
                 File trackFile = new File(track.getFilename());
@@ -347,13 +347,18 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
             }
 
             @Override
+            public void onCancel(boolean wasForced) {
+                isCanceled = true;
+            }
+
+            @Override
             public void onComplete() {
                 isCanceled = false;
                 if (Utils.isWifi(context) || Config.getLoadAvatar())
                     loadAvatar();
             }
         };
-        onlineTask.execute();
+        loadingTask.execute();
     }
 
     public void init(final TrackInfo track) {
@@ -379,47 +384,60 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
             return;
         }
 
-        String[] columns = {"id", "playername", "score", "combo", "mark", "accuracy", "mode"};
-        Cursor scoresSet = ScoreLibrary.getInstance().getMapScores(columns, track.getFilename());
-        if (scoresSet == null || scoresSet.getCount() == 0) {
-            if (scoresSet != null) {
+        loadingTask = new AsyncTask() {
+            private final String[] columns = {"id", "playername", "score", "combo", "mark", "accuracy", "mode"};
+            private final Cursor scoresSet = ScoreLibrary.getInstance().getMapScores(columns, track.getFilename());
+
+            @Override
+            public void run() {
+                if (scoresSet == null || scoresSet.getCount() == 0) {
+                    return;
+                }
+                percentShow = 0;
+                scoresSet.moveToFirst();
+                sprites = new Sprite[scoresSet.getCount()];
+                long lastTotalScore = 0;
+                scoreItems = new ScoreBoardItems[scoresSet.getCount()];
+                for (int i = scoresSet.getCount() - 1; i >= 0; i--) {
+                    scoresSet.moveToPosition(i);
+                    final int scoreID = scoresSet.getInt(0);
+
+                    String totalScore = formatScore(scoresSet.getInt(scoresSet.getColumnIndexOrThrow("score")));
+                    long currTotalScore = scoresSet.getLong(scoresSet.getColumnIndexOrThrow("score"));
+                    String titleStr = "#"
+                            + (i + 1)
+                            + " "
+                            + scoresSet.getString(scoresSet.getColumnIndexOrThrow("playername"))
+                            + "\n"
+                            + StringTable.format(R.string.menu_score,
+                            totalScore, scoresSet.getInt(scoresSet.getColumnIndexOrThrow("combo")));
+                    long diffTotalScore = currTotalScore - lastTotalScore;
+                    @SuppressLint("DefaultLocale") String accStr = ConvertModString(scoresSet.getString(scoresSet.getColumnIndexOrThrow("mode"))) + "\n"
+                            + String.format("%.2f", GameHelper.Round( scoresSet.getFloat(scoresSet.getColumnIndexOrThrow("accuracy")) * 100, 2)) + "%" + "\n"
+                            + (lastTotalScore == 0 ? "-" : ((diffTotalScore != 0 ? "+" : "") + diffTotalScore));
+                    lastTotalScore = currTotalScore;
+                    initSprite(i, titleStr, accStr, scoresSet.getString(scoresSet.getColumnIndexOrThrow("mark")),
+                            false, scoreID, null, null);
+                    scoreItems[i] = new ScoreBoardItems();
+                    scoreItems[i].set(scoresSet.getString(scoresSet.getColumnIndexOrThrow("playername")),
+                            scoresSet.getInt(scoresSet.getColumnIndexOrThrow("combo")),
+                            scoresSet.getInt(scoresSet.getColumnIndexOrThrow("score")),
+                            scoreID);
+                }
+            }
+
+            @Override
+            public void onCancel(boolean wasForced) {
                 scoresSet.close();
             }
 
-            return;
-        }
-        percentShow = 0;
-        scoresSet.moveToFirst();
-        sprites = new Sprite[scoresSet.getCount()];
-        long lastTotalScore = 0;
-        scoreItems = new ScoreBoardItems[scoresSet.getCount()];
-        for (int i = scoresSet.getCount() - 1; i >= 0; i--) {
-            scoresSet.moveToPosition(i);
-            final int scoreID = scoresSet.getInt(0);
+            @Override
+            public void onComplete() {
+                scoresSet.close();
+            }
+        };
 
-            String totalScore = formatScore(scoresSet.getInt(scoresSet.getColumnIndexOrThrow("score")));
-            long currTotalScore = scoresSet.getLong(scoresSet.getColumnIndexOrThrow("score"));
-            String titleStr = "#"
-                    + (i + 1)
-                    + " "
-                    + scoresSet.getString(scoresSet.getColumnIndexOrThrow("playername"))
-                    + "\n"
-                    + StringTable.format(R.string.menu_score,
-                    totalScore, scoresSet.getInt(scoresSet.getColumnIndexOrThrow("combo")));
-            long diffTotalScore = currTotalScore - lastTotalScore;
-            @SuppressLint("DefaultLocale") String accStr = ConvertModString(scoresSet.getString(scoresSet.getColumnIndexOrThrow("mode"))) + "\n"
-                    + String.format("%.2f", GameHelper.Round( scoresSet.getFloat(scoresSet.getColumnIndexOrThrow("accuracy")) * 100, 2)) + "%" + "\n"
-                    + (lastTotalScore == 0 ? "-" : ((diffTotalScore != 0 ? "+" : "") + diffTotalScore));
-            lastTotalScore = currTotalScore;
-            initSprite(i, titleStr, accStr, scoresSet.getString(scoresSet.getColumnIndexOrThrow("mark")),
-                    false, scoreID, null, null);
-            scoreItems[i] = new ScoreBoardItems();
-            scoreItems[i].set(scoresSet.getString(scoresSet.getColumnIndexOrThrow("playername")),
-                    scoresSet.getInt(scoresSet.getColumnIndexOrThrow("combo")),
-                    scoresSet.getInt(scoresSet.getColumnIndexOrThrow("score")),
-                    scoreID);
-        }
-        scoresSet.close();
+        loadingTask.execute();
     }
 
     public void clear() {
@@ -435,7 +453,6 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
                 sp.detachSelf();
             }
         });
-
     }
 
     public void update(final float pSecondsElapsed) {
@@ -567,9 +584,9 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
         }
     }
 
-    public void cancelLoadOnlineScores() {
-        if (onlineTask != null) {
-            onlineTask.cancel(true);
+    public void cancelLoadScores() {
+        if (loadingTask != null) {
+            loadingTask.cancel(true);
         }
     }
 

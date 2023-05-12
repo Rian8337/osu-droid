@@ -1036,7 +1036,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
         board.cancelLoadAvatar();
         if (boardTask != null) {
             boardTask.cancel(true);
-            board.cancelLoadOnlineScores();
+            board.cancelLoadScores();
         }
         boardTask = new AsyncTask() {
             @Override
@@ -1253,7 +1253,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
         board.cancelLoadAvatar();
         if (boardTask != null) {
             boardTask.cancel(true);
-            board.cancelLoadOnlineScores();
+            board.cancelLoadScores();
         }
         boardTask = new AsyncTask() {
             @Override
