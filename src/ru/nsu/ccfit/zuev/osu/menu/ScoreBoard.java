@@ -19,7 +19,6 @@ import org.anddev.andengine.util.MathUtils;
 import java.io.File;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -52,11 +51,10 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
     private boolean showOnlineScores = false;
     private TrackInfo lastTrack = null;
     private boolean wasOnline = false;
-    private boolean isCanceled = false;
     private boolean isScroll = false;
 
     private AsyncTask loadingTask;
-    private final LinkedList<AsyncTask> avatarTasks;
+    private AsyncTask avatarTask;
     private final Context context;
 
     private final SurfaceScrollDetector mScrollDetector;
@@ -88,7 +86,6 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
 
         this.listener = listener;
         this.mScrollDetector = new SurfaceScrollDetector(this);
-        avatarTasks = new LinkedList<>();
     }
 
     public static String ConvertModString(String s) {
@@ -347,13 +344,7 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
             }
 
             @Override
-            public void onCancel(boolean wasForced) {
-                isCanceled = true;
-            }
-
-            @Override
             public void onComplete() {
-                isCanceled = false;
                 if (Utils.isWifi(context) || Config.getLoadAvatar())
                     loadAvatar();
             }
@@ -534,54 +525,35 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
     }
 
     public void loadAvatar() {
-
-        try {
-            if (avatars == null) {
-                return;
-            }
-            for (int i = 0; i < avatars.length; i++) {
-                if (isCanceled) {
-                    break;
-                }
-                if (sprites[i] == null) {
-                    continue;
-                }
-                final int finalI = i;
-                AsyncTask avatarTask = new AsyncTask() {
-                    private final TextureRegion[] avatarTexRegion = new TextureRegion[avatars.length];
-
-                    @Override
-                    public void run() {
-
-                        Avatar ava = avatars[finalI];
-                        boolean bool = OnlineManager.getInstance().loadAvatarToTextureManager(ava.getAvaUrl(), "ava@" + ava.getUserName());
-                        if (bool) {
-                            avatarTexRegion[finalI] = ResourceManager.getInstance().getTextureIfLoaded("ava@" + ava.getUserName());
-                        } else {
-                            avatarTexRegion[finalI] = ResourceManager.getInstance().getTexture("emptyavatar");
-                        }
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        try {
-                            if (avatarTexRegion[finalI] != null && showOnlineScores) {
-                                final Sprite avatar = new Sprite(55, 12, Utils.toRes(90), Utils.toRes(90), avatarTexRegion[finalI]);
-                                sprites[finalI].attachChild(avatar);
-                            }
-                        } catch (Exception ignored) {}
-
-                        isCanceled = false;
-                    }
-                };
-                avatarTask.execute();
-                avatarTasks.add(avatarTask);
-            }
-            isCanceled = false;
-        } catch (Exception ex) {
-//                        Debug.e(ex.toString());
-            isCanceled = false;
+        if (avatars == null) {
+            return;
         }
+
+        avatarTask = new AsyncTask() {
+            @Override
+            public void run() {
+                for (int i = 0; i < avatars.length; ++i) {
+                    if (sprites[i] == null) {
+                        continue;
+                    }
+
+                    var avatar = avatars[i];
+                    TextureRegion avatarTexRegion;
+                    boolean bool = OnlineManager.getInstance().loadAvatarToTextureManager(avatar.getAvaUrl(), "ava@" + avatar.getUserName());
+
+                    if (bool) {
+                        avatarTexRegion = ResourceManager.getInstance().getTextureIfLoaded("ava@" + avatar.getUserName());
+                    } else {
+                        avatarTexRegion = ResourceManager.getInstance().getTexture("emptyavatar");
+                    }
+
+                    var avatarSprite = new Sprite(55, 12, Utils.toRes(90), Utils.toRes(90), avatarTexRegion);
+                    sprites[i].attachChild(avatarSprite);
+                }
+            }
+        };
+
+        avatarTask.execute();
     }
 
     public void cancelLoadScores() {
@@ -591,14 +563,8 @@ public class ScoreBoard implements ScrollDetector.IScrollDetectorListener {
     }
 
     public void cancelLoadAvatar() {
-        if (avatarTasks != null) {
-            isCanceled = true;
-            for (AsyncTask avatarTask : avatarTasks) {
-                avatarTask.cancel(true);
-                /* if (OnlineManager.get != null) {
-                    OnlineManager.get.abort();
-                } */
-            }
+        if (avatarTask != null) {
+            avatarTask.cancel(true);
         }
     }
 
