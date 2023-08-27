@@ -89,14 +89,14 @@ class PerformanceCalculator(
         ).pow(1 / 1.1) * multiplier
     }
 
-    private fun processParameters(parameters: PerformanceCalculationParameters?) = parameters?.apply {
+    private fun processParameters(parameters: PerformanceCalculationParameters?) = parameters?.run {
         this@PerformanceCalculator.scoreMaxCombo = maxCombo
         this@PerformanceCalculator.countGreat = countGreat
         this@PerformanceCalculator.countOk = countOk
         this@PerformanceCalculator.countMeh = countMeh
         this@PerformanceCalculator.countMiss = countMiss
         this@PerformanceCalculator.effectiveMissCount = calculateEffectiveMissCount()
-    } ?: run { resetDefaults() }
+    } ?: resetDefaults()
 
     /**
      * The accuracy of the parameters.
@@ -109,12 +109,6 @@ class PerformanceCalculator(
      */
     private val totalHits: Int
         get() = difficultyAttributes.hitCircleCount + difficultyAttributes.sliderCount + difficultyAttributes.spinnerCount
-
-    /**
-     * The amount of hits that were successfully done.
-     */
-    private val totalSuccessfulHits: Int
-        get() = countGreat + countOk + countMeh
 
     /**
      * Resets this calculator to its original state.
