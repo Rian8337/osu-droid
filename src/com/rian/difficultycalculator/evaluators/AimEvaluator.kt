@@ -1,164 +1,151 @@
-package com.rian.difficultycalculator.evaluators;
+package com.rian.difficultycalculator.evaluators
 
-import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
-import com.rian.difficultycalculator.beatmap.hitobject.Slider;
-import com.rian.difficultycalculator.beatmap.hitobject.Spinner;
-import com.rian.difficultycalculator.math.MathUtils;
+import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject
+import com.rian.difficultycalculator.beatmap.hitobject.Slider
+import com.rian.difficultycalculator.beatmap.hitobject.Spinner
+import kotlin.math.*
 
 /**
  * An evaluator for calculating osu!standard aim skill.
- * <br><br>
+ *
  * This class should be considered an "evaluating" class and not persisted.
  */
-public final class AimEvaluator {
-    private static final double wideAngleMultiplier = 1.5;
-    private static final double acuteAngleMultiplier = 1.95;
-    private static final double sliderMultiplier = 1.35;
-    private static final double velocityChangeMultiplier = 0.75;
-
-    private AimEvaluator() {
-        throw new UnsupportedOperationException();
-    }
+object AimEvaluator {
+    private const val WIDE_ANGLE_MULTIPLIER = 1.5
+    private const val ACUTE_ANGLE_MULTIPLIER = 1.95
+    private const val SLIDER_MULTIPLIER = 1.35
+    private const val VELOCITY_CHANGE_MULTIPLIER = 0.75
 
     /**
      * Evaluates the difficulty of aiming the current object, based on:
-     * <ul>
-     *     <li>cursor velocity to the current object,</li>
-     *     <li>angle difficulty,</li>
-     *     <li>sharp velocity increases,</li>
-     *     <li>and slider difficulty.</li>
-     * </ul>
+     *
+     *  * cursor velocity to the current object,
+     *  * angle difficulty,
+     *  * sharp velocity increases,
+     *  * and slider difficulty.
      *
      * @param current The current object.
      * @param withSliders Whether to take slider difficulty into account.
      */
-    public static double evaluateDifficultyOf(DifficultyHitObject current, boolean withSliders) {
-        DifficultyHitObject last = current.previous(0);
+    @JvmStatic
+    fun evaluateDifficultyOf(current: DifficultyHitObject, withSliders: Boolean): Double {
+        val last = current.previous(0)!!
 
-        if (current.object instanceof Spinner || current.index <= 1 || last.object instanceof Spinner) {
-            return 0;
+        if (current.obj is Spinner || current.index <= 1 || last.obj is Spinner) {
+            return 0.0
         }
 
-        DifficultyHitObject lastLast = current.previous(1);
+        val lastLast = current.previous(1)!!
 
-        // Calculate the velocity to the current hit object, which starts with a base distance / time assuming the last object is a hitcircle.
-        double currentVelocity = current.lazyJumpDistance / current.strainTime;
+        // Calculate the velocity to the current hit object, which starts with a base distance / time assuming the last object is a circle.
+        var currentVelocity = current.lazyJumpDistance / current.strainTime
 
         // But if the last object is a slider, then we extend the travel velocity through the slider into the current object.
-        if (last.object instanceof Slider && withSliders) {
+        if (last.obj is Slider && withSliders) {
             // Calculate the slider velocity from slider head to slider end.
-            double travelVelocity = last.travelDistance / last.travelTime;
+            val travelVelocity = last.travelDistance / last.travelTime
 
             // Calculate the movement velocity from slider end to current object.
-            double movementVelocity = current.minimumJumpDistance / current.minimumJumpTime;
+            val movementVelocity = current.minimumJumpDistance / current.minimumJumpTime
 
             // Take the larger total combined velocity.
-            currentVelocity = Math.max(currentVelocity, movementVelocity + travelVelocity);
+            currentVelocity = max(currentVelocity, movementVelocity + travelVelocity)
         }
 
-        // As above, do the same for the previous hitobject.
-        double prevVelocity = last.lazyJumpDistance / last.strainTime;
+        // As above, do the same for the previous hit object.
+        var prevVelocity = last.lazyJumpDistance / last.strainTime
+        if (lastLast.obj is Slider && withSliders) {
+            val travelVelocity = lastLast.travelDistance / lastLast.travelTime
+            val movementVelocity = last.minimumJumpDistance / last.minimumJumpTime
 
-        if (lastLast.object instanceof Slider && withSliders) {
-            double travelVelocity = lastLast.travelDistance / lastLast.travelTime;
-            double movementVelocity = last.minimumJumpDistance / last.minimumJumpTime;
-
-            prevVelocity = Math.max(prevVelocity, movementVelocity + travelVelocity);
+            prevVelocity = max(prevVelocity, movementVelocity + travelVelocity)
         }
 
-        double wideAngleBonus = 0;
-        double acuteAngleBonus = 0;
-        double sliderBonus = 0;
-        double velocityChangeBonus = 0;
+        var wideAngleBonus = 0.0
+        var acuteAngleBonus = 0.0
+        var sliderBonus = 0.0
+        var velocityChangeBonus = 0.0
 
         // Start strain with regular velocity.
-        double strain = currentVelocity;
+        var strain = currentVelocity
 
         if (
             // If rhythms are the same.
-            Math.max(current.strainTime, last.strainTime) < 1.25 * Math.min(current.strainTime, last.strainTime) &&
-            !Double.isNaN(current.angle) &&
-            !Double.isNaN(last.angle) &&
-            !Double.isNaN(lastLast.angle)
+            max(current.strainTime, last.strainTime) < 1.25 * min(current.strainTime, last.strainTime) &&
+            current.angle != null && last.angle != null && lastLast.angle != null
         ) {
-            // Rewarding angles, take the smaller velocity as base.
-            double angleBonus = Math.min(currentVelocity, prevVelocity);
+            val currentAngle = current.angle!!
+            val lastAngle = last.angle!!
+            val lastLastAngle = lastLast.angle!!
 
-            wideAngleBonus = calculateWideAngleBonus(current.angle);
-            acuteAngleBonus = calculateAcuteAngleBonus(current.angle);
+            // Rewarding angles, take the smaller velocity as base.
+            val angleBonus = min(currentVelocity, prevVelocity)
+            wideAngleBonus = calculateWideAngleBonus(currentAngle)
+            acuteAngleBonus = calculateAcuteAngleBonus(currentAngle)
 
             // Only buff deltaTime exceeding 300 BPM 1/2.
             if (current.strainTime > 100) {
-                acuteAngleBonus = 0;
+                acuteAngleBonus = 0.0
             } else {
                 acuteAngleBonus *=
-                        // Multiply by previous angle, we don't want to buff unless this is a wiggle type pattern.
-                        calculateAcuteAngleBonus(last.angle) *
-                        // The maximum velocity we buff is equal to 125 / strainTime.
-                        Math.min(angleBonus, 125 / current.strainTime) *
-                        // Scale buff from 300 BPM 1/2 to 400 BPM 1/2.
-                        Math.pow(Math.sin(Math.PI / 2 * Math.min(1, (100 - current.strainTime) / 25)), 2) *
-                        // Buff distance exceeding 50 (radius) up to 100 (diameter).
-                        Math.pow(Math.sin(Math.PI / 2 * (MathUtils.clamp(current.lazyJumpDistance, 50, 100) - 50) / 50), 2);
+                    calculateAcuteAngleBonus(lastAngle) * min(angleBonus, 125 / current.strainTime) *
+                    sin(Math.PI / 2 * min(1.0, (100 - current.strainTime) / 25)).pow(2.0) *
+                    sin(Math.PI / 2 * current.lazyJumpDistance.coerceIn(50.0, 100.0) - 50 / 50).pow(2.0)
             }
 
             // Penalize wide angles if they're repeated, reducing the penalty as last.angle gets more acute.
-            wideAngleBonus *= angleBonus * (1 - Math.min(wideAngleBonus, Math.pow(calculateWideAngleBonus(last.angle), 3)));
+            wideAngleBonus *= angleBonus * (1 - min(wideAngleBonus, calculateWideAngleBonus(lastAngle).pow(3.0)))
             // Penalize acute angles if they're repeated, reducing the penalty as lastLast.angle gets more obtuse.
-            acuteAngleBonus *= 0.5 + 0.5 * (1 - Math.min(acuteAngleBonus, Math.pow(calculateAcuteAngleBonus(lastLast.angle), 3)));
+            acuteAngleBonus *= 0.5 + 0.5 * (1 - min(acuteAngleBonus, calculateAcuteAngleBonus(lastLastAngle).pow(3.0)))
         }
 
-        if (Math.max(prevVelocity, currentVelocity) != 0) {
+        if (max(prevVelocity, currentVelocity) != 0.0) {
             // We want to use the average velocity over the whole object when awarding differences, not the individual jump and slider path velocities.
-            prevVelocity = (last.lazyJumpDistance + lastLast.travelDistance) / last.strainTime;
-            currentVelocity = (current.lazyJumpDistance + last.travelDistance) / current.strainTime;
+            prevVelocity = (last.lazyJumpDistance + lastLast.travelDistance) / last.strainTime
+            currentVelocity = (current.lazyJumpDistance + last.travelDistance) / current.strainTime
 
             // Scale with ratio of difference compared to half the max distance.
-            double distanceRatio = Math.pow(Math.sin(Math.PI / 2 * Math.abs(prevVelocity - currentVelocity) / Math.max(prevVelocity, currentVelocity)), 2);
+            val distanceRatio =
+                sin(Math.PI / 2 * abs(prevVelocity - currentVelocity) / max(prevVelocity, currentVelocity)).pow(2.0)
 
             // Reward for % distance up to 125 / strainTime for overlaps where velocity is still changing.
-            double overlapVelocityBuff = Math.min(125 / Math.min(current.strainTime, last.strainTime), Math.abs(prevVelocity - currentVelocity));
+            val overlapVelocityBuff =
+                min(125 / min(current.strainTime, last.strainTime), abs(prevVelocity - currentVelocity))
 
-            velocityChangeBonus = overlapVelocityBuff * distanceRatio;
+            velocityChangeBonus = overlapVelocityBuff * distanceRatio
 
             // Penalize for rhythm changes.
-            velocityChangeBonus *= Math.pow(Math.min(current.strainTime, last.strainTime) / Math.max(current.strainTime, last.strainTime), 2);
+            velocityChangeBonus *=
+                (min(current.strainTime, last.strainTime) / max(current.strainTime, last.strainTime)).pow(2.0)
         }
 
-        if (last.object instanceof Slider) {
+        if (last.obj is Slider) {
             // Reward sliders based on velocity.
-            sliderBonus = last.travelDistance / last.travelTime;
+            sliderBonus = last.travelDistance / last.travelTime
         }
 
         // Add in acute angle bonus or wide angle bonus + velocity change bonus, whichever is larger.
-        strain += Math.max(acuteAngleBonus * acuteAngleMultiplier, wideAngleBonus * wideAngleMultiplier + velocityChangeBonus * velocityChangeMultiplier);
+        strain += max(
+            acuteAngleBonus * ACUTE_ANGLE_MULTIPLIER,
+            wideAngleBonus * WIDE_ANGLE_MULTIPLIER + velocityChangeBonus * VELOCITY_CHANGE_MULTIPLIER
+        )
 
         // Add in additional slider velocity bonus.
         if (withSliders) {
-            strain += sliderBonus * sliderMultiplier;
+            strain += sliderBonus * SLIDER_MULTIPLIER
         }
 
-        return strain;
+        return strain
     }
 
     /**
      * Calculates the bonus of wide angles.
      */
-    private static double calculateWideAngleBonus(double angle) {
-        return Math.pow(
-                Math.sin(
-                        (3.0 / 4) *
-                                (Math.min((5.0 / 6) * Math.PI, Math.max(Math.PI / 6, angle)) -
-                                        Math.PI / 6)
-                ),
-                2
-        );
-    }
+    private fun calculateWideAngleBonus(angle: Double) =
+        sin(3.0 / 4 * angle.coerceIn(Math.PI / 6, 5.0 / 6 * Math.PI) - Math.PI / 6).pow(2.0)
 
     /**
      * Calculates the bonus of acute angles.
      */
-    private static double calculateAcuteAngleBonus(double angle) {
-        return 1 - calculateWideAngleBonus(angle);
-    }
+    private fun calculateAcuteAngleBonus(angle: Double) = 1 - calculateWideAngleBonus(angle)
 }

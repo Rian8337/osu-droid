@@ -227,16 +227,16 @@ public final class BeatmapDifficultyCalculator {
      */
     private static DifficultyBeatmap constructDifficultyBeatmap(final BeatmapData data) {
         BeatmapDifficultyManager difficultyManager = new BeatmapDifficultyManager();
-        difficultyManager.setCS(data.difficulty.cs);
-        difficultyManager.setAR(data.difficulty.ar);
-        difficultyManager.setOD(data.difficulty.od);
-        difficultyManager.setHP(data.difficulty.hp);
-        difficultyManager.setSliderMultiplier(data.difficulty.sliderMultiplier);
-        difficultyManager.setSliderTickRate(data.difficulty.sliderTickRate);
+        difficultyManager.cs = data.difficulty.cs;
+        difficultyManager.setAr(data.difficulty.ar);
+        difficultyManager.od = data.difficulty.od;
+        difficultyManager.hp = data.difficulty.hp;
+        difficultyManager.sliderMultiplier = data.difficulty.sliderMultiplier;
+        difficultyManager.sliderTickRate = data.difficulty.sliderTickRate;
 
         DifficultyBeatmap beatmap = new DifficultyBeatmap(difficultyManager, data.hitObjects);
-        beatmap.setFormatVersion(data.getFormatVersion());
-        beatmap.setStackLeniency(data.general.stackLeniency);
+        beatmap.formatVersion = data.getFormatVersion();
+        beatmap.stackLeniency = data.general.stackLeniency;
 
         return beatmap;
     }
@@ -340,7 +340,7 @@ public final class BeatmapDifficultyCalculator {
                                   HashMap<DifficultyCalculationParameters, T> cacheMap) {
             if (parameters != null) {
                 // Copy the parameter for caching.
-                parameters = parameters.copy();
+                parameters = parameters.clone();
                 parameters.mods.retainAll(difficultyCalculator.difficultyAdjustmentMods);
             } else {
                 parameters = new DifficultyCalculationParameters();
@@ -361,14 +361,14 @@ public final class BeatmapDifficultyCalculator {
                                HashMap<DifficultyCalculationParameters, T> cacheMap) {
             if (parameters != null) {
                 // Copy the parameter for caching.
-                parameters = parameters.copy();
+                parameters = parameters.clone();
                 parameters.mods.retainAll(difficultyCalculator.difficultyAdjustmentMods);
             } else {
                 parameters = new DifficultyCalculationParameters();
             }
 
             for (var cache : cacheMap.entrySet()) {
-                if (isParameterEqual(cache.getKey(), parameters)) {
+                if (cache.getKey() == parameters) {
                     return cache.getValue();
                 }
             }
@@ -400,8 +400,7 @@ public final class BeatmapDifficultyCalculator {
             }
 
             // Check whether mods are equal.
-            return parameter1.mods.size() == parameter2.mods.size() &&
-                    parameter1.mods.containsAll(parameter2.mods);
+            return parameter1.mods == parameter2.mods;
         }
     }
 }

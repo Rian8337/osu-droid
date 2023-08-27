@@ -1,107 +1,109 @@
-package com.rian.difficultycalculator.skills;
+package com.rian.difficultycalculator.skills
 
-import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
-import com.rian.difficultycalculator.math.Interpolation;
-import com.rian.difficultycalculator.math.MathUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-
-import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
+import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject
+import com.rian.difficultycalculator.math.Interpolation
+import ru.nsu.ccfit.zuev.osu.game.mods.GameMod
+import java.util.*
+import kotlin.math.ceil
+import kotlin.math.log10
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Used to processes strain values of difficulty hit objects, keep track of strain levels caused by
  * the processed objects and to calculate a final difficulty value representing the difficulty of
  * hitting all the processed objects.
  */
-public abstract class StrainSkill extends Skill {
+abstract class StrainSkill(
     /**
-     * The strain peaks of each sections.
+     * The mods that this skill processes.
      */
-    protected final ArrayList<Double> strainPeaks = new ArrayList<>();
-
-    private double currentSectionPeak;
-    private double currentSectionEnd;
+    mods: EnumSet<GameMod>
+) : Skill(mods) {
+    /**
+     * The final multiplier to be applied to the final difficulty value after all other calculations.
+     */
+    protected open val difficultyMultiplier = 1.06
 
     /**
-     * @param mods The mods that this skill processes.
+     * The weight by which each strain value decays.
      */
-    public StrainSkill(EnumSet<GameMod> mods) {
-        super(mods);
-    }
+    protected open val decayWeight = 0.9
 
-    @Override
-    public void process(DifficultyHitObject current) {
+    /**
+     * The number of sections with the highest strains, which the peak strain reductions will apply to.
+     *
+     * This is done in order to decrease their impact on the overall difficulty of the beatmap for this skill.
+     */
+    protected open val reducedSectionCount = 10
+
+    /**
+     * The baseline multiplier applied to the section with the biggest strain.
+     */
+    protected open val reducedSectionBaseline = 0.75
+
+    private val strainPeaks = mutableListOf<Double>()
+    private var currentSectionPeak = 0.0
+    private var currentSectionEnd = 0.0
+    private val sectionLength = 400
+
+    override fun process(current: DifficultyHitObject) {
         // The first object doesn't generate a strain, so we begin with an incremented section end
-        int sectionLength = 400;
+
         if (current.index == 0) {
-            currentSectionEnd = Math.ceil(current.startTime / sectionLength) * sectionLength;
+            currentSectionEnd = ceil(current.startTime / sectionLength) * sectionLength
         }
 
         while (current.startTime > currentSectionEnd) {
-            saveCurrentPeak();
-            startNewSectionFrom(currentSectionEnd, current);
-            currentSectionEnd += sectionLength;
+            saveCurrentPeak()
+            startNewSectionFrom(currentSectionEnd, current)
+            currentSectionEnd += sectionLength.toDouble()
         }
 
-        currentSectionPeak = Math.max(strainValueAt(current), currentSectionPeak);
-        saveToHitObject(current);
+        currentSectionPeak = max(strainValueAt(current), currentSectionPeak)
+        saveToHitObject(current)
     }
 
-    @Override
-    public double difficultyValue() {
-        ArrayList<Double> strains = getCurrentStrainPeaks();
-        Collections.sort(strains, (d1, d2) -> Double.compare(d2, d1));
+    override fun difficultyValue(): Double {
+        val strains = currentStrainPeaks
+        strains.sort()
 
-        if (getReducedSectionCount() > 0) {
+        if (reducedSectionCount > 0) {
             // We are reducing the highest strains first to account for extreme difficulty spikes.
-            for (int i = 0; i < Math.min(strains.size(), getReducedSectionCount()); ++i) {
-                double scale = Math.log10(Interpolation.linear(1d, 10, MathUtils.clamp((float) i / getReducedSectionCount(), 0, 1)));
+            for (i in 0 until min(strains.size.toDouble(), reducedSectionCount.toDouble()).toInt()) {
+                val scale = log10(
+                    Interpolation.linear(
+                        1.0,
+                        10.0,
+                        (i.toFloat() / reducedSectionCount).toDouble().coerceIn(0.0, 1.0)
+                    )
+                )
 
-                strains.set(i, strains.get(i) * Interpolation.linear(getReducedSectionBaseline(), 1, scale));
+                strains[i] = strains[i] * Interpolation.linear(reducedSectionBaseline, 1.0, scale)
             }
 
-            Collections.sort(strains, (d1, d2) -> Double.compare(d2, d1));
+            strains.sort()
         }
 
         // Difficulty is the weighted sum of the highest strains from every section.
         // We're sorting from highest to lowest strain.
-        double difficulty = 0;
-        double weight = 1;
+        var difficulty = 0.0
+        var weight = 1.0
 
-        for (double strain : strains) {
-            difficulty += strain * weight;
-            weight *= getDecayWeight();
+        for (strain in strains) {
+            difficulty += strain * weight
+            weight *= decayWeight
         }
 
-        return difficulty * getDifficultyMultiplier();
+        return difficulty * difficultyMultiplier
     }
 
-    /**
-     * Returns a list of the peak strains for each <code>sectionLength</code> section of the beatmap,
-     * including the peak of the current section.
-     */
-    public ArrayList<Double> getCurrentStrainPeaks() {
-        ArrayList<Double> strains = new ArrayList<>(strainPeaks);
-        strains.add(currentSectionPeak);
-
-        return strains;
-    }
-
-    /**
-     * Gets the final multiplier to be applied to the final difficulty value after all other calculations.
-     */
-    protected double getDifficultyMultiplier() {
-        return 1.06;
-    }
-
-    /**
-     * Gets the weight by which each strain value decays.
-     */
-    protected double getDecayWeight() {
-        return 0.9;
-    }
+    val currentStrainPeaks: MutableList<Double>
+        /**
+         * Returns a list of the peak strains for each [sectionLength] section of the beatmap,
+         * including the peak of the current section.
+         */
+        get() = strainPeaks.toMutableList().apply { add(currentSectionPeak) }
 
     /**
      * Calculates the strain value at the hit object.
@@ -110,7 +112,7 @@ public abstract class StrainSkill extends Skill {
      * @param current The hit object to calculate.
      * @return The strain value at the hit object.
      */
-    protected abstract double strainValueAt(DifficultyHitObject current);
+    protected abstract fun strainValueAt(current: DifficultyHitObject): Double
 
     /**
      * Retrieves the peak strain at a point in time.
@@ -119,37 +121,20 @@ public abstract class StrainSkill extends Skill {
      * @param current The current hit object.
      * @return The peak strain.
      */
-    protected abstract double calculateInitialStrain(double time, DifficultyHitObject current);
+    protected abstract fun calculateInitialStrain(time: Double, current: DifficultyHitObject): Double
 
     /**
      * Saves the current strain to a hit object.
      *
      * @param current The hit object to save to.
      */
-    protected abstract void saveToHitObject(DifficultyHitObject current);
-
-    /**
-     * Gets the number of sections with the highest strains, which the peak strain reductions will apply to.
-     * This is done in order to decrease their impact on the overall difficulty of the beatmap for this skill.
-     */
-    protected int getReducedSectionCount() {
-        return 10;
-    }
-
-    /**
-     * Gets the baseline multiplier applied to the section with the biggest strain.
-     */
-    protected double getReducedSectionBaseline() {
-        return 0.75;
-    }
+    protected abstract fun saveToHitObject(current: DifficultyHitObject)
 
     /**
      * Saves the current peak strain level to the list of strain peaks,
      * which will be used to calculate an overall difficulty.
      */
-    private void saveCurrentPeak() {
-        strainPeaks.add(currentSectionPeak);
-    }
+    private fun saveCurrentPeak() = strainPeaks.add(currentSectionPeak)
 
     /**
      * Sets the initial strain level for a new section.
@@ -157,9 +142,9 @@ public abstract class StrainSkill extends Skill {
      * @param time The beginning of the new section, in milliseconds.
      * @param current The current hit object.
      */
-    private void startNewSectionFrom(double time, DifficultyHitObject current) {
+    private fun startNewSectionFrom(time: Double, current: DifficultyHitObject) {
         // The maximum strain of the new section is not zero by default.
         // This means we need to capture the strain level at the beginning of the new section, and use that as the initial peak level.
-        currentSectionPeak = calculateInitialStrain(time, current);
+        currentSectionPeak = calculateInitialStrain(time, current)
     }
 }

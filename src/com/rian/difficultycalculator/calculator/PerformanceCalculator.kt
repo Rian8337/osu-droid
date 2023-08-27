@@ -1,54 +1,43 @@
-package com.rian.difficultycalculator.calculator;
+package com.rian.difficultycalculator.calculator
 
-import com.rian.difficultycalculator.attributes.DifficultyAttributes;
-import com.rian.difficultycalculator.attributes.PerformanceAttributes;
-import com.rian.difficultycalculator.math.MathUtils;
-
-import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
+import com.rian.difficultycalculator.attributes.DifficultyAttributes
+import com.rian.difficultycalculator.attributes.PerformanceAttributes
+import ru.nsu.ccfit.zuev.osu.game.mods.GameMod
+import kotlin.math.log10
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * A performance calculator for calculating performance points.
  */
-public class PerformanceCalculator {
-    public static final double finalMultiplier = 1.14;
-
+class PerformanceCalculator(
     /**
      * The difficulty attributes being calculated.
      */
-    public final DifficultyAttributes difficultyAttributes;
+    val difficultyAttributes: DifficultyAttributes
+) {
+    private var scoreMaxCombo = 0
+    private var countGreat = 0
+    private var countOk = 0
+    private var countMeh = 0
+    private var countMiss = 0
+    private var effectiveMissCount = 0.0
 
-    private int scoreMaxCombo;
-    private int countGreat;
-    private int countOk;
-    private int countMeh;
-    private int countMiss;
-    private double effectiveMissCount;
-
-    public PerformanceCalculator(DifficultyAttributes attributes) {
-        this.difficultyAttributes = attributes;
-
-        processParameters(null);
-    }
-
-    /**
-     * Calculates the performance value of the difficulty attributes assuming an SS score.
-     *
-     * @return The performance attributes for the beatmap assuming an SS score.
-     */
-    public PerformanceAttributes calculate() {
-        return createPerformanceAttributes();
+    init {
+        processParameters(null)
     }
 
     /**
      * Calculates the performance value of the difficulty attributes with the specified parameters.
      *
-     * @param parameters The parameters to create the attributes for.
+     * @param parameters The parameters to create the attributes for. If omitted, the beatmap was assumed to be SS.
      * @return The performance attributes for the beatmap relating to the parameters.
      */
-    public PerformanceAttributes calculate(PerformanceCalculationParameters parameters) {
-        processParameters(parameters);
-
-        return createPerformanceAttributes();
+    @JvmOverloads
+    fun calculate(parameters: PerformanceCalculationParameters? = null) = run {
+        processParameters(parameters)
+        createPerformanceAttributes()
     }
 
     /**
@@ -56,269 +45,289 @@ public class PerformanceCalculator {
      *
      * @return The performance attributes for the beatmap relating to the parameters.
      */
-    private PerformanceAttributes createPerformanceAttributes() {
-        double multiplier = finalMultiplier;
+    private fun createPerformanceAttributes() = PerformanceAttributes().also {
+        var multiplier = FINAL_MULTIPLIER
 
-        if (difficultyAttributes.mods.contains(GameMod.MOD_NOFAIL)) {
-            multiplier *= Math.max(0.9, 1 - 0.02 * effectiveMissCount);
+        difficultyAttributes.mods.apply {
+            if (GameMod.MOD_NOFAIL in this) {
+                multiplier *= max(0.9, 1 - 0.02 * this@PerformanceCalculator.effectiveMissCount)
+            }
+
+            if (GameMod.MOD_RELAX in this) {
+                // Graph: https://www.desmos.com/calculator/bc9eybdthb
+                // We use OD13.3 as maximum since it's the value at which great hit window becomes 0.
+                val okMultiplier = max(
+                    0.0,
+                    if (difficultyAttributes.overallDifficulty > 0)
+                        1 - (difficultyAttributes.overallDifficulty / 13.33).pow(1.8)
+                    else 1.0
+                )
+                val mehMultiplier = max(
+                    0.0,
+                    if (difficultyAttributes.overallDifficulty > 0)
+                        1 - (difficultyAttributes.overallDifficulty / 13.33).pow(5.0)
+                    else 1.0
+                )
+
+                // As we're adding 100s and 50s to an approximated number of combo breaks, the result can be higher
+                // than total hits in specific scenarios (which breaks some calculations),  so we need to clamp it.
+                effectiveMissCount =
+                    min(effectiveMissCount + countOk * okMultiplier + countMeh * mehMultiplier, totalHits.toDouble())
+            }
         }
 
-        if (difficultyAttributes.mods.contains(GameMod.MOD_RELAX)) {
-            // Graph: https://www.desmos.com/calculator/bc9eybdthb
-            // We use OD13.3 as maximum since it's the value at which great hit window becomes 0.
-            double okMultiplier = Math.max(0, difficultyAttributes.overallDifficulty > 0 ? 1 - Math.pow(difficultyAttributes.overallDifficulty / 13.33, 1.8) : 1);
-            double mehMultiplier = Math.max(0, difficultyAttributes.overallDifficulty > 0 ? 1 - Math.pow(difficultyAttributes.overallDifficulty / 13.33, 5) : 1);
-
-            // As we're adding 100s and 50s to an approximated number of combo breaks, the result can be higher
-            // than total hits in specific scenarios (which breaks some calculations),  so we need to clamp it.
-            effectiveMissCount = Math.min(effectiveMissCount + countOk * okMultiplier + countMeh * mehMultiplier, getTotalHits());
-        }
-
-        PerformanceAttributes attributes = new PerformanceAttributes();
-
-        attributes.effectiveMissCount = effectiveMissCount;
-        attributes.aim = calculateAimValue();
-        attributes.speed = calculateSpeedValue();
-        attributes.accuracy = calculateAccuracyValue();
-        attributes.flashlight = calculateFlashlightValue();
-
-        attributes.total = Math.pow(
-                Math.pow(attributes.aim, 1.1) +
-                        Math.pow(attributes.speed, 1.1) +
-                        Math.pow(attributes.accuracy, 1.1) +
-                        Math.pow(attributes.flashlight, 1.1),
-                1 / 1.1
-        ) * multiplier;
-
-        return attributes;
+        it.effectiveMissCount = effectiveMissCount
+        it.aim = calculateAimValue()
+        it.speed = calculateSpeedValue()
+        it.accuracy = calculateAccuracyValue()
+        it.flashlight = calculateFlashlightValue()
+        it.total = (
+            it.aim.pow(1.1) +
+            it.speed.pow(1.1) +
+            it.accuracy.pow(1.1) +
+            it.flashlight.pow(1.1)
+        ).pow(1 / 1.1) * multiplier
     }
 
-    private void processParameters(PerformanceCalculationParameters parameters) {
-        if (parameters == null) {
-            resetDefaults();
-            return;
-        }
-
-        scoreMaxCombo = parameters.maxCombo;
-        countGreat = parameters.countGreat;
-        countOk = parameters.countOk;
-        countMeh = parameters.countMeh;
-        countMiss = parameters.countMiss;
-        effectiveMissCount = calculateEffectiveMissCount();
-    }
+    private fun processParameters(parameters: PerformanceCalculationParameters?) = parameters?.apply {
+        this@PerformanceCalculator.scoreMaxCombo = maxCombo
+        this@PerformanceCalculator.countGreat = countGreat
+        this@PerformanceCalculator.countOk = countOk
+        this@PerformanceCalculator.countMeh = countMeh
+        this@PerformanceCalculator.countMiss = countMiss
+        this@PerformanceCalculator.effectiveMissCount = calculateEffectiveMissCount()
+    } ?: run { resetDefaults() }
 
     /**
-     * Calculates the accuracy of the parameters.
+     * The accuracy of the parameters.
      */
-    private double getAccuracy() {
-        return (double) (countGreat * 6 + countOk * 2 + countMeh) / (getTotalHits() * 6);
-    }
+    private val accuracy: Double
+        get() = (countGreat * 6.0 + countOk * 2 + countMeh) / (totalHits * 6)
 
     /**
-     * Gets the total hits that can be done in the beatmap.
+     * The total hits that can be done in the beatmap.
      */
-    private int getTotalHits() {
-        return difficultyAttributes.hitCircleCount + difficultyAttributes.sliderCount + difficultyAttributes.spinnerCount;
-    }
+    private val totalHits: Int
+        get() = difficultyAttributes.hitCircleCount + difficultyAttributes.sliderCount + difficultyAttributes.spinnerCount
 
     /**
-     * Gets the amount of hits that were successfully done.
+     * The amount of hits that were successfully done.
      */
-    private int getTotalSuccessfulHits() {
-        return countGreat + countOk + countMeh;
-    }
+    private val totalSuccessfulHits: Int
+        get() = countGreat + countOk + countMeh
 
     /**
      * Resets this calculator to its original state.
      */
-    private void resetDefaults() {
-        scoreMaxCombo = difficultyAttributes.maxCombo;
-        countGreat = getTotalHits();
-        countOk = 0;
-        countMeh = 0;
-        countMiss = 0;
-        effectiveMissCount = 0;
+    private fun resetDefaults() {
+        scoreMaxCombo = difficultyAttributes.maxCombo
+        countGreat = totalHits
+        countOk = 0
+        countMeh = 0
+        countMiss = 0
+        effectiveMissCount = 0.0
     }
 
-    private double calculateAimValue() {
-        double aimValue = Math.pow(5 * Math.max(1, difficultyAttributes.aimDifficulty / 0.0675) - 4, 3) / 100000;
+    private fun calculateAimValue(): Double {
+        var aimValue = (5 * max(1.0, difficultyAttributes.aimDifficulty / 0.0675) - 4).pow(3.0) / 100000
 
         // Longer maps are worth more
-        double lengthBonus = 0.95 + 0.4 * Math.min(1, getTotalHits() / 2000d);
-        if (getTotalHits() > 2000) {
-            lengthBonus += Math.log10(getTotalHits() / 2000d) * 0.5;
-        }
+        val lengthBonus = 0.95 + 0.4 * min(1.0, totalHits / 2000.0) +
+                if (totalHits > 2000) log10(totalHits / 2000.0) * 0.5 else 0.0
 
-        aimValue *= lengthBonus;
+        aimValue *= lengthBonus
 
         if (effectiveMissCount > 0) {
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-            aimValue *= 0.97 * Math.pow(1 - Math.pow(effectiveMissCount / getTotalHits(), 0.775), effectiveMissCount);
+            aimValue *= 0.97 * (1 - (effectiveMissCount / totalHits).pow(0.775)).pow(effectiveMissCount)
         }
 
-        aimValue *= getComboScalingFactor();
+        aimValue *= comboScalingFactor
 
-        if (!difficultyAttributes.mods.contains(GameMod.MOD_RELAX)) {
-            // AR scaling
-            double approachRateFactor = 0;
-            if (difficultyAttributes.approachRate > 10.33) {
-                approachRateFactor += 0.3 * (difficultyAttributes.approachRate - 10.33);
-            } else if (difficultyAttributes.approachRate < 8) {
-                approachRateFactor += 0.05 * (8 - difficultyAttributes.approachRate);
+        difficultyAttributes.apply {
+            if (GameMod.MOD_RELAX !in mods) {
+                // AR scaling
+                var approachRateFactor = 0.0
+                if (approachRate > 10.33) {
+                    approachRateFactor += 0.3 * (approachRate - 10.33)
+                } else if (approachRate < 8) {
+                    approachRateFactor += 0.05 * (8 - approachRate)
+                }
+
+                // Buff for longer maps with high AR.
+                aimValue *= 1 + approachRateFactor * lengthBonus
             }
 
-            // Buff for longer maps with high AR.
-            aimValue *= 1 + approachRateFactor * lengthBonus;
-        }
+            // We want to give more reward for lower AR when it comes to aim and HD. This nerfs high AR and buffs lower AR.
+            if (GameMod.MOD_HIDDEN in mods) {
+                aimValue *= 1 + 0.04 * (12 - approachRate)
+            }
 
-        // We want to give more reward for lower AR when it comes to aim and HD. This nerfs high AR and buffs lower AR.
-        if (difficultyAttributes.mods.contains(GameMod.MOD_HIDDEN)) {
-            aimValue *= 1 + 0.04 * (12 - difficultyAttributes.approachRate);
-        }
+            // We assume 15% of sliders in a map are difficult since there's no way to tell from the performance calculator.
+            val estimateDifficultSliders = sliderCount * 0.15
+            if (estimateDifficultSliders > 0) {
+                val estimateSliderEndsDropped =
+                    min(
+                        (countOk + countMeh + countMiss),
+                        (maxCombo - scoreMaxCombo)
+                    ).toDouble().coerceIn(0.0, estimateDifficultSliders)
 
-        // We assume 15% of sliders in a map are difficult since there's no way to tell from the performance calculator.
-        double estimateDifficultSliders = difficultyAttributes.sliderCount * 0.15;
+                val sliderNerfFactor =
+                    (1 - aimSliderFactor) *
+                    (1 - estimateSliderEndsDropped / estimateDifficultSliders).pow(3.0) + aimSliderFactor
 
-        if (estimateDifficultSliders > 0) {
-            double estimateSliderEndsDropped = MathUtils.clamp(Math.min(countOk + countMeh + countMiss, difficultyAttributes.maxCombo - scoreMaxCombo), 0, estimateDifficultSliders);
-            double sliderNerfFactor = (1 - difficultyAttributes.aimSliderFactor) * Math.pow(1 - estimateSliderEndsDropped / estimateDifficultSliders, 3) + difficultyAttributes.aimSliderFactor;
-            aimValue *= sliderNerfFactor;
+                aimValue *= sliderNerfFactor
+            }
         }
 
         // Scale the aim value with accuracy.
-        aimValue *= getAccuracy();
+        aimValue *= accuracy
 
         // It is also important to consider accuracy difficulty when doing that.
-        aimValue *= 0.98 + Math.pow(difficultyAttributes.overallDifficulty, 2) / 2500;
-
-        return aimValue;
+        aimValue *= 0.98 + difficultyAttributes.overallDifficulty.pow(2.0) / 2500
+        return aimValue
     }
 
-    private double calculateSpeedValue() {
-        if (difficultyAttributes.mods.contains(GameMod.MOD_RELAX)) {
-            return 0;
+    private fun calculateSpeedValue(): Double {
+        if (GameMod.MOD_RELAX in difficultyAttributes.mods) {
+            return 0.0
         }
 
-        double speedValue = Math.pow(5 * Math.max(1, difficultyAttributes.speedDifficulty / 0.0675) - 4, 3) / 100000;
+        var speedValue = (5 * max(1.0, difficultyAttributes.speedDifficulty / 0.0675) - 4).pow(3.0) / 100000
 
         // Longer maps are worth more
-        double lengthBonus = 0.95 + 0.4 * Math.min(1, getTotalHits() / 2000d);
-        if (getTotalHits() > 2000) {
-            lengthBonus += Math.log10(getTotalSuccessfulHits() / 2000d) * 0.5;
-        }
+        val lengthBonus = 0.95 + 0.4 * min(1.0, totalHits / 2000.0) +
+                if (totalHits > 2000) log10(totalHits / 2000.0) * 0.5 else 0.0
 
-        speedValue *= lengthBonus;
+        speedValue *= lengthBonus
 
         if (effectiveMissCount > 0) {
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-            speedValue *= 0.97 * Math.pow(1 - Math.pow(effectiveMissCount / getTotalHits(), 0.775), Math.pow(effectiveMissCount, 0.875));
+            speedValue *= 0.97 * (1 - (effectiveMissCount / totalHits).pow(0.775)).pow(effectiveMissCount.pow(0.875))
         }
 
-        speedValue *= getComboScalingFactor();
+        speedValue *= comboScalingFactor
 
-        // AR scaling
-        if (difficultyAttributes.approachRate > 10.33) {
-            // Buff for longer maps with high AR.
-            speedValue *= 1 + 0.3 * (difficultyAttributes.approachRate - 10.33) * lengthBonus;
+        difficultyAttributes.apply {
+            // AR scaling
+            if (approachRate > 10.33) {
+                // Buff for longer maps with high AR.
+                speedValue *= 1 + 0.3 * (approachRate - 10.33) * lengthBonus
+            }
+            if (GameMod.MOD_HIDDEN in mods) {
+                speedValue *= 1 + 0.04 * (12 - approachRate)
+            }
+
+            // Calculate accuracy assuming the worst case scenario.
+            val relevantTotalDiff = totalHits - speedNoteCount
+            val relevantCountGreat = max(0.0, countGreat - relevantTotalDiff)
+            val relevantCountOk = max(0.0, countOk - max(0.0, relevantTotalDiff - countGreat))
+            val relevantCountMeh = max(0.0, countMeh - max(0.0, relevantTotalDiff - countGreat - countOk))
+            val relevantAccuracy =
+                if (speedNoteCount == 0.0) 0.0
+                else (relevantCountGreat * 6 + relevantCountOk * 2 + relevantCountMeh) / (speedNoteCount * 6)
+
+            // Scale the speed value with accuracy and OD.
+            speedValue *=
+                (0.95 + overallDifficulty.pow(2.0) / 750) *
+                ((accuracy + relevantAccuracy) / 2).pow((14.5 - max(overallDifficulty, 8.0)) / 2
+            )
         }
-
-        if (difficultyAttributes.mods.contains(GameMod.MOD_HIDDEN)) {
-            speedValue *= 1 + 0.04 * (12 - difficultyAttributes.approachRate);
-        }
-
-        // Calculate accuracy assuming the worst case scenario.
-        double relevantTotalDiff = getTotalHits() - difficultyAttributes.speedNoteCount;
-        double relevantCountGreat = Math.max(0, countGreat - relevantTotalDiff);
-        double relevantCountOk = Math.max(0, countOk - Math.max(0, relevantTotalDiff - countGreat));
-        double relevantCountMeh = Math.max(0, countMeh - Math.max(0, relevantTotalDiff - countGreat - countOk));
-        double relevantAccuracy = difficultyAttributes.speedNoteCount == 0 ? 0 : (relevantCountGreat * 6 + relevantCountOk * 2 + relevantCountMeh) / (difficultyAttributes.speedNoteCount * 6);
-
-        // Scale the speed value with accuracy and OD.
-        speedValue *= (0.95 + Math.pow(difficultyAttributes.overallDifficulty, 2) / 750) * Math.pow((getAccuracy() + relevantAccuracy) / 2, (14.5 - Math.max(difficultyAttributes.overallDifficulty, 8)) / 2);
 
         // Scale the speed value with # of 50s to punish double-tapping.
-        speedValue *= Math.pow(0.99, Math.max(0, countMeh - getTotalHits() / 500d));
+        speedValue *= 0.99.pow(max(0.0, countMeh - totalHits / 500.0))
 
-        return speedValue;
+        return speedValue
     }
 
-    private double calculateAccuracyValue() {
-        if (difficultyAttributes.mods.contains(GameMod.MOD_RELAX)) {
-            return 0;
+    private fun calculateAccuracyValue(): Double {
+        if (GameMod.MOD_RELAX in difficultyAttributes.mods) {
+            return 0.0
         }
 
         // This percentage only considers HitCircles of any value - in this part of the calculation we focus on hitting the timing hit window.
-        double betterAccuracyPercentage = 0;
-        int circleCount = difficultyAttributes.hitCircleCount;
+        val circleCount = difficultyAttributes.hitCircleCount
+        val betterAccuracyPercentage =
+            if (circleCount > 0) max(
+                0.0,
+                ((countGreat - (totalHits - circleCount)) * 6.0 + countOk * 2 + countMeh) / (circleCount * 6)
+            )
+            else 0.0
 
-        if (circleCount > 0) {
-            betterAccuracyPercentage = Math.max(0, ((countGreat - (getTotalHits() - circleCount)) * 6 + countOk * 2 + countMeh) / (circleCount * 6));
+        return difficultyAttributes.run {
+            // Lots of arbitrary values from testing.
+            // Considering to use derivation from perfect accuracy in a probabilistic manner - assume normal distribution
+            var accuracyValue =
+                1.52163.pow(overallDifficulty) * betterAccuracyPercentage.pow(24.0) * 2.83
+
+            // Bonus for many hit circles - it's harder to keep good accuracy up for longer
+            accuracyValue *= min(1.15, (circleCount / 1000.0).pow(0.3))
+
+            if (GameMod.MOD_HIDDEN in mods) {
+                accuracyValue *= 1.08
+            }
+            if (GameMod.MOD_FLASHLIGHT in mods) {
+                accuracyValue *= 1.02
+            }
+
+            accuracyValue
         }
-
-        // Lots of arbitrary values from testing.
-        // Considering to use derivation from perfect accuracy in a probabilistic manner - assume normal distribution
-        double accuracyValue = Math.pow(1.52163, difficultyAttributes.overallDifficulty) * Math.pow(betterAccuracyPercentage, 24) * 2.83;
-
-        // Bonus for many hit circles - it's harder to keep good accuracy up for longer
-        accuracyValue *= Math.min(1.15, Math.pow(circleCount / 1000d, 0.3));
-
-        if (difficultyAttributes.mods.contains(GameMod.MOD_HIDDEN)) {
-            accuracyValue *= 1.08;
-        }
-        if (difficultyAttributes.mods.contains(GameMod.MOD_FLASHLIGHT)) {
-            accuracyValue *= 1.02;
-        }
-
-        return accuracyValue;
     }
 
-    private double calculateFlashlightValue() {
-        if (!difficultyAttributes.mods.contains(GameMod.MOD_FLASHLIGHT)) {
-            return 0;
+    private fun calculateFlashlightValue(): Double {
+        if (GameMod.MOD_FLASHLIGHT !in difficultyAttributes.mods) {
+            return 0.0
         }
 
-        double flashlightValue = Math.pow(difficultyAttributes.flashlightDifficulty, 2) * 25;
+        var flashlightValue = difficultyAttributes.flashlightDifficulty.pow(2.0) * 25
 
         if (effectiveMissCount > 0) {
             // Penalize misses by assessing # of misses relative to the total # of objects. Default a 3% reduction for any # of misses.
-            flashlightValue *= 0.97 * Math.pow(1 - Math.pow(effectiveMissCount / getTotalHits(), 0.775), Math.pow(effectiveMissCount, 0.875));
+            flashlightValue *= 0.97 * (1 - (effectiveMissCount / totalHits).pow(0.775)).pow(effectiveMissCount.pow(0.875))
         }
 
-        flashlightValue *= getComboScalingFactor();
+        flashlightValue *= comboScalingFactor
 
         // Account for shorter maps having a higher ratio of 0 combo/100 combo flashlight radius.
-        flashlightValue *= 0.7 + 0.1 * Math.min(1, getTotalHits() / 200) +
-                (getTotalHits() > 200 ? 0.2 * Math.min(1, (getTotalHits() - 200) / 200) : 0);
+        flashlightValue *=
+            0.7 + 0.1 * min(1.0, totalHits / 200.0) +
+                if (totalHits > 200)
+                    0.2 * min(1.0, (totalHits - 200.0) / 200)
+                else 0.0
 
         // Scale the flashlight value with accuracy slightly.
-        flashlightValue *= 0.5 + getAccuracy() / 2;
+        flashlightValue *= 0.5 + accuracy / 2
 
         // It is also important to consider accuracy difficulty when doing that.
-        flashlightValue *= 0.98 + Math.pow(difficultyAttributes.overallDifficulty, 2) / 2500;
+        flashlightValue *= 0.98 + difficultyAttributes.overallDifficulty.pow(2.0) / 2500
 
-        return flashlightValue;
+        return flashlightValue
     }
 
-    private double calculateEffectiveMissCount() {
+    private fun calculateEffectiveMissCount() = difficultyAttributes.run {
         // Guess the number of misses + slider breaks from combo
-        double comboBasedMissCount = 0;
+        var comboBasedMissCount = 0.0
 
-        if (difficultyAttributes.sliderCount > 0) {
-            double fullComboThreshold = difficultyAttributes.maxCombo - 0.1 * difficultyAttributes.sliderCount;
-
+        if (sliderCount > 0) {
+            val fullComboThreshold: Double = maxCombo - 0.1 * sliderCount
             if (scoreMaxCombo < fullComboThreshold) {
                 // Clamp miss count to maximum amount of possible breaks.
-                comboBasedMissCount = Math.min(
-                        fullComboThreshold / Math.max(1, scoreMaxCombo),
-                        countOk + countMeh + countMiss
-                );
+                comboBasedMissCount = min(
+                    fullComboThreshold / max(1, scoreMaxCombo),
+                    (countOk + countMeh + countMiss).toDouble()
+                )
             }
         }
 
-        return Math.max(countMiss, comboBasedMissCount);
+        max(countMiss.toDouble(), comboBasedMissCount)
     }
 
-    private double getComboScalingFactor() {
-        return difficultyAttributes.maxCombo <= 0 ? 0 : Math.min(Math.pow(scoreMaxCombo, 0.8) / Math.pow(difficultyAttributes.maxCombo, 0.8), 1);
+    private val comboScalingFactor: Double
+        get() =
+            if (difficultyAttributes.maxCombo <= 0) 0.0
+            else min((scoreMaxCombo.toDouble() / difficultyAttributes.maxCombo).pow(0.8), 1.0)
+
+    companion object {
+        const val FINAL_MULTIPLIER = 1.14
     }
 }

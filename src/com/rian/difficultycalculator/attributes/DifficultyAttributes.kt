@@ -1,85 +1,97 @@
-package com.rian.difficultycalculator.attributes;
+package com.rian.difficultycalculator.attributes
 
-import java.util.EnumSet;
-
-import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
+import ru.nsu.ccfit.zuev.osu.game.mods.GameMod
+import java.util.*
 
 /**
  * Holds data that can be used to calculate performance points.
  */
-public class DifficultyAttributes {
+class DifficultyAttributes {
     /**
      * The mods which were applied to the beatmap.
      */
-    public EnumSet<GameMod> mods = EnumSet.noneOf(GameMod.class);
+    @JvmField
+    var mods = EnumSet.noneOf(GameMod::class.java)
 
     /**
      * The combined star rating of all skills.
      */
-    public double starRating;
+    @JvmField
+    var starRating = 0.0
 
     /**
      * The maximum achievable combo.
      */
-    public int maxCombo;
+    @JvmField
+    var maxCombo = 0
 
     /**
      * The difficulty corresponding to the aim skill.
      */
-    public double aimDifficulty;
+    @JvmField
+    var aimDifficulty = 0.0
 
     /**
      * The difficulty corresponding to the speed skill.
      */
-    public double speedDifficulty;
+    @JvmField
+    var speedDifficulty = 0.0
 
     /**
      * The difficulty corresponding to the flashlight skill.
      */
-    public double flashlightDifficulty;
+    @JvmField
+    var flashlightDifficulty = 0.0
 
     /**
      * The number of clickable objects weighted by difficulty.
-     * <br><br>
-     * Related to speed/tap difficulty.
+     *
+     * Related to speed difficulty.
      */
-    public double speedNoteCount;
+    @JvmField
+    var speedNoteCount = 0.0
 
     /**
      * Describes how much of aim difficulty is contributed to by hit circles or sliders.
-     * <br><br>
-     * A value closer to 1 indicates most of aim difficulty is contributed by hit circles.
-     * <br><br>
-     * A value closer to 0 indicates most of aim difficulty is contributed by sliders.
+     *
+     * A value closer to 1 indicates most of the aim difficulty is contributed by hit circles.
+     *
+     * A value closer to 0 indicates most of the aim difficulty is contributed by sliders.
      */
-    public double aimSliderFactor;
+    @JvmField
+    var aimSliderFactor = 0.0
 
     /**
-     * The perceived approach rate inclusive of rate-adjusting mods (DT/HT/etc).
-     * <br><br>
+     * The perceived approach rate inclusive of rate-adjusting mods (DT/HT/etc.).
+     *
      * Rate-adjusting mods don't directly affect the approach rate difficulty value, but have a perceived effect as a result of adjusting audio timing.
      */
-    public double approachRate;
+    @JvmField
+    var approachRate = 0.0
 
     /**
-     * The perceived overall difficulty inclusive of rate-adjusting mods (DT/HT/etc), based on osu!standard judgement.
-     * <br><br>
+     * The perceived overall difficulty inclusive of rate-adjusting mods (DT/HT/etc.).
+     *
      * Rate-adjusting mods don't directly affect the overall difficulty value, but have a perceived effect as a result of adjusting audio timing.
      */
-    public double overallDifficulty;
+    @JvmField
+    var overallDifficulty = 0.0
 
     /**
      * The number of hit circles in the beatmap.
      */
-    public int hitCircleCount;
+    @JvmField
+    var hitCircleCount = 0
 
     /**
      * The number of sliders in the beatmap.
      */
-    public int sliderCount;
+    @JvmField
+    var sliderCount = 0
 
     /**
      * The number of spinners in the beatmap.
      */
-    public int spinnerCount;
+    @JvmField
+    var spinnerCount = 0
 }

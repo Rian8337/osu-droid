@@ -1,113 +1,109 @@
-package com.rian.difficultycalculator.evaluators;
+package com.rian.difficultycalculator.evaluators
 
-import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
-import com.rian.difficultycalculator.beatmap.hitobject.Slider;
-import com.rian.difficultycalculator.beatmap.hitobject.Spinner;
+import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject
+import com.rian.difficultycalculator.beatmap.hitobject.Slider
+import com.rian.difficultycalculator.beatmap.hitobject.Spinner
+import com.rian.difficultycalculator.beatmap.hitobject.stackedEndPosition
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * An evaluator for calculating osu!standard flashlight skill.
- * <br><br>
+ * <br></br><br></br>
  * This class should be considered an "evaluating" class and not persisted.
  */
-public final class FlashlightEvaluator {
-    private FlashlightEvaluator() {
-        throw new UnsupportedOperationException();
-    }
-
+object FlashlightEvaluator {
     /**
      * Evaluates the difficulty of memorizing and hitting the current object, based on:
-     * <ul>
-     *     <li>distance between a number of previous objects and the current object,</li>
-     *     <li>the visual opacity of the current object,</li>
-     *     <li>the angle made by the current object,</li>
-     *     <li>length and speed of the current object (for sliders),</li>
-     *     <li>and whether Hidden mod is enabled.</li>
-     * </ul>
+     *
+     *  * distance between a number of previous objects and the current object,
+     *  * the visual opacity of the current object,
+     *  * the angle made by the current object,
+     *  * length and speed of the current object (for sliders),
+     *  * and whether Hidden mod is enabled.
+     *
      *
      * @param current The current object.
      * @param isHiddenMod Whether the Hidden mod is enabled.
      */
-    public static double evaluateDifficultyOf(DifficultyHitObject current, boolean isHiddenMod) {
+    @JvmStatic
+    fun evaluateDifficultyOf(current: DifficultyHitObject, isHiddenMod: Boolean): Double {
         // Exclude overlapping objects that can be tapped at once.
-        if (current.object instanceof Spinner) {
-            return 0;
+        if (current.obj is Spinner) {
+            return 0.0
         }
 
-        double scalingFactor = 52 / current.object.getRadius();
-        double smallDistNerf = 1;
-        double cumulativeStrainTime = 0;
-        double result = 0;
-        DifficultyHitObject last = current;
-        double angleRepeatCount = 0;
+        val scalingFactor = 52 / current.obj.radius
+        var smallDistNerf = 1.0
+        var cumulativeStrainTime = 0.0
+        var result = 0.0
+        var last = current
+        var angleRepeatCount = 0.0
 
-        for (int i = 0; i < Math.min(current.index, 10); ++i) {
-            DifficultyHitObject currentObject = current.previous(i);
+        for (i in 0 until min(current.index, 10)) {
+            val currentObject = current.previous(i)!!
 
             // Exclude overlapping objects that can be tapped at once.
-            if (!(currentObject.object instanceof Spinner)) {
-                double jumpDistance = current.object
-                        .getStackedPosition()
-                        .subtract(currentObject.object.getStackedEndPosition())
-                        .getLength();
-
-                cumulativeStrainTime += last.strainTime;
+            if (currentObject.obj !is Spinner) {
+                val jumpDistance = (current.obj.stackedPosition - currentObject.obj.stackedEndPosition).length
+                cumulativeStrainTime += last.strainTime
 
                 // We want to nerf objects that can be easily seen within the Flashlight circle radius.
                 if (i == 0) {
-                    smallDistNerf = Math.min(1, jumpDistance / 75);
+                    smallDistNerf = min(1.0, jumpDistance / 75.0)
                 }
 
                 // We also want to nerf stacks so that only the first object of the stack is accounted for.
-                double stackNerf = Math.min(1, currentObject.lazyJumpDistance / scalingFactor / 25);
+                val stackNerf = min(1.0, currentObject.lazyJumpDistance / scalingFactor / 25)
 
                 // Bonus based on how visible the object is.
-                double opacityBonusMultiplier = 0.4;
-                double opacityBonus = 1 + opacityBonusMultiplier * (1 - current.opacityAt(currentObject.object.getStartTime(), isHiddenMod));
+                val opacityBonus =
+                    1 + 0.4 * (1 - current.opacityAt(currentObject.obj.startTime, isHiddenMod))
+                result += stackNerf * opacityBonus * scalingFactor * jumpDistance / cumulativeStrainTime
 
-                result += (stackNerf * opacityBonus * scalingFactor * jumpDistance) / cumulativeStrainTime;
-
-                if (!Double.isNaN(currentObject.angle) && !Double.isNaN(current.angle)) {
-                    // Objects further back in time should count less for the nerf.
-                    if (Math.abs(currentObject.angle - current.angle) < 0.02) {
-                        angleRepeatCount += Math.max(0, 1 - 0.1 * i);
-                    }
+                // Objects further back in time should count less for the nerf.
+                if (currentObject.angle != null && current.angle != null &&
+                    abs(currentObject.angle!! - current.angle!!) < 0.02) {
+                    angleRepeatCount += max(0.0, 1 - 0.1 * i)
                 }
             }
 
-            last = currentObject;
+            last = currentObject
         }
 
-        result = Math.pow(smallDistNerf * result, 2);
+        result = (smallDistNerf * result).pow(2.0)
 
         // Additional bonus for Hidden due to there being no approach circles.
         if (isHiddenMod) {
-            double hiddenBonus = 0.2;
-            result *= 1 + hiddenBonus;
+            val hiddenBonus = 0.2
+            result *= 1 + hiddenBonus
         }
 
         // Nerf patterns with repeated angles.
-        double minAngleMultiplier = 0.2;
-        result *= minAngleMultiplier + (1 - minAngleMultiplier) / (angleRepeatCount + 1);
+        val minAngleMultiplier = 0.2
+        result *= minAngleMultiplier + (1 - minAngleMultiplier) / (angleRepeatCount + 1)
 
-        double sliderBonus = 0;
-        if (current.object instanceof Slider) {
+        var sliderBonus = 0.0
+        if (current.obj is Slider) {
             // Invert the scaling factor to determine the true travel distance independent of circle size.
-            double pixelTravelDistance = ((Slider) current.object).getLazyTravelDistance() / scalingFactor;
+            val pixelTravelDistance = current.obj.lazyTravelDistance / scalingFactor
 
             // Reward sliders based on velocity.
-            double minVelocity = 0.5;
-            sliderBonus = Math.pow(Math.max(0, pixelTravelDistance / current.travelTime - minVelocity), 0.5);
+            val minVelocity = 0.5
+            sliderBonus = max(0.0, pixelTravelDistance / current.travelTime - minVelocity).pow(0.5)
 
             // Longer sliders require more memorization.
-            sliderBonus *= pixelTravelDistance;
+            sliderBonus *= pixelTravelDistance
 
             // Nerf sliders with repeats, as less memorization is required.
-            sliderBonus /= ((Slider) current.object).getRepeatCount();
+            sliderBonus /= current.obj.repeatCount.toDouble()
         }
 
-        double sliderMultiplier = 1.3;
-        result += sliderBonus * sliderMultiplier;
+        val sliderMultiplier = 1.3
+        result += sliderBonus * sliderMultiplier
 
-        return result;
+        return result
     }
 }

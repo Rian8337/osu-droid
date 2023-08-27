@@ -1,12 +1,19 @@
-package com.rian.difficultycalculator.math;
+package com.rian.difficultycalculator.math
 
 /**
  * Holds interpolation methods for numbers.
  */
-public final class Interpolation {
-    private Interpolation() {
-        throw new UnsupportedOperationException();
-    }
+object Interpolation {
+    /**
+     * Performs a linear interpolation.
+     *
+     * @param start The starting point of the interpolation.
+     * @param end The final point of the interpolation.
+     * @param amount The interpolation multiplier.
+     * @return The interpolated value.
+     */
+    @JvmStatic
+    fun linear(start: Double, end: Double, amount: Double) = start + (end - start) * amount
 
     /**
      * Performs a linear interpolation.
@@ -16,19 +23,6 @@ public final class Interpolation {
      * @param amount The interpolation multiplier.
      * @return The interpolated value.
      */
-    public static double linear(double start, double end, double amount) {
-        return start + (end - start) * amount;
-    }
-
-    /**
-     * Performs a linear interpolation.
-     *
-     * @param start The starting point of the interpolation.
-     * @param end The final point of the interpolation.
-     * @param amount The interpolation multiplier.
-     * @return The interpolated value.
-     */
-    public static float linear(float start, float end, float amount) {
-        return start + (end - start) * amount;
-    }
+    @JvmStatic
+    fun linear(start: Float, end: Float, amount: Float) = start + (end - start) * amount
 }

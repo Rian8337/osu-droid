@@ -4,7 +4,7 @@ import com.rian.difficultycalculator.attributes.DifficultyAttributes;
 import com.rian.difficultycalculator.beatmap.BeatmapControlPointsManager;
 import com.rian.difficultycalculator.beatmap.BeatmapHitObjectsManager;
 import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
-import com.rian.difficultycalculator.beatmap.hitobject.HitObjectWithDuration;
+import com.rian.difficultycalculator.beatmap.hitobject.HitObjectWithLength;
 import com.rian.difficultycalculator.beatmap.hitobject.Slider;
 import com.rian.difficultycalculator.beatmap.timings.TimingControlPoint;
 
@@ -329,8 +329,8 @@ public class BeatmapData {
         HitObject lastObject = hitObjects.getObjects().get(hitObjects.getObjects().size() - 1);
 
         track.setMusicLength((int) lastObject.getStartTime());
-        if (lastObject instanceof HitObjectWithDuration) {
-            track.setMusicLength((int) ((HitObjectWithDuration) lastObject).getEndTime());
+        if (lastObject instanceof HitObjectWithLength) {
+            track.setMusicLength((int) ((HitObjectWithLength) lastObject).endTime);
         }
         track.setMaxCombo(getMaxCombo());
 

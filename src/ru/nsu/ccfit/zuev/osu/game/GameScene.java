@@ -19,8 +19,7 @@ import com.reco1l.legacy.engine.VideoSprite;
 import com.reco1l.legacy.ui.multiplayer.Multiplayer;
 import com.reco1l.legacy.ui.multiplayer.RoomScene;
 import com.rian.difficultycalculator.attributes.TimedDifficultyAttributes;
-import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
-import com.rian.difficultycalculator.beatmap.hitobject.HitObjectWithDuration;
+import com.rian.difficultycalculator.beatmap.hitobject.HitObjectUtils;
 import com.rian.difficultycalculator.calculator.DifficultyCalculationParameters;
 
 import org.anddev.andengine.engine.Engine;
@@ -3003,12 +3002,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             return;
         }
 
-        HitObject object = beatmapData.hitObjects.getObjects().get(objectId);
-        double time = object.getStartTime();
-
-        if (object instanceof HitObjectWithDuration) {
-            time = ((HitObjectWithDuration) object).getEndTime();
-        }
+        double time = HitObjectUtils.getEndTime(beatmapData.hitObjects.getObjects().get(objectId));
 
         ppText.setText(String.format(Locale.ENGLISH, "%.2fpp", getPPAtTime(time)));
     }

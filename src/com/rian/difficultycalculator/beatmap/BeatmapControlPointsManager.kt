@@ -1,43 +1,27 @@
-package com.rian.difficultycalculator.beatmap;
+package com.rian.difficultycalculator.beatmap
 
-import com.rian.difficultycalculator.beatmap.timings.DifficultyControlPointManager;
-import com.rian.difficultycalculator.beatmap.timings.TimingControlPointManager;
+import com.rian.difficultycalculator.beatmap.timings.DifficultyControlPointManager
+import com.rian.difficultycalculator.beatmap.timings.TimingControlPointManager
 
 /**
  * A manager for beatmap control points.
  */
-public class BeatmapControlPointsManager {
+class BeatmapControlPointsManager : Cloneable {
     /**
      * The manager for timing control points of this beatmap.
      */
-    public final TimingControlPointManager timing;
+    var timing = TimingControlPointManager()
+        private set
 
     /**
      * The manager for difficulty control points of this beatmap.
      */
-    public final DifficultyControlPointManager difficulty;
+    var difficulty = DifficultyControlPointManager()
+        private set
 
-    public BeatmapControlPointsManager() {
-        timing = new TimingControlPointManager();
-        difficulty = new DifficultyControlPointManager();
-    }
-
-    /**
-     * Copy constructor.
-     *
-     * @param source The source to copy from.
-     */
-    private BeatmapControlPointsManager(BeatmapControlPointsManager source) {
-        timing = source.timing.deepClone();
-        difficulty = source.difficulty.deepClone();
-    }
-
-    /**
-     * Deep clones this manager.
-     *
-     * @return The deep cloned manager.
-     */
-    public BeatmapControlPointsManager deepClone() {
-        return new BeatmapControlPointsManager(this);
-    }
+    override fun clone() =
+        (super.clone() as BeatmapControlPointsManager).apply {
+            timing = this@BeatmapControlPointsManager.timing.clone()
+            difficulty = this@BeatmapControlPointsManager.difficulty.clone()
+        }
 }

@@ -1,22 +1,17 @@
-package com.rian.difficultycalculator.utils;
+package com.rian.difficultycalculator.utils
 
 /**
  * A utility for converting osu!standard hit windows and overall difficulty to some hit results and vice versa.
  */
-public final class HitWindowConverter {
-    private HitWindowConverter() {
-        throw new UnsupportedOperationException();
-    }
-
+object HitWindowConverter {
     /**
      * Calculates the overall difficulty value of a great hit window.
      *
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow300ToOD(double value) {
-        return (float) (80 - value) / 6;
-    }
+    @JvmStatic
+    fun hitWindow300ToOD(value: Double) = (80 - value).toFloat() / 6
 
     /**
      * Calculates the overall difficulty value of an ok hit window.
@@ -24,9 +19,8 @@ public final class HitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow100ToOD(double value) {
-        return (float) (140 - value) / 8;
-    }
+    @JvmStatic
+    fun hitWindow100ToOD(value: Double) = (140 - value).toFloat() / 8
 
     /**
      * Calculates the overall difficulty value of a meh hit window.
@@ -34,9 +28,8 @@ public final class HitWindowConverter {
      * @param value The value of the hit window, in milliseconds.
      * @return The overall difficulty value.
      */
-    public static float hitWindow50ToOD(double value) {
-        return (float) (200 - value) / 10;
-    }
+    @JvmStatic
+    fun hitWindow50ToOD(value: Double) = (200 - value).toFloat() / 10
 
     /**
      * Calculates the hit window for 300 (great) hit result of an overall difficulty value.
@@ -44,9 +37,8 @@ public final class HitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow300(float od) {
-        return 80 - 6 * od;
-    }
+    @JvmStatic
+    fun odToHitWindow300(od: Float) = (80 - 6 * od).toDouble()
 
     /**
      * Calculates the hit window for 100 (ok) hit result of an overall difficulty value.
@@ -54,9 +46,8 @@ public final class HitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow100(float od) {
-        return 140 - 8 * od;
-    }
+    @JvmStatic
+    fun odToHitWindow100(od: Float) = (140 - 8 * od).toDouble()
 
     /**
      * Calculates the hit window for 50 (meh) hit result of an overall difficulty value.
@@ -64,7 +55,6 @@ public final class HitWindowConverter {
      * @param od The overall difficulty value.
      * @return The hit window in milliseconds.
      */
-    public static double odToHitWindow50(float od) {
-        return 200 - 10 * od;
-    }
+    @JvmStatic
+    fun odToHitWindow50(od: Float) = (200 - 10 * od).toDouble()
 }

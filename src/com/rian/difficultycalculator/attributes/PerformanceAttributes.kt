@@ -1,36 +1,42 @@
-package com.rian.difficultycalculator.attributes;
+package com.rian.difficultycalculator.attributes
 
 /**
  * A structure containing the performance values of a score.
  */
-public class PerformanceAttributes {
+class PerformanceAttributes {
     /**
      * Calculated score performance points.
      */
-    public double total;
+    @JvmField
+    var total = 0.0
 
     /**
      * The aim performance value.
      */
-    public double aim;
+    @JvmField
+    var aim = 0.0
 
     /**
      * The speed performance value.
      */
-    public double speed;
+    @JvmField
+    var speed = 0.0
 
     /**
      * The accuracy performance value.
      */
-    public double accuracy;
+    @JvmField
+    var accuracy = 0.0
 
     /**
      * The flashlight performance value.
      */
-    public double flashlight;
+    @JvmField
+    var flashlight = 0.0
 
     /**
-     * The amount of misses that are filtered out from slider breaks.
+     * The amount of misses including slider breaks.
      */
-    public double effectiveMissCount;
+    @JvmField
+    var effectiveMissCount = 0.0
 }

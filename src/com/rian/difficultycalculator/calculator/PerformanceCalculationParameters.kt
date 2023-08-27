@@ -1,31 +1,38 @@
-package com.rian.difficultycalculator.calculator;
+package com.rian.difficultycalculator.calculator
 
 /**
  * A class for specifying parameters for performance calculation.
  */
-public class PerformanceCalculationParameters {
+data class PerformanceCalculationParameters(
     /**
      * The maximum combo achieved.
      */
-    public int maxCombo;
+    @JvmField
+    var maxCombo: Int = 0,
 
     /**
      * The amount of 300 (great) hits achieved.
      */
-    public int countGreat;
+    @JvmField
+    var countGreat: Int = 0,
 
     /**
      * The amount of 100 (ok) hits achieved.
      */
-    public int countOk;
+    @JvmField
+    var countOk: Int = 0,
 
     /**
      * The amount of 50 (meh) hits achieved.
      */
-    public int countMeh;
+    @JvmField
+    var countMeh: Int = 0,
 
     /**
      * The amount of misses achieved.
      */
-    public int countMiss;
+    @JvmField
+    var countMiss: Int = 0,
+) {
+
 }

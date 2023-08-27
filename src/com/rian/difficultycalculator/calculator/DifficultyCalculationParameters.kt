@@ -1,64 +1,56 @@
-package com.rian.difficultycalculator.calculator;
+package com.rian.difficultycalculator.calculator
 
-import java.util.EnumSet;
-
-import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
+import ru.nsu.ccfit.zuev.osu.game.mods.GameMod
+import java.util.*
 
 /**
  * A class for specifying parameters for difficulty calculation.
  */
-public class DifficultyCalculationParameters {
+data class DifficultyCalculationParameters(
     /**
      * The mods to calculate for.
      */
-    public EnumSet<GameMod> mods = EnumSet.noneOf(GameMod.class);
+    @JvmField
+    var mods: EnumSet<GameMod> = EnumSet.noneOf(GameMod::class.java),
 
     /**
      * The custom speed multiplier to calculate for.
      */
-    public float customSpeedMultiplier = 1;
+    @JvmField
+    var customSpeedMultiplier: Float = 1f,
 
     /**
-     * The forced AR setting to calculate for. Set to <code>Double.NaN</code> to disable.
+     * The forced AR setting to calculate for. Set to `null` to disable.
      */
-    public float forcedAR = Float.NaN;
-
+    @JvmField
+    var forcedAR: Float? = null
+) : Cloneable {
     /**
-     * Retrieves the overall speed multiplier to calculate for.
+     * The overall speed multiplier to calculate for.
      */
-    public float getTotalSpeedMultiplier() {
-        float speedMultiplier = customSpeedMultiplier;
+    val totalSpeedMultiplier: Float
+        get() {
+            var speedMultiplier = customSpeedMultiplier
 
-        if (mods.contains(GameMod.MOD_DOUBLETIME) || mods.contains(GameMod.MOD_NIGHTCORE)) {
-            speedMultiplier *= 1.5f;
+            if (mods.contains(GameMod.MOD_DOUBLETIME) || mods.contains(GameMod.MOD_NIGHTCORE)) {
+                speedMultiplier *= 1.5f
+            }
+
+            if (mods.contains(GameMod.MOD_HALFTIME)) {
+                speedMultiplier *= 0.75f
+            }
+
+            return speedMultiplier
         }
 
-        if (mods.contains(GameMod.MOD_HALFTIME)) {
-            speedMultiplier *= 0.75f;
+    /**
+     * Whether force AR is active in this parameter.
+     */
+    val isForceAR: Boolean
+        get() = forcedAR != null
+
+    public override fun clone() =
+        (super.clone() as DifficultyCalculationParameters).apply {
+            mods = this@DifficultyCalculationParameters.mods.clone()
         }
-
-        return speedMultiplier;
-    }
-
-    /**
-     * Whether force AR is used in this parameter.
-     */
-    public boolean isForceAR() {
-        return !Float.isNaN(forcedAR);
-    }
-
-    /**
-     * Copies this instance to another instance.
-     *
-     * @return The copied instance.
-     */
-    public DifficultyCalculationParameters copy() {
-        var copy = new DifficultyCalculationParameters();
-
-        copy.mods = EnumSet.copyOf(mods);
-        copy.forcedAR = forcedAR;
-        copy.customSpeedMultiplier = customSpeedMultiplier;
-
-        return copy;
-    }
 }

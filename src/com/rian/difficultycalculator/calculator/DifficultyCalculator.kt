@@ -1,51 +1,38 @@
-package com.rian.difficultycalculator.calculator;
+package com.rian.difficultycalculator.calculator
 
-import com.rian.difficultycalculator.attributes.DifficultyAttributes;
-import com.rian.difficultycalculator.attributes.TimedDifficultyAttributes;
-import com.rian.difficultycalculator.beatmap.BeatmapDifficultyManager;
-import com.rian.difficultycalculator.beatmap.DifficultyBeatmap;
-import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject;
-import com.rian.difficultycalculator.beatmap.hitobject.HitObject;
-import com.rian.difficultycalculator.skills.Aim;
-import com.rian.difficultycalculator.skills.Flashlight;
-import com.rian.difficultycalculator.skills.Skill;
-import com.rian.difficultycalculator.skills.Speed;
-import com.rian.difficultycalculator.utils.HitObjectStackEvaluator;
-import com.rian.difficultycalculator.utils.HitWindowConverter;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-
-import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
+import com.rian.difficultycalculator.attributes.DifficultyAttributes
+import com.rian.difficultycalculator.attributes.TimedDifficultyAttributes
+import com.rian.difficultycalculator.beatmap.BeatmapDifficultyManager
+import com.rian.difficultycalculator.beatmap.DifficultyBeatmap
+import com.rian.difficultycalculator.beatmap.hitobject.DifficultyHitObject
+import com.rian.difficultycalculator.skills.Aim
+import com.rian.difficultycalculator.skills.Flashlight
+import com.rian.difficultycalculator.skills.Skill
+import com.rian.difficultycalculator.skills.Speed
+import com.rian.difficultycalculator.utils.HitObjectStackEvaluator.applyStacking
+import com.rian.difficultycalculator.utils.HitWindowConverter.hitWindow300ToOD
+import com.rian.difficultycalculator.utils.HitWindowConverter.odToHitWindow300
+import ru.nsu.ccfit.zuev.osu.game.mods.GameMod
+import java.util.*
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * A difficulty calculator for calculating star rating.
  */
-public class DifficultyCalculator {
+class DifficultyCalculator {
     /**
      * Mods that can alter the star rating when they are used in calculation with one or more mods.
      */
-    public final EnumSet<GameMod> difficultyAdjustmentMods = EnumSet.of(
-            GameMod.MOD_DOUBLETIME, GameMod.MOD_HALFTIME, GameMod.MOD_NIGHTCORE,
-            GameMod.MOD_SMALLCIRCLE, GameMod.MOD_RELAX, GameMod.MOD_EASY,
-            GameMod.MOD_REALLYEASY, GameMod.MOD_HARDROCK, GameMod.MOD_HIDDEN,
-            GameMod.MOD_FLASHLIGHT, GameMod.MOD_SPEEDUP
-    );
-
-    private static final double difficultyMultiplier = 0.0675;
-
-    public DifficultyCalculator() {}
-
-    /**
-     * Calculates the difficulty of a beatmap without specific parameters.
-     *
-     * @param beatmap The beatmap whose difficulty is to be calculated.
-     * @return A structure describing the difficulty of the beatmap.
-     */
-    public DifficultyAttributes calculate(final DifficultyBeatmap beatmap) {
-        return calculate(beatmap, null);
-    }
+    @JvmField
+    val difficultyAdjustmentMods: EnumSet<GameMod> = EnumSet.of(
+        GameMod.MOD_DOUBLETIME, GameMod.MOD_HALFTIME, GameMod.MOD_NIGHTCORE,
+        GameMod.MOD_SMALLCIRCLE, GameMod.MOD_RELAX, GameMod.MOD_EASY,
+        GameMod.MOD_REALLYEASY, GameMod.MOD_HARDROCK, GameMod.MOD_HIDDEN,
+        GameMod.MOD_FLASHLIGHT, GameMod.MOD_SPEEDUP
+    )
 
     /**
      * Calculates the difficulty of the beatmap with specific parameters.
@@ -54,80 +41,77 @@ public class DifficultyCalculator {
      * @param parameters The calculation parameters that should be applied to the beatmap.
      * @return A structure describing the difficulty of the beatmap.
      */
-    public DifficultyAttributes calculate(final DifficultyBeatmap beatmap, final DifficultyCalculationParameters parameters) {
-        DifficultyBeatmap beatmapToCalculate = beatmap;
+    @JvmOverloads
+    fun calculate(
+        beatmap: DifficultyBeatmap,
+        parameters: DifficultyCalculationParameters? = null
+    ): DifficultyAttributes {
+        // Always operate on a clone of the original beatmap if parameters are present, to not modify it game-wide
+        val beatmapToCalculate = if (parameters != null) beatmap.clone() else beatmap
 
         if (parameters != null) {
-            // Always operate on a clone of the original beatmap, to not modify it game-wide
-            beatmapToCalculate = beatmap.deepClone();
-            applyParameters(beatmapToCalculate, parameters);
+            applyParameters(beatmapToCalculate, parameters)
         }
 
-        Skill[] skills = createSkills(beatmapToCalculate, parameters);
+        val skills = createSkills(beatmapToCalculate, parameters)
 
-        for (DifficultyHitObject object : createDifficultyHitObjects(beatmapToCalculate, parameters)) {
-            for (Skill skill : skills) {
-                skill.process(object);
+        for (obj in createDifficultyHitObjects(beatmapToCalculate, parameters)) {
+            for (skill in skills) {
+                skill.process(obj)
             }
         }
 
-        return createDifficultyAttributes(beatmapToCalculate, skills, parameters);
-    }
-
-    /**
-     * Calculates the difficulty of a beatmap without specific parameters and returns a set of
-     * <code>TimedDifficultyAttributes</code> representing the difficulty at every relevant time
-     * value in the beatmap.
-     *
-     * @param beatmap The beatmap whose difficulty is to be calculated.
-     * @return The set of <code>TimedDifficultyAttributes</code>.
-     */
-    public List<TimedDifficultyAttributes> calculateTimed(final DifficultyBeatmap beatmap) {
-        return calculateTimed(beatmap, null);
+        return createDifficultyAttributes(beatmapToCalculate, skills, parameters)
     }
 
     /**
      * Calculates the difficulty of a beatmap with specific parameters and returns a set of
-     * <code>TimedDifficultyAttributes</code> representing the difficulty at every relevant time
+     * `TimedDifficultyAttributes` representing the difficulty at every relevant time
      * value in the beatmap.
      *
      * @param beatmap The beatmap whose difficulty is to be calculated.
      * @param parameters The calculation parameters that should be applied to the beatmap.
-     * @return The set of <code>TimedDifficultyAttributes</code>.
+     * @return The set of `TimedDifficultyAttributes`.
      */
-    public List<TimedDifficultyAttributes> calculateTimed(final DifficultyBeatmap beatmap,
-                                                          final DifficultyCalculationParameters parameters) {
-        DifficultyBeatmap beatmapToCalculate = beatmap;
+    @JvmOverloads
+    fun calculateTimed(
+        beatmap: DifficultyBeatmap,
+        parameters: DifficultyCalculationParameters? = null
+    ): List<TimedDifficultyAttributes> {
+        // Always operate on a clone of the original beatmap if parameters are present, to not modify it game-wide
+        val beatmapToCalculate = if (parameters != null) beatmap.clone() else beatmap
 
         if (parameters != null) {
-            // Always operate on a clone of the original beatmap, to not modify it game-wide
-            beatmapToCalculate = beatmap.deepClone();
-            applyParameters(beatmapToCalculate, parameters);
+            applyParameters(beatmapToCalculate, parameters)
         }
 
-        Skill[] skills = createSkills(beatmapToCalculate, parameters);
-        ArrayList<TimedDifficultyAttributes> attributes = new ArrayList<>();
+        val skills = createSkills(beatmapToCalculate, parameters)
+        val attributes = ArrayList<TimedDifficultyAttributes>()
 
-        if (beatmapToCalculate.getHitObjectsManager().getObjects().isEmpty()) {
-            return attributes;
+        if (beatmapToCalculate.hitObjectsManager.getObjects().isEmpty()) {
+            return attributes
         }
 
-        DifficultyBeatmap progressiveBeatmap = new DifficultyBeatmap(beatmapToCalculate.getDifficultyManager());
+        val progressiveBeatmap = DifficultyBeatmap(beatmapToCalculate.difficultyManager)
 
         // Add the first object in the beatmap, otherwise it will be ignored.
-        progressiveBeatmap.getHitObjectsManager().add(beatmapToCalculate.getHitObjectsManager().getObjects().get(0));
+        progressiveBeatmap.hitObjectsManager.add(beatmapToCalculate.hitObjectsManager.getObjects()[0])
 
-        for (DifficultyHitObject object : createDifficultyHitObjects(beatmapToCalculate, parameters)) {
-            progressiveBeatmap.getHitObjectsManager().add(object.object);
+        for (obj in createDifficultyHitObjects(beatmapToCalculate, parameters)) {
+            progressiveBeatmap.hitObjectsManager.add(obj.obj)
 
-            for (Skill skill : skills) {
-                skill.process(object);
+            for (skill in skills) {
+                skill.process(obj)
             }
 
-            attributes.add(new TimedDifficultyAttributes(object.endTime * (parameters != null ? parameters.getTotalSpeedMultiplier() : 1), createDifficultyAttributes(progressiveBeatmap, skills, parameters)));
+            attributes.add(
+                TimedDifficultyAttributes(
+                    obj.endTime * (parameters?.totalSpeedMultiplier?.toDouble() ?: 1.0),
+                    createDifficultyAttributes(progressiveBeatmap, skills, parameters)
+                )
+            )
         }
-
-        return attributes;
+        return attributes
     }
 
     /**
@@ -138,70 +122,64 @@ public class DifficultyCalculator {
      * @param parameters The difficulty calculation parameters used.
      * @return Difficulty attributes describing the beatmap's difficulty.
      */
-    private DifficultyAttributes createDifficultyAttributes(final DifficultyBeatmap beatmap, final Skill[] skills,
-                                                              final DifficultyCalculationParameters parameters) {
-        DifficultyAttributes attributes = new DifficultyAttributes();
+    private fun createDifficultyAttributes(
+        beatmap: DifficultyBeatmap, skills: Array<Skill>,
+        parameters: DifficultyCalculationParameters?
+    ) = DifficultyAttributes().apply {
+            mods = parameters?.mods?.clone() ?: mods
 
-        if (parameters != null) {
-            attributes.mods = parameters.mods.clone();
+            aimDifficulty = calculateRating(skills[0])
+            speedDifficulty = calculateRating(skills[2])
+            speedNoteCount = (skills[2] as Speed).relevantNoteCount()
+            flashlightDifficulty = calculateRating(skills[3])
+
+            aimSliderFactor = if (aimDifficulty > 0) calculateRating(skills[1]) / aimDifficulty else 1.0
+
+            if (parameters?.mods?.contains(GameMod.MOD_RELAX) == true) {
+                aimDifficulty *= 0.9
+                speedDifficulty = 0.0
+                flashlightDifficulty *= 0.7
+            }
+
+            val baseAimPerformance: Double = (5 * max(1.0, aimDifficulty / 0.0675) - 4).pow(3.0) / 100000
+            val baseSpeedPerformance: Double = (5 * max(1.0, speedDifficulty / 0.0675) - 4).pow(3.0) / 100000
+            var baseFlashlightPerformance = 0.0
+            if (parameters?.mods?.contains(GameMod.MOD_FLASHLIGHT) == true) {
+                baseFlashlightPerformance = flashlightDifficulty.pow(2.0) * 25.0
+            }
+
+            val basePerformance =
+                (baseAimPerformance.pow(1.1) + baseSpeedPerformance.pow(1.1) + baseFlashlightPerformance.pow(1.1)).pow(
+                    1.0 / 1.1
+                )
+
+            // Document for formula derivation:
+            // https://docs.google.com/document/d/10DZGYYSsT_yjz2Mtp6yIJld0Rqx4E-vVHupCqiM4TNI/edit
+            starRating =
+                if (basePerformance > 1e-5)
+                    Math.cbrt(PerformanceCalculator.FINAL_MULTIPLIER) * 0.027 *
+                    (Math.cbrt(100000 / 2.0.pow(1 / 1.1) * basePerformance) + 4)
+                else 0.0
+
+            val ar = beatmap.difficultyManager.ar
+            var preempt = (if (ar <= 5) 1800 - 120 * ar else 1950 - 150 * ar).toDouble()
+
+            if (parameters?.isForceAR == false) {
+                preempt /= parameters.totalSpeedMultiplier.toDouble()
+            }
+
+            approachRate = if (preempt > 1200) (1800 - preempt) / 120 else (1200 - preempt) / 150 + 5
+
+            val greatWindow =
+                odToHitWindow300(beatmap.difficultyManager.od) /
+                (parameters?.totalSpeedMultiplier?.toDouble() ?: 1.0)
+
+            overallDifficulty = hitWindow300ToOD(greatWindow).toDouble()
+            maxCombo = beatmap.maxCombo
+            hitCircleCount = beatmap.hitObjectsManager.circleCount
+            sliderCount = beatmap.hitObjectsManager.sliderCount
+            spinnerCount = beatmap.hitObjectsManager.spinnerCount
         }
-
-        attributes.aimDifficulty = calculateRating(skills[0]);
-        attributes.speedDifficulty = calculateRating(skills[2]);
-        attributes.speedNoteCount = ((Speed) skills[2]).relevantNoteCount();
-        attributes.flashlightDifficulty = calculateRating(skills[3]);
-
-        double aimRatingNoSliders = calculateRating(skills[1]);
-        attributes.aimSliderFactor = attributes.aimDifficulty > 0 ? aimRatingNoSliders / attributes.aimDifficulty : 1;
-
-        if (parameters != null && parameters.mods.contains(GameMod.MOD_RELAX)) {
-            attributes.aimDifficulty *= 0.9;
-            attributes.speedDifficulty = 0;
-            attributes.flashlightDifficulty *= 0.7;
-        }
-
-        double baseAimPerformance = Math.pow(5 * Math.max(1, attributes.aimDifficulty / 0.0675) - 4, 3) / 100000;
-        double baseSpeedPerformance = Math.pow(5 * Math.max(1, attributes.speedDifficulty / 0.0675) - 4, 3) / 100000;
-        double baseFlashlightPerformance = 0;
-
-        if (parameters != null && parameters.mods.contains(GameMod.MOD_FLASHLIGHT)) {
-            baseFlashlightPerformance = Math.pow(attributes.flashlightDifficulty, 2) * 25.0;
-        }
-
-        double basePerformance = Math.pow(
-                Math.pow(baseAimPerformance, 1.1) +
-                        Math.pow(baseSpeedPerformance, 1.1) +
-                        Math.pow(baseFlashlightPerformance, 1.1),
-                1.0 / 1.1
-        );
-
-        // Document for formula derivation:
-        // https://docs.google.com/document/d/10DZGYYSsT_yjz2Mtp6yIJld0Rqx4E-vVHupCqiM4TNI/edit
-        attributes.starRating = basePerformance > 1e-5
-                ? Math.cbrt(PerformanceCalculator.finalMultiplier) * 0.027 * (Math.cbrt(100000 / Math.pow(2, 1 / 1.1) * basePerformance) + 4)
-                : 0;
-
-        float ar = beatmap.getDifficultyManager().getAR();
-        double preempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
-
-        if (parameters != null && !parameters.isForceAR()) {
-            preempt /= parameters.getTotalSpeedMultiplier();
-        }
-
-        attributes.approachRate = preempt > 1200 ? (1800 - preempt) / 120 : (1200 - preempt) / 150 + 5;
-
-        float od = beatmap.getDifficultyManager().getOD();
-        double odMS = HitWindowConverter.odToHitWindow300(od) / (parameters != null ? parameters.getTotalSpeedMultiplier() : 1);
-
-        attributes.overallDifficulty = HitWindowConverter.hitWindow300ToOD(odMS);
-
-        attributes.maxCombo = beatmap.getMaxCombo();
-        attributes.hitCircleCount = beatmap.getHitObjectsManager().getCircleCount();
-        attributes.sliderCount = beatmap.getHitObjectsManager().getSliderCount();
-        attributes.spinnerCount = beatmap.getHitObjectsManager().getSpinnerCount();
-
-        return attributes;
-    }
 
     /**
      * Applies difficulty calculation parameters to the given beatmap.
@@ -209,24 +187,24 @@ public class DifficultyCalculator {
      * @param beatmap The beatmap.
      * @param parameters The difficulty calculation parameters.
      */
-    private void applyParameters(DifficultyBeatmap beatmap, DifficultyCalculationParameters parameters) {
-        final BeatmapDifficultyManager manager = beatmap.getDifficultyManager();
-        float initialAR = manager.getAR();
+    private fun applyParameters(beatmap: DifficultyBeatmap, parameters: DifficultyCalculationParameters) {
+        val manager = beatmap.difficultyManager
+        val initialAR = manager.ar
 
-        processCS(manager, parameters);
-        processAR(manager, parameters);
-        processOD(manager, parameters);
-        processHP(manager, parameters);
+        processCS(manager, parameters)
+        processAR(manager, parameters)
+        processOD(manager, parameters)
+        processHP(manager, parameters)
 
-        if (initialAR != manager.getAR()) {
-            beatmap.getHitObjectsManager().resetStacking();
+        if (initialAR != manager.ar) {
+            beatmap.hitObjectsManager.resetStacking()
 
-            HitObjectStackEvaluator.applyStacking(
-                    beatmap.getFormatVersion(),
-                    beatmap.getHitObjectsManager().getObjects(),
-                    manager.getAR(),
-                    beatmap.getStackLeniency()
-            );
+            applyStacking(
+                beatmap.formatVersion,
+                beatmap.hitObjectsManager.getObjects(),
+                manager.ar,
+                beatmap.stackLeniency
+            )
         }
     }
 
@@ -237,115 +215,109 @@ public class DifficultyCalculator {
      * @param parameters The difficulty calculation parameter being used.
      * @return The skills.
      */
-    private Skill[] createSkills(DifficultyBeatmap beatmap, DifficultyCalculationParameters parameters) {
-        EnumSet<GameMod> mods = EnumSet.noneOf(GameMod.class);
-        float od = beatmap.getDifficultyManager().getOD();
-        double greatWindow = HitWindowConverter.odToHitWindow300(od);
+    private fun createSkills(beatmap: DifficultyBeatmap, parameters: DifficultyCalculationParameters?): Array<Skill> {
+        val mods = parameters?.mods ?: EnumSet.noneOf(GameMod::class.java)
+        val greatWindow =
+            odToHitWindow300(beatmap.difficultyManager.od) /
+            (parameters?.totalSpeedMultiplier?.toDouble() ?: 1.0)
 
-        if (parameters != null) {
-            mods = parameters.mods;
-            greatWindow /= parameters.getTotalSpeedMultiplier();
-        }
-
-        return new Skill[] {
-                new Aim(mods, true),
-                new Aim(mods, false),
-                new Speed(mods, greatWindow),
-                new Flashlight(mods),
-        };
+        return arrayOf(
+            Aim(mods, true),
+            Aim(mods, false),
+            Speed(mods, greatWindow),
+            Flashlight(mods)
+        )
     }
 
-    private double calculateRating(Skill skill) {
-        return Math.sqrt(skill.difficultyValue()) * difficultyMultiplier;
-    }
+    private fun calculateRating(skill: Skill) = sqrt(skill.difficultyValue()) * DIFFICULTY_MULTIPLIER
 
-    private void processCS(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        float cs = manager.getCS();
+    private fun processCS(manager: BeatmapDifficultyManager, parameters: DifficultyCalculationParameters?) {
+        var cs = manager.cs
 
-        if (parameters != null) {
-            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                ++cs;
-            }
-            if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                --cs;
-            }
-            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                --cs;
-            }
-            if (parameters.mods.contains(GameMod.MOD_SMALLCIRCLE)) {
-                cs += 4f;
+        parameters?.mods?.apply {
+            when {
+                GameMod.MOD_HARDROCK in this -> ++cs
+                GameMod.MOD_EASY in this -> --cs
+                GameMod.MOD_REALLYEASY in this -> --cs
+                GameMod.MOD_SMALLCIRCLE in this -> cs += 4
             }
         }
 
         // 12.14 is the point at which the object radius approaches 0. Use the _very_ minimum value.
-        manager.setCS(Math.min(cs, 12.13f));
+        manager.cs = min(cs, 12.13f)
     }
 
-    private void processAR(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        float ar = manager.getAR();
+    private fun processAR(manager: BeatmapDifficultyManager, parameters: DifficultyCalculationParameters?) {
+        var ar = manager.ar
 
         if (parameters == null) {
-            manager.setAR(Math.min(ar, 10f));
-            return;
+            manager.ar = min(ar, 10f)
+            return
         }
 
-        if (parameters.isForceAR()) {
-            manager.setAR(parameters.forcedAR);
-        } else {
-            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                ar *= 1.4f;
-            }
-            if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                ar /= 2f;
-            }
-            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                    ar *= 2f;
-                    ar -= 0.5f;
+        parameters.apply {
+            manager.ar = forcedAR ?: run {
+                if (GameMod.MOD_HARDROCK in mods) {
+                    ar *= 1.4f
                 }
 
-                ar -= 0.5f;
-                ar -= parameters.customSpeedMultiplier - 1f;
-            }
+                if (GameMod.MOD_EASY in mods) {
+                    ar /= 2f
+                }
 
-            manager.setAR(Math.min(ar, 10f));
+                if (GameMod.MOD_REALLYEASY in mods) {
+                    if (GameMod.MOD_EASY in mods) {
+                        ar *= 2f
+                        ar -= 0.5f
+                    }
+
+                    ar -= 0.5f
+                    ar -= customSpeedMultiplier - 1
+                }
+
+                min(ar, 10f)
+            }
         }
     }
 
-    private void processOD(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        float od = manager.getOD();
+    private fun processOD(manager: BeatmapDifficultyManager, parameters: DifficultyCalculationParameters?) {
+        var od = manager.od
 
-        if (parameters != null) {
-            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                od *= 1.4f;
+        parameters?.mods?.apply {
+            if (GameMod.MOD_HARDROCK in this) {
+                od *= 1.4f
             }
-            if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                od /= 2f;
+
+            if (GameMod.MOD_EASY in this) {
+                od /= 2f
             }
-            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                od /= 2f;
+
+            if (GameMod.MOD_REALLYEASY in this) {
+                od /= 2f
             }
         }
 
-        manager.setOD(Math.min(od, 10f));
+        manager.od = min(od, 10f)
     }
 
-    private void processHP(BeatmapDifficultyManager manager, DifficultyCalculationParameters parameters) {
-        float hp = manager.getHP();
+    private fun processHP(manager: BeatmapDifficultyManager, parameters: DifficultyCalculationParameters?) {
+        var hp = manager.hp
 
-        if (parameters != null) {
-            if (parameters.mods.contains(GameMod.MOD_HARDROCK)) {
-                hp *= 1.4f;
+        parameters?.mods?.apply {
+            if (GameMod.MOD_HARDROCK in this) {
+                hp *= 1.4f
             }
-            if (parameters.mods.contains(GameMod.MOD_EASY)) {
-                hp /= 2f;
+
+            if (GameMod.MOD_EASY in this) {
+                hp /= 2f
             }
-            if (parameters.mods.contains(GameMod.MOD_REALLYEASY)) {
-                hp /= 2f;
+
+            if (GameMod.MOD_REALLYEASY in this) {
+                hp /= 2f
             }
         }
 
-        manager.setHP(Math.min(hp, 10f));
+        manager.hp = min(hp, 10f)
     }
 
     /**
@@ -355,33 +327,39 @@ public class DifficultyCalculator {
      * @param parameters The difficulty calculation parameter being used.
      * @return The generated difficulty hit objects.
      */
-    private List<DifficultyHitObject> createDifficultyHitObjects(
-            final DifficultyBeatmap beatmap, final DifficultyCalculationParameters parameters) {
-        ArrayList<DifficultyHitObject> objects = new ArrayList<>();
-        List<HitObject> rawObjects = beatmap.getHitObjectsManager().getObjects();
+    private fun createDifficultyHitObjects(
+        beatmap: DifficultyBeatmap, parameters: DifficultyCalculationParameters?
+    ): List<DifficultyHitObject> {
+        val objects = mutableListOf<DifficultyHitObject>()
+        val rawObjects = beatmap.hitObjectsManager.getObjects()
 
-        float ar = beatmap.getDifficultyManager().getAR();
-        double timePreempt = (ar <= 5) ? (1800 - 120 * ar) : (1950 - 150 * ar);
-        float objectScale = (1 - 0.7f * (beatmap.getDifficultyManager().getCS() - 5) / 5) / 2;
+        val ar = beatmap.difficultyManager.ar
+        val timePreempt = (if (ar <= 5) 1800 - 120 * ar else 1950 - 150 * ar).toDouble()
 
-        for (int i = 1; i < rawObjects.size(); ++i) {
-            rawObjects.get(i).setScale(objectScale);
-            rawObjects.get(i - 1).setScale(objectScale);
+        val objectScale = (1 - 0.7f * (beatmap.difficultyManager.cs - 5) / 5) / 2
 
-            HitObject lastLast = i > 1 ? rawObjects.get(i - 2) : null;
+        for (i in 1 until rawObjects.size) {
+            rawObjects[i].scale = objectScale
+            rawObjects[i - 1].scale = objectScale
+            val lastLast = rawObjects.getOrNull(i - 2)
 
-            objects.add(new DifficultyHitObject(
-                    rawObjects.get(i),
-                    rawObjects.get(i - 1),
+            objects.add(
+                DifficultyHitObject(
+                    rawObjects[i],
+                    rawObjects[i - 1],
                     lastLast,
-                    parameters != null ? parameters.getTotalSpeedMultiplier() : 1,
+                    parameters?.totalSpeedMultiplier?.toDouble() ?: 1.0,
                     objects,
-                    objects.size(),
+                    objects.size,
                     timePreempt,
-                    parameters != null && parameters.isForceAR()
-            ));
+                    parameters?.isForceAR == true
+                )
+            )
         }
+        return objects
+    }
 
-        return objects;
+    companion object {
+        private const val DIFFICULTY_MULTIPLIER = 0.0675
     }
 }
