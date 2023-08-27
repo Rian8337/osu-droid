@@ -18,7 +18,7 @@ abstract class ControlPointManager<T : ControlPoint>(
     /**
      * The control points in this manager.
      */
-    private val controlPoints = mutableListOf<T>()
+    protected val controlPoints = mutableListOf<T>()
 
     /**
      * Finds the control point that is active at a given time.
