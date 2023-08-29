@@ -1,6 +1,5 @@
 package ru.nsu.ccfit.zuev.audio.serviceAudio;
 
-import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
@@ -25,6 +24,10 @@ public class SongService extends Service {
     private boolean isGaming = false;
     // private boolean isSettingMenu = false;
     private NotifyPlayer notify;
+
+    // These are used when BASS is reinitialized from window focus change.
+    private Status lastStatus = Status.PAUSED;
+    private int lastPosition;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -223,6 +226,7 @@ public class SongService extends Service {
         }
 
         if (audioFunc != null) {
+            saveCurrentAudioState();
             audioFunc.onGamePause();
             reloadCurrentAudio();
         }
@@ -237,9 +241,12 @@ public class SongService extends Service {
         // only if the player leaves the game from the main menu, which is when we want to
         // reload BASS after being altered in `showNotification` and reload the audio.
         if (notify.isShowing) {
+            saveCurrentAudioState();
+
             if (audioFunc != null) {
                 audioFunc.onGameResume();
             }
+
             reloadCurrentAudio();
         }
 
@@ -264,20 +271,21 @@ public class SongService extends Service {
         return MainActivity.isActivityVisible();
     }
 
-    private void reloadCurrentAudio() {
-        Status pastStatus = getStatus();
+    private void saveCurrentAudioState() {
+        lastStatus = getStatus();
+        lastPosition = getPosition();
+    }
 
-        pause();
+    private void reloadCurrentAudio() {
         setVolume(Config.getBgmVolume());
 
         // Reload audio, otherwise it will be choppy or offset for whatever reason.
         if (LibraryManager.INSTANCE.getBeatmap() != null) {
-            int position = getPosition();
             preLoad(LibraryManager.INSTANCE.getBeatmap().getMusic());
-            seekTo(position);
+            seekTo(lastPosition);
         }
 
-        if (audioFunc != null && pastStatus != Status.STOPPED && pastStatus != Status.PAUSED) {
+        if (audioFunc != null && lastStatus == Status.PLAYING) {
             audioFunc.resume();
         }
     }
