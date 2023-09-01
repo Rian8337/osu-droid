@@ -6,8 +6,9 @@ import com.reco1l.framework.lang.Execution;
 import com.reco1l.legacy.ui.multiplayer.Multiplayer;
 import com.reco1l.legacy.ui.multiplayer.RoomMods;
 import com.reco1l.legacy.ui.multiplayer.RoomScene;
-import com.rian.difficultycalculator.attributes.DifficultyAttributes;
-import com.rian.difficultycalculator.calculator.DifficultyCalculationParameters;
+import com.rian.osu.beatmap.Beatmap;
+import com.rian.osu.difficultycalculator.attributes.DifficultyAttributes;
+import com.rian.osu.difficultycalculator.calculator.DifficultyCalculationParameters;
 
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
@@ -24,13 +25,12 @@ import ru.nsu.ccfit.zuev.osu.GlobalManager;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
 import ru.nsu.ccfit.zuev.osu.TrackInfo;
 import ru.nsu.ccfit.zuev.osu.Utils;
-import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
-import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
+import com.rian.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.game.GameHelper;
 import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
 import ru.nsu.ccfit.zuev.osu.game.mods.IModSwitcher;
 import ru.nsu.ccfit.zuev.osu.game.mods.ModButton;
-import ru.nsu.ccfit.zuev.osu.helper.BeatmapDifficultyCalculator;
+import com.rian.osu.difficultycalculator.BeatmapDifficultyCalculator;
 import ru.nsu.ccfit.zuev.osu.helper.StringTable;
 import ru.nsu.ccfit.zuev.osu.helper.TextButton;
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
@@ -277,12 +277,16 @@ public class ModMenu implements IModSwitcher {
                 if (pSceneTouchEvent.isActionUp()) {
                     (new Thread() {
                         public void run() {
-                            if (GlobalManager.getInstance().getSongMenu().getSelectedTrack() != null){
-                                BeatmapData beatmapData = new BeatmapParser(
-                                        GlobalManager.getInstance().getSongMenu().getSelectedTrack().getFilename()
-                                ).parse(true);
+                            if (GlobalManager.getInstance().getSongMenu().getSelectedTrack() == null) {
+                                return;
+                            }
 
-                                if (beatmapData == null) {
+                            try (var parser = new BeatmapParser(
+                                    GlobalManager.getInstance().getSongMenu().getSelectedTrack().getFilename()
+                            )) {
+                                Beatmap beatmap = parser.parse(true);
+
+                                if (beatmap == null) {
                                     GlobalManager.getInstance().getSongMenu().setStarsDisplay(0);
                                     return;
                                 }
@@ -296,10 +300,9 @@ public class ModMenu implements IModSwitcher {
                                 }
 
                                 DifficultyAttributes attributes = BeatmapDifficultyCalculator.calculateDifficulty(
-                                        beatmapData,
+                                        beatmap,
                                         parameters
                                 );
-
 
                                 GlobalManager.getInstance().getSongMenu().setStarsDisplay(
                                         GameHelper.Round(attributes.starRating, 2)

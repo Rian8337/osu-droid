@@ -1,5 +1,10 @@
 package ru.nsu.ccfit.zuev.osu;
 
+import com.rian.osu.beatmap.Beatmap;
+import com.rian.osu.beatmap.hitobject.HitObjectUtils;
+import ru.nsu.ccfit.zuev.osu.game.GameHelper;
+import com.rian.osu.difficultycalculator.BeatmapDifficultyCalculator;
+
 import java.io.Serializable;
 
 public class TrackInfo implements Serializable {
@@ -208,6 +213,64 @@ public class TrackInfo implements Serializable {
 
     public String getMD5() {
         return md5;
+    }
+
+    /**
+     * Given a <code>Beatmap</code>, populate the metadata of this <code>TrackInfo</code>
+     * with that <code>Beatmap</code>.
+     *
+     * @param beatmap The <code>Beatmap</code> to populate.
+     * @return Whether this <code>TrackInfo</code> was successfully populated.
+     */
+    public boolean populate(Beatmap beatmap) {
+        md5 = beatmap.md5;
+
+        var metadata = beatmap.getMetadata();
+        creator = metadata.creator;
+        mode = metadata.version;
+        publicName = metadata.artist + " - " + metadata.title;
+        beatmapID = metadata.beatmapID;
+        beatmapSetID = metadata.beatmapSetID;
+
+        // Difficulty
+        var difficulty = beatmap.getDifficulty();
+        overallDifficulty = difficulty.od;
+        approachRate = difficulty.getAr();
+        hpDrain = difficulty.hp;
+        circleSize = difficulty.cs;
+
+        // Events
+        background = beatmap.folder + "/" + beatmap.getEvents().backgroundFilename;
+
+        // Timing points
+        for (var point : beatmap.getControlPoints().getTiming().getControlPoints()) {
+            var bpm = (float) point.getBPM();
+
+            bpmMin = (bpmMin != Float.MAX_VALUE ? Math.min(bpmMin, bpm) : bpm);
+            bpmMax = (bpmMax != 0 ? Math.max(bpmMax, bpm) : bpm);
+        }
+
+        // Hit objects
+        var hitObjects = beatmap.getHitObjects();
+        if (hitObjects.getObjects().isEmpty()) {
+            return false;
+        }
+
+        totalHitObjectCount = hitObjects.getObjects().size();
+        hitCircleCount = hitObjects.getCircleCount();
+        sliderCount = hitObjects.getSliderCount();
+        spinnerCount = hitObjects.getSpinnerCount();
+
+        var lastObject = hitObjects.getObjects().get(hitObjects.getObjects().size() - 1);
+
+        musicLength = (int) HitObjectUtils.getEndTime(lastObject);
+        maxCombo = beatmap.getMaxCombo();
+
+        var attributes = BeatmapDifficultyCalculator.calculateDifficulty(beatmap);
+
+        this.difficulty = GameHelper.Round(attributes.starRating, 2);
+
+        return true;
     }
 
     // Sometimes when the library is reloaded there can be 2 instances for the same beatmap so checking its MD5 is the

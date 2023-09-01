@@ -3,7 +3,6 @@ package ru.nsu.ccfit.zuev.osu.game;
 import android.graphics.PointF;
 import android.os.Build;
 import android.os.SystemClock;
-
 import com.edlplan.ext.EdExtensionHelper;
 import com.edlplan.framework.math.FMath;
 import com.edlplan.framework.support.ProxySprite;
@@ -18,22 +17,21 @@ import com.reco1l.framework.lang.execution.Async;
 import com.reco1l.legacy.engine.VideoSprite;
 import com.reco1l.legacy.ui.multiplayer.Multiplayer;
 import com.reco1l.legacy.ui.multiplayer.RoomScene;
-import com.rian.difficultycalculator.attributes.TimedDifficultyAttributes;
-import com.rian.difficultycalculator.beatmap.hitobject.HitObjectUtils;
-import com.rian.difficultycalculator.calculator.DifficultyCalculationParameters;
-
+import com.rian.osu.beatmap.Beatmap;
+import com.rian.osu.beatmap.constants.BeatmapCountdown;
+import com.rian.osu.beatmap.constants.SampleBank;
+import com.rian.osu.beatmap.hitobject.HitObjectUtils;
+import com.rian.osu.beatmap.parser.BeatmapParser;
+import com.rian.osu.beatmap.timings.BreakPeriod;
+import com.rian.osu.difficultycalculator.BeatmapDifficultyCalculator;
+import com.rian.osu.difficultycalculator.attributes.TimedDifficultyAttributes;
+import com.rian.osu.difficultycalculator.calculator.DifficultyCalculationParameters;
 import org.anddev.andengine.engine.Engine;
 import org.anddev.andengine.engine.camera.SmoothCamera;
 import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.engine.options.TouchOptions;
 import org.anddev.andengine.entity.IEntity;
-import org.anddev.andengine.entity.modifier.DelayModifier;
-import org.anddev.andengine.entity.modifier.FadeOutModifier;
-import org.anddev.andengine.entity.modifier.IEntityModifier;
-import org.anddev.andengine.entity.modifier.LoopEntityModifier;
-import org.anddev.andengine.entity.modifier.MoveXModifier;
-import org.anddev.andengine.entity.modifier.ParallelEntityModifier;
-import org.anddev.andengine.entity.modifier.SequenceEntityModifier;
+import org.anddev.andengine.entity.modifier.*;
 import org.anddev.andengine.entity.primitive.Rectangle;
 import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.Scene.IOnSceneTouchListener;
@@ -47,61 +45,35 @@ import org.anddev.andengine.opengl.font.Font;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
 import org.anddev.andengine.util.Debug;
 import org.anddev.andengine.util.modifier.IModifier;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.*;
-
-import javax.microedition.khronos.opengles.GL10;
-
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.audio.effect.Metronome;
 import ru.nsu.ccfit.zuev.audio.serviceAudio.PlayMode;
-import ru.nsu.ccfit.zuev.osu.BeatmapProperties;
-import ru.nsu.ccfit.zuev.osu.Config;
-import ru.nsu.ccfit.zuev.osu.Constants;
-import ru.nsu.ccfit.zuev.osu.GlobalManager;
-import ru.nsu.ccfit.zuev.osu.PropertiesLibrary;
-import ru.nsu.ccfit.zuev.osu.RGBAColor;
-import ru.nsu.ccfit.zuev.osu.RGBColor;
-import ru.nsu.ccfit.zuev.osu.ResourceManager;
-import ru.nsu.ccfit.zuev.osu.ToastLogger;
-import ru.nsu.ccfit.zuev.osu.TrackInfo;
-import ru.nsu.ccfit.zuev.osu.Utils;
+import ru.nsu.ccfit.zuev.osu.*;
 import ru.nsu.ccfit.zuev.osu.async.AsyncTask;
-import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
-import ru.nsu.ccfit.zuev.osu.beatmap.constants.BeatmapCountdown;
-import ru.nsu.ccfit.zuev.osu.beatmap.constants.SampleBank;
-import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.game.GameHelper.SliderPath;
 import ru.nsu.ccfit.zuev.osu.game.cursor.flashlight.FlashLightEntity;
 import ru.nsu.ccfit.zuev.osu.game.cursor.main.AutoCursor;
 import ru.nsu.ccfit.zuev.osu.game.cursor.main.Cursor;
 import ru.nsu.ccfit.zuev.osu.game.cursor.main.CursorEntity;
 import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
-import ru.nsu.ccfit.zuev.osu.helper.AnimSprite;
-import ru.nsu.ccfit.zuev.osu.helper.BeatmapDifficultyCalculator;
-import ru.nsu.ccfit.zuev.osu.helper.DifficultyHelper;
-import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
-import ru.nsu.ccfit.zuev.osu.helper.ModifierFactory;
-import ru.nsu.ccfit.zuev.osu.helper.StringTable;
+import ru.nsu.ccfit.zuev.osu.helper.*;
 import ru.nsu.ccfit.zuev.osu.menu.LoadingScreen;
 import ru.nsu.ccfit.zuev.osu.menu.ModMenu;
 import ru.nsu.ccfit.zuev.osu.menu.PauseMenu;
 import ru.nsu.ccfit.zuev.osu.menu.ScoreBoardItem;
 import ru.nsu.ccfit.zuev.osu.online.OnlineFileOperator;
 import ru.nsu.ccfit.zuev.osu.online.OnlineScoring;
-import ru.nsu.ccfit.zuev.osu.scoring.Replay;
-import ru.nsu.ccfit.zuev.osu.scoring.ResultType;
-import ru.nsu.ccfit.zuev.osu.scoring.ScoreLibrary;
-import ru.nsu.ccfit.zuev.osu.scoring.ScoringScene;
-import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
-import ru.nsu.ccfit.zuev.osu.scoring.TouchType;
+import ru.nsu.ccfit.zuev.osu.scoring.*;
 import ru.nsu.ccfit.zuev.osuplus.BuildConfig;
 import ru.nsu.ccfit.zuev.osuplus.R;
 import ru.nsu.ccfit.zuev.skins.OsuSkin;
 import ru.nsu.ccfit.zuev.skins.SkinManager;
+
+import javax.microedition.khronos.opengles.GL10;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
 
 public class GameScene implements IUpdateHandler, GameObjectListener,
         IOnSceneTouchListener {
@@ -114,7 +86,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
     private Scene scene;
     private Scene bgScene, mgScene, fgScene;
     private Scene oldScene;
-    private BeatmapData beatmapData;
+    private Beatmap beatmap;
     private TrackInfo lastTrack;
     private ScoringScene scoringScene;
     private TimingPoint currentTimingPoint;
@@ -254,15 +226,17 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             video = null;
         }
 
-        if (Config.isVideoEnabled() && beatmapData.events.videoFilename != null
+        var events = beatmap.getEvents();
+
+        if (Config.isVideoEnabled() && events.videoFilename != null
                 // Unfortunately MediaPlayer API doesn't allow to change playback speed on APIs < 23, so in that case
                 // the video will not be shown.
                 && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M || timeMultiplier == 1.0f)) {
             try {
                 videoStarted = false;
-                videoOffset = beatmapData.events.videoStartTime / 1000f;
+                videoOffset = events.videoStartTime / 1000f;
 
-                video = new VideoSprite(lastTrack.getBeatmap().getPath() + "/" + beatmapData.events.videoFilename, engine);
+                video = new VideoSprite(lastTrack.getBeatmap().getPath() + "/" + events.videoFilename, engine);
 
                 var factor = Config.getRES_HEIGHT() / video.getHeight();
                 float brightness = Config.getBackgroundBrightness();
@@ -284,7 +258,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             storyboardSprite.setBrightness(Config.getBackgroundBrightness());
         }
 
-        if (bgSprite == null && beatmapData.events.backgroundFilename != null) {
+        if (bgSprite == null && events.backgroundFilename != null) {
             final TextureRegion tex = Config.isSafeBeatmapBg() ? ResourceManager.getInstance().getTexture("menu-background") : ResourceManager.getInstance().getTextureIfLoaded("::background");
             if (tex != null) {
                 float brightness = Config.getBackgroundBrightness();
@@ -296,12 +270,12 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             }
         }
 
-        if (bgSprite == null && beatmapData.events.backgroundColor != null) {
+        if (bgSprite == null && events.backgroundColor != null) {
             final float bright = Config.getBackgroundBrightness();
             scene.setBackground(new ColorBackground(
-                    beatmapData.events.backgroundColor.r() * bright / 255f,
-                    beatmapData.events.backgroundColor.g() * bright / 255f,
-                    beatmapData.events.backgroundColor.b() * bright / 255f
+                    events.backgroundColor.r() * bright / 255f,
+                    events.backgroundColor.g() * bright / 255f,
+                    events.backgroundColor.b() * bright / 255f
             ));
         }
     }
@@ -319,28 +293,26 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         } else
             this.replayFile = rFile;
 
-        BeatmapParser parser = new BeatmapParser(track.getFilename());
-        if (parser.openFile()) {
-            beatmapData = parser.parse(true);
-        } else {
-            Debug.e("startGame: cannot open file");
-            ToastLogger.showText(
-                    StringTable.format(R.string.message_error_open,
-                            track.getFilename()), true);
-            return false;
+        try (var parser = new BeatmapParser(track.getFilename())) {
+            if (parser.openFile()) {
+                beatmap = parser.parse(true);
+            } else {
+                Debug.e("startGame: cannot open file");
+                ToastLogger.showText(
+                        StringTable.format(R.string.message_error_open,
+                                track.getFilename()), true);
+                return false;
+            }
         }
 
-        if (beatmapData == null) {
+        if (beatmap == null) {
             return false;
         }
 
         // TODO skin manager
-        SkinManager.getInstance().loadBeatmapSkin(beatmapData.getFolder());
+        SkinManager.getInstance().loadBeatmapSkin(beatmap.folder);
 
-        breakPeriods = new LinkedList<>();
-        for (final BreakPeriod period : beatmapData.events.breaks) {
-            breakPeriods.add(new BreakPeriod(period.getStart() / 1000f, (period.getStart() + period.getLength()) / 1000f));
-        }
+        breakPeriods = new LinkedList<>(beatmap.getEvents().breaks);
 
         totalOffset = Config.getOffset();
         String beatmapName = track.getFilename();
@@ -352,8 +324,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         }
 
         try {
-            final File musicFile = new File(beatmapData.getFolder(),
-                    beatmapData.general.audioFilename);
+            final File musicFile = new File(beatmap.folder,
+                    beatmap.getGeneral().audioFilename);
 
             if (!musicFile.exists()) {
                 throw new FileNotFoundException(musicFile.getPath());
@@ -367,22 +339,22 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             return false;
         }
 
-        title = beatmapData.metadata.title;
-        artist = beatmapData.metadata.artist;
-        version = beatmapData.metadata.version;
+        title = beatmap.getMetadata().title;
+        artist = beatmap.getMetadata().artist;
+        version = beatmap.getMetadata().version;
 
 
         scale = (float) ((Config.getRES_HEIGHT() / 480.0f)
-                * (54.42 - beatmapData.difficulty.cs * 4.48)
+                * (54.42 - beatmap.getDifficulty().cs * 4.48)
                 * 2 / GameObjectSize.BASE_OBJECT_SIZE)
                 + 0.5f * Config.getScaleMultiplier();
 
 
-        float rawApproachRate = beatmapData.difficulty.ar;
+        float rawApproachRate = beatmap.getDifficulty().getAr();
         approachRate = (float) GameHelper.ar2ms(rawApproachRate) / 1000f;
 
-        overallDifficulty = beatmapData.difficulty.od;
-        drain = beatmapData.difficulty.hp;
+        overallDifficulty = beatmap.getDifficulty().od;
+        drain = beatmap.getDifficulty().hp;
         rawDifficulty = overallDifficulty;
         rawDrain = drain;
 
@@ -464,12 +436,12 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         GameHelper.setAutopilotMod(ModMenu.getInstance().getMod().contains(GameMod.MOD_AUTOPILOT));
         GameHelper.setAuto(ModMenu.getInstance().getMod().contains(GameMod.MOD_AUTO));
 
-        GameHelper.setStackLeniency(beatmapData.general.stackLeniency);
+        GameHelper.setStackLeniency(beatmap.getGeneral().stackLeniency);
         if (scale < 0.001f){
             scale = 0.001f;
         }
-        GameHelper.setSpeed((float) beatmapData.difficulty.sliderMultiplier * 100);
-        GameHelper.setTickRate((float) beatmapData.difficulty.sliderTickRate);
+        GameHelper.setSpeed((float) beatmap.getDifficulty().sliderMultiplier * 100);
+        GameHelper.setTickRate((float) beatmap.getDifficulty().sliderTickRate);
         GameHelper.setScale(scale);
         GameHelper.setDifficulty(overallDifficulty);
         GameHelper.setDrain(drain);
@@ -477,7 +449,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         // Parsing hit objects
         objects = new LinkedList<>();
-        for (final String s : beatmapData.rawHitObjects) {
+        for (final String s : beatmap.getRawHitObjects()) {
             objects.add(new GameObjectData(s));
         }
 
@@ -491,8 +463,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         lastObjectId = -1;
 
         GameHelper.setSliderColor(SkinManager.getInstance().getSliderColor());
-        if (beatmapData.colors.sliderBorderColor != null) {
-            GameHelper.setSliderColor(beatmapData.colors.sliderBorderColor);
+        if (beatmap.getColors().sliderBorderColor != null) {
+            GameHelper.setSliderColor(beatmap.getColors().sliderBorderColor);
         }
 
         if (OsuSkin.get().isForceOverrideSliderBorderColor()) {
@@ -500,7 +472,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         }
 
         combos = new ArrayList<>();
-        for (RGBColor color : beatmapData.colors.comboColors) {
+        for (RGBColor color : beatmap.getColors().comboColors) {
             combos.add(new RGBColor(color.r() / 255, color.g() / 255, color.b() / 255));
         }
 
@@ -515,8 +487,8 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         comboNum = -1;
         currentComboNum = 0;
         lastObjectHitTime = 0;
-        final SampleBank defSound = beatmapData.general.sampleBank;
-        if (defSound == SampleBank.soft) {
+        final SampleBank defSound = beatmap.getGeneral().sampleBank;
+        if (defSound == SampleBank.Soft) {
             TimingPoint.setDefaultSound("soft");
         } else {
             TimingPoint.setDefaultSound("normal");
@@ -533,7 +505,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
                 null
         );
 
-        for (final String s : beatmapData.rawTimingPoints) {
+        for (final String s : beatmap.getRawTimingPoints()) {
             final TimingPoint tp = new TimingPoint(s.split("[,]"),
                     currentTimingPoint);
             if (!tp.wasInderited()) {
@@ -542,7 +514,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             }
         }
 
-        for (final String s : beatmapData.rawTimingPoints) {
+        for (final String s : beatmap.getRawTimingPoints()) {
             final TimingPoint tp = new TimingPoint(s.split("[,]"),
                     currentTimingPoint);
             timingPoints.add(tp);
@@ -552,7 +524,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         }
 
         GameHelper.controlPoints = new ControlPoints();
-        GameHelper.controlPoints.load(TimingPoints.parse(beatmapData.rawTimingPoints));
+        GameHelper.controlPoints.load(TimingPoints.parse(beatmap.getRawTimingPoints()));
         currentTimingPoint = timingPoints.peek();
         firstTimingPoint = currentTimingPoint;
         soundTimingPoint = currentTimingPoint;
@@ -619,7 +591,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             }
 
             timedDifficultyAttributes = BeatmapDifficultyCalculator.calculateTimedDifficulty(
-                    beatmapData,
+                    beatmap,
                     parameters
             );
         } else {
@@ -805,7 +777,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         mIsAuto = stat.getMod() != null && stat.getMod().contains(GameMod.MOD_AUTO);
 
         float multiplier = 1 + rawDifficulty / 10f + rawDrain / 10f;
-        multiplier += (beatmapData.difficulty.cs - 3) / 4f;
+        multiplier += (beatmap.getDifficulty().cs - 3) / 4f;
 
         stat.setDiffModifier(multiplier);
         stat.setMaxObjectsCount(lastTrack.getTotalHitObjectCount());
@@ -845,7 +817,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         comboWas100 = false;
         comboWasMissed = false;
 
-        final int leadIn = beatmapData.general.audioLeadIn;
+        final int leadIn = beatmap.getGeneral().audioLeadIn;
         secPassed = -leadIn / 1000f;
         if (secPassed > -1) {
             secPassed = -1;
@@ -890,7 +862,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             autoCursor.attachToScene(fgScene);
         }
 
-        final BeatmapCountdown countdown = beatmapData.general.countdown;
+        final BeatmapCountdown countdown = beatmap.getGeneral().countdown;
         if (Config.isCorovans() && countdown != null) {
             float cdSpeed = countdown.speed;
             skipTime -= cdSpeed * Countdown.COUNTDOWN_LENGTH;
@@ -943,7 +915,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
         GameHelper.setGlobalTime(0);
 
         float effectOffset = 155 - 25;
-        breakAnimator = new BreakAnimator(this, fgScene, stat, beatmapData.general.letterboxInBreaks, bgSprite);
+        breakAnimator = new BreakAnimator(this, fgScene, stat, beatmap.getGeneral().letterboxInBreaks, bgSprite);
         if(!Config.isHideInGameUI()){
             scorebar = new ScoreBar(this, fgScene, stat);
             addPassiveObject(scorebar);
@@ -1492,9 +1464,9 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         if (!breakPeriods.isEmpty()) {
             if (!breakAnimator.isBreak()
-                    && breakPeriods.peek().getStart() <= secPassed) {
+                    && breakPeriods.peek().startTime <= secPassed) {
                 gameStarted = false;
-                breakAnimator.init(breakPeriods.peek().getLength());
+                breakAnimator.init(breakPeriods.peek().getDuration());
                 if(GameHelper.isFlashLight()){
                     flashlightSprite.onBreak(true);
                 }
@@ -3002,7 +2974,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             return;
         }
 
-        double time = HitObjectUtils.getEndTime(beatmapData.hitObjects.getObjects().get(objectId));
+        double time = HitObjectUtils.getEndTime(beatmap.getHitObjects().getObjects().get(objectId));
 
         ppText.setText(String.format(Locale.ENGLISH, "%.2fpp", getPPAtTime(time)));
     }
@@ -3016,7 +2988,7 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
 
         return BeatmapDifficultyCalculator.calculatePerformance(
                 timedAttributes.attributes,
-                stat
+                BeatmapDifficultyCalculator.constructPerformanceParameters(stat)
         ).total;
     }
 

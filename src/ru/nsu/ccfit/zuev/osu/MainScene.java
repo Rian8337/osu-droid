@@ -11,6 +11,7 @@ import com.edlplan.ui.fragment.ConfirmDialogFragment;
 
 import com.reco1l.legacy.ui.ChimuWebView;
 import com.reco1l.legacy.ui.MainMenu;
+import com.rian.osu.beatmap.Beatmap;
 import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.entity.IEntity;
 import org.anddev.andengine.entity.modifier.IEntityModifier;
@@ -59,8 +60,7 @@ import javax.microedition.khronos.opengles.GL10;
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.async.SyncTaskManager;
-import ru.nsu.ccfit.zuev.osu.beatmap.BeatmapData;
-import ru.nsu.ccfit.zuev.osu.beatmap.parser.BeatmapParser;
+import com.rian.osu.beatmap.parser.BeatmapParser;
 import ru.nsu.ccfit.zuev.osu.game.SongProgressBar;
 import ru.nsu.ccfit.zuev.osu.game.TimingPoint;
 import ru.nsu.ccfit.zuev.osu.helper.ModifierFactory;
@@ -91,7 +91,7 @@ public class MainScene implements IUpdateHandler {
     private float[] peakAlpha = new float[120];
     private Replay replay = null;
     private TrackInfo selectedTrack;
-    private BeatmapData beatmapData;
+    private Beatmap beatmap;
     private List<TimingPoint> timingPoints;
     private TimingPoint currentTimingPoint, lastTimingPoint, firstTimingPoint;
 
@@ -910,11 +910,13 @@ public class MainScene implements IUpdateHandler {
             Arrays.fill(peakDownRate, 1f);
             Arrays.fill(peakAlpha, 0f);
 
-            BeatmapParser parser = new BeatmapParser(selectedTrack.getFilename());
-            beatmapData = parser.parse(false);
-            if (beatmapData != null) {
+            try (var parser = new BeatmapParser(selectedTrack.getFilename())) {
+                beatmap = parser.parse(false);
+            }
+
+            if (beatmap != null) {
                 timingPoints = new LinkedList<>();
-                for (final String s : beatmapData.rawTimingPoints) {
+                for (final String s : beatmap.getRawTimingPoints()) {
                     final TimingPoint tp = new TimingPoint(s.split("[,]"), currentTimingPoint);
                     timingPoints.add(tp);
                     if (!tp.wasInderited() || currentTimingPoint == null) {

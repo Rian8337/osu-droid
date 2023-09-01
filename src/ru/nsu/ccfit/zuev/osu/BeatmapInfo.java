@@ -1,11 +1,16 @@
 package ru.nsu.ccfit.zuev.osu;
 
+import com.rian.osu.beatmap.Beatmap;
+import ru.nsu.ccfit.zuev.osu.helper.StringTable;
+import ru.nsu.ccfit.zuev.osuplus.R;
+
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 
 public class BeatmapInfo implements Serializable {
     private static final long serialVersionUID = -3865268984942011628L;
-    private final ArrayList<TrackInfo> tracks = new ArrayList<TrackInfo>();
+    private final ArrayList<TrackInfo> tracks = new ArrayList<>();
     private String title;
     private String titleUnicode;
     private String artist;
@@ -120,6 +125,62 @@ public class BeatmapInfo implements Serializable {
 
     public void setPreviewTime(final int previewTime) {
         this.previewTime = previewTime;
+    }
+
+    /**
+     * Given a <code>Beatmap</code>, populate the metadata of this <code>BeatmapInfo</code>
+     * with that <code>Beatmap</code>.
+     *
+     * @param beatmap The <code>Beatmap</code> to populate.
+     * @return Whether this <code>BeatmapInfo</code> was successfully populated.
+     */
+    public boolean populate(Beatmap beatmap) {
+        // General
+        if (music == null) {
+            final File musicFile = new File(path, beatmap.getGeneral().audioFilename);
+
+            if (!musicFile.exists()) {
+                ToastLogger.showText(StringTable.format(R.string.beatmap_parser_music_not_found,
+                        beatmap.filename.substring(0, Math.max(0, beatmap.filename.length() - 4))), true);
+                return false;
+            }
+
+            music = musicFile.getPath();
+            previewTime = beatmap.getGeneral().previewTime;
+        }
+
+        // Metadata
+        if (title == null) {
+            title = beatmap.getMetadata().title;
+        }
+
+        if (titleUnicode == null) {
+            String titleUnicode = beatmap.getMetadata().titleUnicode;
+            if (!titleUnicode.isEmpty()) {
+                this.titleUnicode = titleUnicode;
+            }
+        }
+
+        if (artist == null) {
+            artist = beatmap.getMetadata().artist;
+        }
+
+        if (artistUnicode == null) {
+            String artistUnicode = beatmap.getMetadata().artist;
+            if (!artistUnicode.isEmpty()) {
+                this.artistUnicode = artistUnicode;
+            }
+        }
+
+        if (source == null) {
+            source = beatmap.getMetadata().source;
+        }
+
+        if (tags == null) {
+            tags = beatmap.getMetadata().tags;
+        }
+
+        return true;
     }
 
     @Override
