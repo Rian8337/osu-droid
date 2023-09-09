@@ -12,9 +12,7 @@ import java.io.File;
 
 import androidx.core.app.NotificationManagerCompat;
 import ru.nsu.ccfit.zuev.audio.Status;
-import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.GlobalManager;
-import ru.nsu.ccfit.zuev.osu.LibraryManager;
 import ru.nsu.ccfit.zuev.osu.MainActivity;
 
 
@@ -24,10 +22,6 @@ public class SongService extends Service {
     private boolean isGaming = false;
     // private boolean isSettingMenu = false;
     private NotifyPlayer notify;
-
-    // These are used when BASS is reinitialized from window focus change.
-    private Status lastStatus = Status.PAUSED;
-    private int lastPosition;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -225,31 +219,12 @@ public class SongService extends Service {
             return;
         }
 
-        if (audioFunc != null) {
-            saveCurrentAudioState();
-            audioFunc.onGamePause();
-            reloadCurrentAudio();
-        }
-
         notify.show();
         notify.updateSong(GlobalManager.getInstance().getMainScene().getBeatmapInfo());
         notify.updateState();
     }
 
     public boolean hideNotification() {
-        // Checking if the notification is shown is pretty hacky, but for now it is the case
-        // only if the player leaves the game from the main menu, which is when we want to
-        // reload BASS after being altered in `showNotification` and reload the audio.
-        if (notify.isShowing) {
-            saveCurrentAudioState();
-
-            if (audioFunc != null) {
-                audioFunc.onGameResume();
-            }
-
-            reloadCurrentAudio();
-        }
-
         return notify.hide();
     }
 
@@ -269,25 +244,6 @@ public class SongService extends Service {
 
     public boolean isRunningForeground() {
         return MainActivity.isActivityVisible();
-    }
-
-    private void saveCurrentAudioState() {
-        lastStatus = getStatus();
-        lastPosition = getPosition();
-    }
-
-    private void reloadCurrentAudio() {
-        setVolume(Config.getBgmVolume());
-
-        // Reload audio, otherwise it will be choppy or offset for whatever reason.
-        if (LibraryManager.INSTANCE.getBeatmap() != null) {
-            preLoad(LibraryManager.INSTANCE.getBeatmap().getMusic());
-            seekTo(lastPosition);
-        }
-
-        if (audioFunc != null && lastStatus == Status.PLAYING) {
-            audioFunc.resume();
-        }
     }
 
     public class ReturnBindObject extends Binder {

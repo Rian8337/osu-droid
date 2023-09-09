@@ -29,15 +29,6 @@ public class BassAudioProvider {
 
     public BassAudioProvider() {
         freq.value = 1.0f;
-        configureOnFocusBASS();
-    }
-
-    /**
-     * Configures BASS to the configurations that the game uses when it is focused.
-     */
-    public static void configureOnFocusBASS() {
-        // Free the current device.
-        BASS.BASS_Free();
 
         // This likely doesn't help, but also doesn't seem to cause any issues or any CPU increase.
         BASS.BASS_SetConfig(BASS.BASS_CONFIG_UPDATEPERIOD, 5);
@@ -50,39 +41,9 @@ public class BassAudioProvider {
         // Ensure there are no brief delays on audio operations (causing stream stalls etc.) after periods of silence.
         BASS.BASS_SetConfig(BASS.BASS_CONFIG_DEV_NONSTOP, 1);
 
-        // Initialize BASS under the current configuration.
         BASS.BASS_Init(-1, DEFAULT_FREQUENCY, BASS.BASS_DEVICE_LATENCY);
-    }
 
-    /**
-     * Configures BASS to the configurations that the game uses when it is not focused.
-     */
-    public static void configureOffFocusBASS() {
-        // Reset BASS configurations to their default values.
-        // Free the current device.
-        BASS.BASS_Free();
-
-        // https://www.un4seen.com/doc/#bass/BASS_CONFIG_UPDATEPERIOD.html
-        BASS.BASS_SetConfig(BASS.BASS_CONFIG_UPDATEPERIOD, 100);
-
-        // https://www.un4seen.com/doc/#bass/BASS_CONFIG_DEV_PERIOD.html
-        BASS.BASS_SetConfig(BASS.BASS_CONFIG_DEV_PERIOD, 10);
-
-        // https://www.un4seen.com/doc/#bass/BASS_CONFIG_BUFFER.html
-        BASS.BASS_SetConfig(BASS.BASS_CONFIG_BUFFER, 500);
-
-        // https://www.un4seen.com/doc/#bass/BASS_CONFIG_DEV_NONSTOP.html
-        BASS.BASS_SetConfig(BASS.BASS_CONFIG_DEV_NONSTOP, 0);
-
-        // This is needed for `NotifyPlayer` so that the music does not get choppy.
-        // Unsure why it is needed.
-        BASS.BASS_SetConfig(BASS.BASS_CONFIG_DEV_BUFFER, 0);
-
-        // Reinitialize BASS under the current configuration.
-        BASS.BASS_Init(-1, DEFAULT_FREQUENCY, BASS.BASS_DEVICE_LATENCY);
-    }
-
-    public static void logBASSConfig() {
+        Log.i("BASS-Config", "BASS initialized");
         Log.i("BASS-Config", "Update period:          " + BASS.BASS_GetConfig(BASS.BASS_CONFIG_UPDATEPERIOD));
         Log.i("BASS-Config", "Device period:          " + BASS.BASS_GetConfig(BASS.BASS_CONFIG_DEV_PERIOD));
         Log.i("BASS-Config", "Device buffer length:   " + BASS.BASS_GetConfig(BASS.BASS_CONFIG_DEV_BUFFER));

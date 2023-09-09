@@ -13,7 +13,6 @@ import com.un4seen.bass.BASS_FX;
 
 import java.nio.ByteBuffer;
 
-import ru.nsu.ccfit.zuev.audio.BassAudioProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.Config;
 
@@ -31,17 +30,6 @@ public class BassAudioFunc {
     private LocalBroadcastManager broadcastManager;
 
     public BassAudioFunc() {
-        onGameResume();
-    }
-
-    public void onGameResume() {
-        BassAudioProvider.configureOnFocusBASS();
-        BassAudioProvider.logBASSConfig();
-    }
-
-    public void onGamePause() {
-        BassAudioProvider.configureOffFocusBASS();
-        BassAudioProvider.logBASSConfig();
     }
 
     public boolean pause() {
