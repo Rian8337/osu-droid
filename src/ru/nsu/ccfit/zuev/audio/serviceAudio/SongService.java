@@ -219,12 +219,20 @@ public class SongService extends Service {
             return;
         }
 
+        if (audioFunc != null) {
+            audioFunc.onGamePause();
+        }
+
         notify.show();
         notify.updateSong(GlobalManager.getInstance().getMainScene().getBeatmapInfo());
         notify.updateState();
     }
 
     public boolean hideNotification() {
+        if (audioFunc != null) {
+            audioFunc.onGameResume();
+        }
+
         return notify.hide();
     }
 

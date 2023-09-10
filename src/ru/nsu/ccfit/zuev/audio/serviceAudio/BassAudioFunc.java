@@ -29,7 +29,31 @@ public class BassAudioFunc {
     private BroadcastReceiver receiver;
     private LocalBroadcastManager broadcastManager;
 
+    private boolean onFocus;
+    private final float onFocusBufferLength = 0.1f;
+    private final float offFocusBufferLength = 0.5f;
+
     public BassAudioFunc() {
+    }
+
+    public void onGameResume() {
+        onFocus = false;
+
+        BASS.BASS_SetConfig(BASS.BASS_CONFIG_UPDATEPERIOD, 5);
+
+        if (channel != 0) {
+            BASS.BASS_ChannelSetAttribute(channel, BASS.BASS_ATTRIB_BUFFER, onFocusBufferLength);
+        }
+    }
+
+    public void onGamePause() {
+        onFocus = true;
+
+        if (channel != 0) {
+            BASS.BASS_ChannelSetAttribute(channel, BASS.BASS_ATTRIB_BUFFER, offFocusBufferLength);
+        }
+
+        BASS.BASS_SetConfig(BASS.BASS_CONFIG_UPDATEPERIOD, 100);
     }
 
     public boolean pause() {
@@ -85,6 +109,12 @@ public class BassAudioFunc {
                 BASS.BASS_ChannelSetAttribute(channel, BASS_FX.BASS_ATTRIB_TEMPO, 25.0f);
                 break;
         }
+
+        if (channel != 0) {
+            // Use smaller buffer length on focus for smaller latency.
+            BASS.BASS_ChannelSetAttribute(channel, BASS.BASS_ATTRIB_BUFFER, onFocus ? onFocusBufferLength : offFocusBufferLength);
+        }
+
         return channel != 0;
     }
 
@@ -116,6 +146,12 @@ public class BassAudioFunc {
         else{
             BASS.BASS_ChannelSetAttribute(channel, BASS_FX.BASS_ATTRIB_TEMPO, (speed - 1.0f) * 100);
         }
+
+        if (channel != 0) {
+            // Use smaller buffer length on focus for smaller latency.
+            BASS.BASS_ChannelSetAttribute(channel, BASS.BASS_ATTRIB_BUFFER, onFocus ? onFocusBufferLength : offFocusBufferLength);
+        }
+
         return channel != 0;
     }
 
