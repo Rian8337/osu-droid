@@ -37,7 +37,7 @@ public class BassAudioFunc {
     }
 
     public void onGameResume() {
-        onFocus = false;
+        onFocus = true;
 
         BASS.BASS_SetConfig(BASS.BASS_CONFIG_UPDATEPERIOD, 5);
 
@@ -47,7 +47,7 @@ public class BassAudioFunc {
     }
 
     public void onGamePause() {
-        onFocus = true;
+        onFocus = false;
 
         if (channel != 0) {
             BASS.BASS_ChannelSetAttribute(channel, BASS.BASS_ATTRIB_BUFFER, offFocusBufferLength);
