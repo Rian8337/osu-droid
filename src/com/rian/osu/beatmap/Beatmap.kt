@@ -106,10 +106,11 @@ class Beatmap : Cloneable {
     /**
      * Gets the max combo of this beatmap.
      */
-    val maxCombo: Int
-        get() = hitObjects.getObjects().sumOf {
+    val maxCombo by lazy {
+        hitObjects.getObjects().sumOf {
             if (it is Slider) it.nestedHitObjects.size else 1
         }
+    }
 
     public override fun clone() =
         (super.clone() as Beatmap).apply {
