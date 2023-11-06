@@ -1618,20 +1618,16 @@ public class GameScene implements IUpdateHandler, GameObjectListener,
             autoCursor.moveToObject(activeObjects.peek(), secPassed, approachRate, this);
         }
 
-        int clickCount = 0;
-        for (final boolean c : cursorIIsDown) {
-            if (c) ++clickCount;
-        }
+        if (Config.isRemoveSliderLock()) {
+            for (int i = 0; i < CursorCount; i++) {
+                if (cursorIIsDown[i]) {
+                    lastObjectHitTime = getLastObjectHitTime();
+                    tryHitActiveObjects(dt);
+                }
 
-        for (int i = 0; i < CursorCount; i++) {
-            cursorIIsDown[i] = false;
-        }
-
-        for (int i = 0; i < clickCount; ++i) {
-            if (Config.isRemoveSliderLock()) {
-                lastObjectHitTime = getLastObjectHitTime();
+                cursorIIsDown[i] = false;
             }
-
+        } else {
             tryHitActiveObjects(dt);
         }
 
