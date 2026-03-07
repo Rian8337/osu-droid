@@ -2,6 +2,7 @@ package ru.nsu.ccfit.zuev.osu.online;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import com.osudroid.data.BeatmapInfo;
 import okhttp3.MediaType;
@@ -9,11 +10,16 @@ import okhttp3.OkHttpClient;
 
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.anddev.andengine.util.Debug;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import android.util.Base64;
 
 import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
@@ -24,12 +30,23 @@ import ru.nsu.ccfit.zuev.osu.helper.FileUtils;
 import ru.nsu.ccfit.zuev.osu.helper.MD5Calculator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
+import ru.nsu.ccfit.zuev.osu.security.AttestationState;
+import ru.nsu.ccfit.zuev.osu.security.HardwareAttestationManager;
 
 public class OnlineManager {
+    private static final String TAG = "OnlineManager";
+
     public static final String hostname = "osudroid.kansenindex.dev";
     public static final String endpoint = "https://" + hostname + "/api/droid/";
     public static final String updateEndpoint = endpoint + "update";
     public static final String defaultAvatarURL = "https://" + hostname + "/user/avatar/0.png";
+
+    /**
+     * Endpoint that issues a one-time challenge nonce for hardware attestation.
+     * The server stores the nonce with a short TTL (~60 s) and validates it during login.
+     */
+    public static final String attestationChallengeEndpoint = endpoint + "getAttestationChallenge";
+
     private static final String onlineVersion = "48";
 
     public static final OkHttpClient client = new OkHttpClient();
@@ -114,25 +131,258 @@ public class OnlineManager {
         return logIn(username, password);
     }
 
+    /**
+     * Fetches a one-time attestation challenge nonce from the server.
+     *
+     * The server returns a JSON object: {"challenge": "<base64-encoded nonce>"}
+     * The nonce is decoded and stored in AttestationState.pendingChallenge for
+     * use by {@link HardwareAttestationManager#generateKeyPair(byte[])}.
+     *
+     * This is called before login so the key pair is generated with a fresh, server-issued
+     * challenge that is cryptographically bound to the resulting attestation chain.
+     *
+     * Failures here are non-fatal: login will proceed without attestation, and the server
+     * can decide whether to accept or reject unattempted attestation based on its policy.
+     */
+    private void fetchAttestationChallenge() {
+        if (!HardwareAttestationManager.INSTANCE.isSupported()) {
+            Log.w(TAG, "Hardware attestation not supported on this device.");
+            return;
+        }
+        try {
+            Request request = new Request.Builder()
+                    .url(attestationChallengeEndpoint)
+                    .get()
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    Log.w(TAG, "fetchAttestationChallenge: non-success HTTP " + response.code());
+                    return;
+                }
+                JSONObject json = new JSONObject(response.body().string());
+                String challengeB64 = json.optString("challenge", "");
+                if (challengeB64.isEmpty()) {
+                    Log.w(TAG, "fetchAttestationChallenge: empty challenge in response.");
+                    return;
+                }
+                // Decode and store — will be consumed by generateKeyPair() below.
+                AttestationState.INSTANCE.setPendingChallenge(
+                        Base64.decode(challengeB64, Base64.DEFAULT));
+                Log.i(TAG, "Attestation challenge received (" + challengeB64.length() + " b64 chars).");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "fetchAttestationChallenge failed: " + e.getMessage(), e);
+            // Non-fatal — login continues without attestation.
+        }
+    }
+
+    /**
+     * Attempts to generate a hardware-attested key pair using the challenge previously stored by
+     * {@link #fetchAttestationChallenge()}.  On success, caches the PEM chain in
+     * {@link AttestationState#getAttestationChain()} so it can be sent with the login request.
+     *
+     * Failures are non-fatal: login will proceed without attestation parameters.
+     */
+    private void prepareAttestationKeyPair() {
+        byte[] challenge = AttestationState.INSTANCE.getPendingChallenge();
+        if (challenge == null) {
+            return;
+        }
+        try {
+            HardwareAttestationManager.INSTANCE.generateKeyPair(challenge);
+            String chain = HardwareAttestationManager.INSTANCE.getAttestationChain();
+            AttestationState.INSTANCE.setAttestationChain(chain);
+            AttestationState.INSTANCE.setPendingChallenge(null); // consumed
+            Log.i(TAG, "Attestation key pair ready. Chain length: "
+                    + (chain != null ? chain.length() : 0) + " chars.");
+        } catch (Exception e) {
+            Log.e(TAG, "prepareAttestationKeyPair failed: " + e.getMessage(), e);
+            AttestationState.INSTANCE.setPendingChallenge(null);
+        }
+    }
+
+    /**
+     * Builds and executes the raw login POST, returning the OkHttp {@link Response}.
+     *
+     * <p>The caller is responsible for closing the response body. Unlike {@link #sendRequest},
+     * this method returns the raw response regardless of HTTP status code so that the caller
+     * can inspect JSON error bodies (e.g. {@code 401 CHALLENGE_EXPIRED}) before deciding
+     * whether to retry.
+     *
+     * @param chain PEM attestation chain to include, or {@code null} to omit.
+     * @return the raw HTTP response.
+     * @throws OnlineManagerException if the network call itself fails.
+     */
+    private Response sendLoginRequest(String chain) throws OnlineManagerException {
+        String hashedPassword = MD5Calculator.getStringMD5(
+                escapeHTMLSpecialCharacters(addSlashes(String.valueOf(password).trim())) + "taikotaiko"
+        );
+
+        // Build the values string for HMAC signing — mirrors exactly what PostBuilder does:
+        // each URL-encoded value joined by "_" in the order the params are added.
+        StringBuilder signValues = new StringBuilder();
+        try {
+            signValues.append(java.net.URLEncoder.encode(username, "UTF-8"));
+            signValues.append("_").append(java.net.URLEncoder.encode(hashedPassword, "UTF-8"));
+            signValues.append("_").append(java.net.URLEncoder.encode(onlineVersion, "UTF-8"));
+            if (chain != null) {
+                signValues.append("_").append(java.net.URLEncoder.encode(chain, "UTF-8"));
+            }
+        } catch (java.io.UnsupportedEncodingException ignored) {}
+
+        okhttp3.FormBody.Builder formBuilder = new okhttp3.FormBody.Builder();
+        formBuilder.add("username", username);
+        formBuilder.add("password", hashedPassword);
+        formBuilder.add("version", onlineVersion);
+        if (chain != null) {
+            formBuilder.add("attestationChain", chain);
+            Log.i(TAG, "sendLoginRequest: attaching attestation chain (" + chain.length() + " chars).");
+        }
+
+        // Append the HMAC sign param last, same as PostBuilder.requestWithAttempts().
+        String sign = SecurityUtils.signRequest(signValues.toString());
+        if (sign != null) {
+            formBuilder.add("sign", sign);
+        }
+
+        Request request = new Request.Builder()
+                .url(endpoint + "login")
+                .post(formBuilder.build())
+                .build();
+
+        try {
+            return client.newCall(request).execute();
+        } catch (IOException e) {
+            failMessage = "Cannot connect to server";
+            throw new OnlineManagerException("Cannot connect to server", e);
+        }
+    }
+
     public synchronized boolean logIn(String username, String password) throws OnlineManagerException {
         this.username = username;
         this.password = password;
 
-        PostBuilder post = new URLEncodedPostBuilder();
-        post.addParam("username", username);
-        post.addParam(
-                "password",
-                MD5Calculator.getStringMD5(
-                        escapeHTMLSpecialCharacters(addSlashes(String.valueOf(password).trim())) + "taikotaiko"
-                ));
-        post.addParam("version", onlineVersion);
-
-        ArrayList<String> response = sendRequest(post, endpoint + "login");
-
-        if (response == null) {
-            return false;
+        // --- Hardware Attestation: Step 1 — get challenge & generate key pair ---
+        // If a key was generated less than KEY_TTL_MS (15 min) ago, reuse it — no new
+        // challenge fetch or key generation is needed. This avoids the overhead of key
+        // generation on rapid re-logins (e.g. screen-off/on or brief session expiry).
+        // After the TTL expires, clear and do a full re-attestation.
+        boolean reusingExistingKey = AttestationState.INSTANCE.isKeyStillValid()
+                && AttestationState.INSTANCE.getAttestationChain() != null;
+        if (!reusingExistingKey) {
+            AttestationState.INSTANCE.clear();
+            fetchAttestationChallenge();
+            prepareAttestationKeyPair();
+        } else {
+            Log.i(TAG, "Reusing existing attestation key (within 15-min TTL).");
         }
-        if (response.size() < 2) {
+        // -----------------------------------------------------------------------
+
+        String chain = AttestationState.INSTANCE.getAttestationChain();
+
+        // --- Hardware Attestation: Step 2 — send login with attestation chain ---
+        // We use a raw OkHttp call instead of sendRequest() so we can inspect the HTTP
+        // status and JSON body directly. This lets us detect 401 CHALLENGE_EXPIRED (which
+        // happens when the server restarted and discarded its in-memory challenge store)
+        // and transparently re-attest before retrying — without surfacing the error to the
+        // player at all.
+        ArrayList<String> response = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            try (Response httpResponse = sendLoginRequest(chain)) {
+                int httpCode = httpResponse.code();
+                Log.i(TAG, "logIn attempt " + (attempt + 1) + ": HTTP " + httpCode);
+
+                if (httpResponse.body() == null) {
+                    failMessage = "Server error: HTTP " + httpCode;
+                    return false;
+                }
+
+                String bodyStr = httpResponse.body().string();
+                Log.d(TAG, "logIn response body: " + bodyStr);
+                boolean isChallengeExpired = false;
+
+                if (httpCode == 401) {
+                    // New protocol: server returns HTTP 401 + JSON { "code": "CHALLENGE_EXPIRED" }.
+                    try {
+                        JSONObject json = new JSONObject(bodyStr);
+                        String code = json.optString("code");
+                        Log.w(TAG, "logIn 401 — code=" + code);
+                        isChallengeExpired = "CHALLENGE_EXPIRED".equals(code);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "logIn 401 — failed to parse JSON body: " + e.getMessage());
+                    }
+                } else if (httpResponse.isSuccessful()) {
+                    // Legacy / current server protocol: HTTP 200 with body "FAIL\n<message>".
+                    // Detect challenge expiry by checking the failure message text so that
+                    // re-attestation fires even before the server is updated to return 401+JSON.
+                    BufferedReader reader = new BufferedReader(new StringReader(bodyStr));
+                    ArrayList<String> lines = new ArrayList<>();
+                    String line;
+                    while ((line = reader.readLine()) != null) lines.add(line);
+
+                    if (!lines.isEmpty() && "FAIL".equals(lines.get(0))) {
+                        String reason = lines.size() >= 2 ? lines.get(1) : "";
+                        if (reason.toLowerCase().contains("challenge") &&
+                                (reason.toLowerCase().contains("expired") ||
+                                 reason.toLowerCase().contains("not issued") ||
+                                 reason.toLowerCase().contains("not found"))) {
+                            Log.w(TAG, "logIn FAIL — detected challenge expiry in message: " + reason);
+                            isChallengeExpired = true;
+                        } else {
+                            // Normal FAIL (wrong password, etc.) — propagate as-is.
+                            failMessage = reason.isEmpty() ? "Unknown server error" : reason;
+                            Log.w(TAG, "logIn FAIL — " + failMessage);
+                            return false;
+                        }
+                    } else {
+                        // SUCCESS path — capture lines for session parsing below.
+                        Log.i(TAG, "logIn SUCCESS on attempt " + (attempt + 1));
+                        response = lines;
+                        break;
+                    }
+                } else {
+                    failMessage = "Server error: HTTP " + httpCode;
+                    Log.e(TAG, "logIn unexpected HTTP " + httpCode + ": " + bodyStr);
+                    return false;
+                }
+
+                if (isChallengeExpired && attempt == 0) {
+                    // The chain we sent has an expired or missing challenge (e.g. server
+                    // restarted, or the key was generated before the challenge flow existed).
+                    // Force a full re-attestation cycle and retry the login once.
+                    Log.w(TAG, "Challenge expired — clearing state and re-attesting for retry...");
+                    AttestationState.INSTANCE.clear();
+                    fetchAttestationChallenge();
+                    prepareAttestationKeyPair();
+                    chain = AttestationState.INSTANCE.getAttestationChain();
+
+                    if (chain == null) {
+                        // Challenge fetch or key generation failed — no point retrying.
+                        failMessage = "Attestation failed (could not obtain new challenge)";
+                        Log.e(TAG, "Re-attestation failed: chain is null after retry fetch.");
+                        return false;
+                    }
+
+                    Log.i(TAG, "Re-attestation complete. New chain length: "
+                            + chain.length() + ". Retrying login...");
+                    continue;
+                }
+
+                // Either not a challenge expiry, or already retried — treat as failure.
+                failMessage = "Attestation failed";
+                Log.e(TAG, "logIn failed after " + (attempt + 1) + " attempt(s). isChallengeExpired="
+                        + isChallengeExpired + " body=" + bodyStr);
+                return false;
+
+            } catch (IOException e) {
+                failMessage = "Cannot connect to server";
+                throw new OnlineManagerException("Cannot connect to server", e);
+            }
+        }
+        // -----------------------------------------------------------------------
+
+        if (response == null || response.size() < 2) {
             failMessage = "Invalid server response";
             return false;
         }
@@ -155,6 +405,16 @@ public class OnlineManager {
             avatarURL = "";
         }
 
+        // --- Hardware Attestation: Step 3 — mark session as attested ---
+        // If we sent a chain and the server accepted it (login succeeded), the private key is
+        // now usable for signing score submissions. The server associates the session ID with
+        // the leaf public key extracted from the chain.
+        if (chain != null) {
+            AttestationState.INSTANCE.setSessionAttestationReady(true);
+            Log.i(TAG, "Session attestation active for userId=" + userId);
+        }
+        // ----------------------------------------------------------------
+
         return true;
     }
 
@@ -174,6 +434,29 @@ public class OnlineManager {
         post.addParam("hash", beatmap.getMD5());
         post.addParam("data", scoreData);
         post.addParam("version", onlineVersion);
+
+        // --- Hardware Attestation: sign the score submission ---
+        // The payload signed is "userID|beatmapHash|scoreData" — a canonical string that
+        // uniquely identifies this exact submission. The server verifies this signature
+        // using the public key it stored when the attestation chain was submitted at login.
+        // This prevents score injection: an attacker would need the hardware-backed private
+        // key, which never leaves the TEE/StrongBox.
+        if (AttestationState.INSTANCE.getSessionAttestationReady()) {
+            try {
+                String sigPayload = userId + "|" + beatmap.getMD5() + "|" + scoreData;
+                String sig = HardwareAttestationManager.INSTANCE.signData(
+                        sigPayload.getBytes(StandardCharsets.UTF_8));
+                if (sig != null) {
+                    post.addParam("attestationSignature", sig);
+                    Log.i(TAG, "Attestation signature attached to score submission.");
+                }
+            } catch (Exception e) {
+                // Non-fatal: submission proceeds without the signature.
+                // The server may choose to flag or reject unsigned submissions based on policy.
+                Log.e(TAG, "Failed to sign score submission: " + e.getMessage(), e);
+            }
+        }
+        // -------------------------------------------------------
 
         MediaType replayMime = MediaType.parse("application/octet-stream");
         RequestBody replayFileBody = RequestBody.create(replayFile, replayMime);

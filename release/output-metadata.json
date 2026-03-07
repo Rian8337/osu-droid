@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 1772903884,
-      "versionName": "2026.308.1-tournament",
-      "outputFile": "osu!droid-2026.308.1-tournament-release-2026-03-07.apk"
+      "versionCode": 1772921822,
+      "versionName": "2026.308.4-tournament",
+      "outputFile": "osu!droid-2026.308.4-tournament-release-2026-03-07.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/osu!droid-2026.308.1-tournament-release-2026-03-07.dm"
+        "baselineProfiles/1/osu!droid-2026.308.4-tournament-release-2026-03-07.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/osu!droid-2026.308.1-tournament-release-2026-03-07.dm"
+        "baselineProfiles/0/osu!droid-2026.308.4-tournament-release-2026-03-07.dm"
       ]
     }
   ],

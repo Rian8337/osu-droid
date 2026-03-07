@@ -16,12 +16,15 @@ import com.osudroid.multiplayer.api.data.parsePlayer
 import com.osudroid.multiplayer.api.data.parsePlayers
 import com.osudroid.ui.v2.multi.RoomScene
 import ru.nsu.ccfit.zuev.osu.SecurityUtils
+import ru.nsu.ccfit.zuev.osu.security.AttestationState
+import ru.nsu.ccfit.zuev.osu.security.HardwareAttestationManager
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter.Listener
 import org.json.JSONArray
 import org.json.JSONObject
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager
+import android.util.Log
 
 object RoomAPI {
 
@@ -322,6 +325,23 @@ object RoomAPI {
         if (sign != null) {
             auth["authSign"] = sign
         }
+
+        // --- Hardware Attestation: sign the room connection payload ---
+        // Signs "userId_gameSessionId_roomId" to prove this specific connection
+        // comes from the same hardware-attested device that logged in.
+        if (AttestationState.sessionAttestationReady) {
+            try {
+                val sigPayload = "${userId}_${gameSessionId}_${roomId}"
+                val sig = HardwareAttestationManager.signData(sigPayload.toByteArray(Charsets.UTF_8))
+                if (sig != null) {
+                    auth["attestationSignature"] = sig
+                    Log.i("RoomAPI", "Attestation signature attached to room connection auth.")
+                }
+            } catch (e: Exception) {
+                Log.e("RoomAPI", "Failed to sign room connection: ${e.message}", e)
+            }
+        }
+        // --------------------------------------------------------------
 
         if (!roomPassword.isNullOrBlank()) {
             auth["password"] = roomPassword

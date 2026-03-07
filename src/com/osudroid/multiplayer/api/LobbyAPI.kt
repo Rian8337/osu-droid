@@ -1,5 +1,6 @@
 package com.osudroid.multiplayer.api
 
+import android.util.Log
 import com.osudroid.BuildSettings
 import com.osudroid.debug.MockRoom
 import com.osudroid.multiplayer.api.data.Room
@@ -12,6 +13,8 @@ import com.osudroid.multiplayer.api.data.parseGameplaySettings
 import com.reco1l.framework.net.JsonArrayRequest
 import com.reco1l.framework.net.JsonObjectRequest
 import com.reco1l.toolkt.data.putObject
+import ru.nsu.ccfit.zuev.osu.security.AttestationState
+import ru.nsu.ccfit.zuev.osu.security.HardwareAttestationManager
 
 object LobbyAPI {
 
@@ -123,6 +126,24 @@ object LobbyAPI {
                 put("version", RoomAPI.API_VERSION)
                 put("sessionId", sessionId)
                 put("sign", sign)
+
+                // --- Hardware Attestation: sign the room creation payload ---
+                // Signs "hostUID_name_maxPlayers_sessionId" so the server can verify this
+                // createRoom request was issued by the same hardware-attested device session.
+                if (AttestationState.sessionAttestationReady) {
+                    try {
+                        val sigPayload = "${hostUID}_${name}_${maxPlayers}_${sessionId}"
+                        val sig = HardwareAttestationManager.signData(
+                            sigPayload.toByteArray(Charsets.UTF_8))
+                        if (sig != null) {
+                            put("attestationSignature", sig)
+                            Log.i("LobbyAPI", "Attestation signature attached to createRoom.")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("LobbyAPI", "Failed to sign createRoom: ${e.message}", e)
+                    }
+                }
+                // -------------------------------------------------------------
             }
 
             return request.execute().json.getString("id").toLong()
