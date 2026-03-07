@@ -140,7 +140,7 @@ class SpectatorDataManager(
         private fun postDataSend(submitSuccess: Boolean, gameHasEnded: Boolean = false) {
             if (gameHasEnded) {
                 cancel()
-                gameScene.stopSpectatorDataSubmission()
+                submissionTimer.cancel()
                 return
             }
 

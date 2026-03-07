@@ -9,7 +9,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.android.tools.build:gradle:8.5.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
         classpath "androidx.room:room-gradle-plugin:$room_version"
@@ -17,7 +17,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.google.devtools.ksp' version '2.0.10-1.0.24'
+    id 'com.google.devtools.ksp' version '2.1.10-1.0.29'
 }
 
 allprojects {
@@ -35,7 +35,7 @@ def getReleaseVersionCode() {
 }
 
 def getReleaseVersionName() {
-    def subVersion = '0-tournament'
+    def subVersion = '1-tournament'
     def versionName = new Date().format('yyyy.Mdd') + '.' + subVersion
     println('versionName: ' + versionName)
     return versionName
@@ -54,7 +54,7 @@ apply plugin: 'androidx.room'
 
 android {
     namespace 'ru.nsu.ccfit.zuev.osuplus'
-    compileSdk 34
+    compileSdk 35
     ndkVersion '22.1.7171670'
 
     defaultConfig {
@@ -70,6 +70,11 @@ android {
     packagingOptions {
         resources {
             excludes += ['META-INF/proguard/coroutines.pro']
+        }
+        jniLibs {
+            // Setting this to false ensures libs are stored uncompressed,
+            // which is a prerequisite for 16 KB alignment
+            useLegacyPackaging = false
         }
     }
 
@@ -144,6 +149,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
     useLibrary 'org.apache.http.legacy'
     lint {
         abortOnError true
@@ -162,7 +171,8 @@ android {
 
     android.applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
-            def fileName = "osudroid-${defaultConfig.versionName}-${variant.buildType.name}.apk"
+            def releaseTime = new Date().format("yyyy-MM-dd", TimeZone.getTimeZone("UTC"))
+            def fileName = "osu!droid-${defaultConfig.versionName}-${variant.buildType.name}-${releaseTime}.apk"
             outputFileName = fileName
         }
     }

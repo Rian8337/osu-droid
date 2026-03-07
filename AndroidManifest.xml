@@ -110,8 +110,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!--We keep the scheme, so it can be treated as URL in other apps such as Discord-->
-                <data android:scheme="https" android:host="tournament.odmp"/>
+                <data android:scheme="https" android:host="osudroid.kansenindex.dev" android:pathPrefix="/tournament"/>
             </intent-filter>
 
             <intent-filter>

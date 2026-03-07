@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "ru.nsu.ccfit.zuev.osuplus.tournament",
+  "variantName": "release",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 1772903884,
+      "versionName": "2026.308.1-tournament",
+      "outputFile": "osu!droid-2026.308.1-tournament-release-2026-03-07.apk"
+    }
+  ],
+  "elementType": "File",
+  "baselineProfiles": [
+    {
+      "minApi": 28,
+      "maxApi": 30,
+      "baselineProfiles": [
+        "baselineProfiles/1/osu!droid-2026.308.1-tournament-release-2026-03-07.dm"
+      ]
+    },
+    {
+      "minApi": 31,
+      "maxApi": 2147483647,
+      "baselineProfiles": [
+        "baselineProfiles/0/osu!droid-2026.308.1-tournament-release-2026-03-07.dm"
+      ]
+    }
+  ],
+  "minSdkVersionForDexing": 24
+}

@@ -26,11 +26,11 @@ import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2;
 
 public class OnlineManager {
-    public static final String hostname = "osudroid.moe";
-    public static final String endpoint = "https://" + hostname + "/api/";
-    public static final String updateEndpoint = endpoint + "update.php?lang=";
+    public static final String hostname = "osudroid.kansenindex.dev";
+    public static final String endpoint = "https://" + hostname + "/api/droid/";
+    public static final String updateEndpoint = endpoint + "update";
     public static final String defaultAvatarURL = "https://" + hostname + "/user/avatar/0.png";
-    private static final String onlineVersion = "58";
+    private static final String onlineVersion = "48";
 
     public static final OkHttpClient client = new OkHttpClient();
 

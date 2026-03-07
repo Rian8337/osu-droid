@@ -889,7 +889,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         multiplier += (Math.min(rawDifficulty.gameplayCS, 17.62f) - 3) / 4f;
 
         stat.setDiffModifier(multiplier);
-        stat.setBeatmapNoteCount(objects.size());
+        stat.setBeatmapNoteCount(objects.length);
         stat.setV1MaxScore(parsedBeatmap.getMaxScore());
 
         if (!Multiplayer.isMultiplayer && !replaying && OnlineManager.getInstance().isStayOnline() && replay != null) {
@@ -911,9 +911,6 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             }
         }
 
-        if (Multiplayer.isMultiplayer && Multiplayer.isConnected() && Multiplayer.room != null) {
-            spectatorDataManager = new SpectatorDataManager(this, replay, stat);
-        }
 
         // Resetting variables before starting the game.
         Multiplayer.finalData = null;
@@ -1040,7 +1037,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
 
         stat.setDiffModifier(difficultyScoreMultiplier);
         stat.setBeatmapNoteCount(objects.length);
-        stat.setBeatmapMaxCombo(parsedBeatmap.getMaxCombo());
+        stat.setV1MaxScore(parsedBeatmap.getMaxScore());
 
         GameHelper.setHardRock(lastMods.ofType(ModHardRock.class));
         GameHelper.setDoubleTime(lastMods.ofType(ModDoubleTime.class));
@@ -1328,6 +1325,10 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         // Disable screen dimming
         engine.getEngineOptions().setWakeLockOptions(WakeLockOptions.SCREEN_BRIGHT);
         GlobalManager.getInstance().getMainActivity().reapplyWakeLock();
+
+        if (Multiplayer.isMultiplayer && Multiplayer.isConnected() && Multiplayer.room != null) {
+            spectatorDataManager = new SpectatorDataManager(this, replay, stat);
+        }
 
         engine.setScene(scene);
         engine.getOverlay().attachChild(hud, 0);
@@ -2046,7 +2047,10 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
 
         cancelStoryboardLoading();
         cancelVideoLoading();
-        stopSpectatorDataSubmission();
+        if (spectatorDataManager != null) {
+            spectatorDataManager.pauseTimer();
+            spectatorDataManager = null;
+        }
 
         // osu!stable restarts the song back to preview time when the player is in the last 10 seconds *or* 2% of the beatmap.
         float mSecPassed = elapsedTime * 1000;
