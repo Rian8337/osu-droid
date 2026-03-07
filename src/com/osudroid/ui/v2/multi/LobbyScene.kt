@@ -19,6 +19,7 @@ import kotlinx.coroutines.*
 import ru.nsu.ccfit.zuev.osu.*
 import kotlin.coroutines.cancellation.CancellationException
 import ru.nsu.ccfit.zuev.osu.helper.StringTable
+import ru.nsu.ccfit.zuev.osu.online.OnlineManager
 
 class LobbyScene : UIScene() {
 
@@ -244,7 +245,12 @@ class LobbyScene : UIScene() {
             switchContainers(messageContainer)
             roomContainer.detachChildren()
 
-            val list = LobbyAPI.getRooms(searchQuery, SecurityUtils.signRequest(searchQuery ?: ""))
+            val list = LobbyAPI.getRooms(
+                query = searchQuery,
+                sessionId = OnlineManager.getInstance().sessionId,
+                uid = OnlineManager.getInstance().userId,
+                sign = SecurityUtils.signRequest("${searchQuery ?: ""}_${OnlineManager.getInstance().userId}_${OnlineManager.getInstance().sessionId}")
+            )
 
             updateThread {
 

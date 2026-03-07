@@ -124,7 +124,7 @@ class GameLoaderScene(private val gameScene: GameScene, private val beatmapInfo:
 
                 // Mods
                 if (mods.isNotEmpty()) {
-                    +ModsIndicator().also { it.mods = mods.serializeMods() }
+                    +ModsIndicator().also { it.mods = mods.values }
                 }
             }
 
@@ -184,6 +184,12 @@ class GameLoaderScene(private val gameScene: GameScene, private val beatmapInfo:
         if (selectedBeatmap != null) {
             songMenu.playMusic(selectedBeatmap.audioPath, selectedBeatmap.previewTime)
         }
+    }
+
+
+    override fun onAttached() {
+        super.onAttached()
+        mainContainer.paddingBottom = if (Multiplayer.isConnected) Multiplayer.roomScene!!.chat.buttonHeight + 12f else 0f
     }
 
     override fun onManagedUpdate(deltaTimeSec: Float) {

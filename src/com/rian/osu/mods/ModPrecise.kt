@@ -5,6 +5,7 @@ import com.rian.osu.beatmap.PreciseDroidHitWindow
 import com.rian.osu.beatmap.hitobject.HitObject
 import com.rian.osu.beatmap.hitobject.Slider
 import com.rian.osu.beatmap.hitobject.Spinner
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Represents the Precise mod.
@@ -15,12 +16,13 @@ class ModPrecise : Mod(), IModApplicableToHitObject {
     override val description = "Ultimate rhythm gamer timing."
     override val type = ModType.DifficultyIncrease
     override val isRanked = true
-    override val scoreMultiplier = 1.06f
+    override val scoreMultiplier = 1.15f
 
     override fun applyToHitObject(
         mode: GameMode,
         hitObject: HitObject,
-        adjustmentMods: Iterable<IModFacilitatesAdjustment>
+        adjustmentMods: Iterable<IModFacilitatesAdjustment>,
+        scope: CoroutineScope?
     ) {
         if (mode == GameMode.Standard || hitObject is Spinner) {
             return
@@ -31,6 +33,4 @@ class ModPrecise : Mod(), IModApplicableToHitObject {
 
         obj.hitWindow = PreciseDroidHitWindow(obj.hitWindow?.overallDifficulty)
     }
-
-    override fun deepCopy() = ModPrecise()
 }

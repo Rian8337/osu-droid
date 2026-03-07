@@ -45,7 +45,7 @@ class ModMenuPresetsSection : ModMenuSection("Presets") {
 
         val modPreset = ModPreset(
             name = name,
-            serializedMods = ModMenu.enabledMods.serializeMods(includeIrrelevantMods = true).toString()
+            serializedMods = ModMenu.enabledMods.serializeMods(includeIrrelevantMods = true)
         )
 
         DatabaseManager.modPresetTable.insert(modPreset)
@@ -143,7 +143,7 @@ class ModMenuPresetsSection : ModMenuSection("Presets") {
 
             +ModsIndicator().apply {
                 iconSize = 21f
-                mods = preset.mods.serializeMods(includeIrrelevantMods = true)
+                mods = preset.mods.values
             }
         }
 

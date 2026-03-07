@@ -35,7 +35,9 @@ public class StatisticV2 implements Serializable {
     private int hit300k = 0, hit100k = 0;
     private int misses = 0;
     private int scoreMaxCombo = 0;
+    private int sliderHeadHits = 0;
     private int sliderTickHits = 0;
+    private int sliderRepeatHits = 0;
     private int sliderEndHits = 0;
     private long time = 0;
     private int currentCombo = 0;
@@ -107,14 +109,14 @@ public class StatisticV2 implements Serializable {
         hit100 = Integer.parseInt(params[7]);
         hit50 = Integer.parseInt(params[8]);
         misses = Integer.parseInt(params[9]);
+
         if (params.length >= 11) {
             time = Long.parseLong(params[10]);
         }
-        if (params.length >= 13) {
-            playerName = params[12];
-        }
 
-        sliderTickHits = params.length >= 14 ? Integer.parseInt(params[13]) : -1;
+        sliderHeadHits = params.length >= 12 ? Integer.parseInt(params[11]) : -1;
+        sliderTickHits = params.length >= 13 ? Integer.parseInt(params[12]) : -1;
+        sliderRepeatHits = params.length >= 14 ? Integer.parseInt(params[13]) : -1;
         sliderEndHits = params.length >= 15 ? Integer.parseInt(params[14]) : -1;
 
         if (originalDifficulty != null) {
@@ -387,6 +389,18 @@ public class StatisticV2 implements Serializable {
         this.misses = misses;
     }
 
+    public int getSliderHeadHits() {
+        return sliderHeadHits;
+    }
+
+    public void setSliderHeadHits(int sliderHeadHits) {
+        this.sliderHeadHits = sliderHeadHits;
+    }
+
+    public void addSliderHeadHit() {
+        sliderHeadHits++;
+    }
+
     public int getSliderTickHits() {
         return sliderTickHits;
     }
@@ -397,6 +411,18 @@ public class StatisticV2 implements Serializable {
 
     public void addSliderTickHit() {
         sliderTickHits++;
+    }
+
+    public int getSliderRepeatHits() {
+        return sliderRepeatHits;
+    }
+
+    public void setSliderRepeatHits(int sliderRepeatHits) {
+        this.sliderRepeatHits = sliderRepeatHits;
+    }
+
+    public void addSliderRepeatHit() {
+        sliderRepeatHits++;
     }
 
     public int getSliderEndHits() {
@@ -504,7 +530,11 @@ public class StatisticV2 implements Serializable {
         builder.append(' ');
         builder.append(getUnstableRate());
         builder.append(' ');
+        builder.append(getSliderHeadHits());
+        builder.append(' ');
         builder.append(getSliderTickHits());
+        builder.append(' ');
+        builder.append(getSliderRepeatHits());
         builder.append(' ');
         builder.append(getSliderEndHits());
         builder.append(' ');
@@ -598,7 +628,7 @@ public class StatisticV2 implements Serializable {
             beatmapMD5,
             playerName,
             replayFilename,
-            mod.serializeMods(false).toString(),
+            mod.serializeMods(false),
             getTotalScoreWithMultiplier(),
             scoreMaxCombo,
             getMark(),
@@ -609,7 +639,9 @@ public class StatisticV2 implements Serializable {
             hit50,
             misses,
             time,
+            sliderHeadHits >= 0 ? sliderHeadHits : null,
             sliderTickHits >= 0 ? sliderTickHits : null,
+            sliderRepeatHits >= 0 ? sliderRepeatHits : null,
             sliderEndHits >= 0 ? sliderEndHits : null
         );
     }

@@ -31,7 +31,7 @@ open class UIText : UIBufferedComponent<CompoundBuffer>() {
                 currentLength = value.length
 
                 if (currentLength > previousLength) {
-                    invalidateBuffer(BufferInvalidationFlag.Instance)
+                    requestNewBuffer()
                 }
 
                 invalidate(InvalidationFlag.Content)
@@ -42,7 +42,7 @@ open class UIText : UIBufferedComponent<CompoundBuffer>() {
      * The font to use for this text.
      * It must be already loaded and ready to use before setting it.
      */
-    var font: Font? = null
+    var font: Font? = ResourceManager.getInstance().getFont("smallFont")
         set(value) {
             if (field != value) {
                 field = value
@@ -57,7 +57,7 @@ open class UIText : UIBufferedComponent<CompoundBuffer>() {
         set(value) {
             if (field != value) {
                 field = value
-                invalidateBuffer(BufferInvalidationFlag.Data)
+                requestBufferUpdate()
             }
         }
 
@@ -114,12 +114,12 @@ open class UIText : UIBufferedComponent<CompoundBuffer>() {
         contentWidth = linesWidth!!.max().toFloat()
         contentHeight = (lines!!.size * font.lineHeight + (lines!!.size - 1) * font.lineGap).toFloat()
 
-        invalidateBuffer(BufferInvalidationFlag.Data)
+        requestBufferUpdate()
     }
 
     override fun onSizeChanged() {
         super.onSizeChanged()
-        invalidateBuffer(BufferInvalidationFlag.Data)
+        requestBufferUpdate()
     }
 
     override fun onCreateBuffer(): CompoundBuffer {
@@ -440,4 +440,12 @@ open class CompoundText : UIContainer() {
 
         super.onManagedUpdate(deltaTimeSec)
     }
+}
+
+
+fun UITextCompoundBuffer(capacity: Int): CompoundBuffer {
+    return CompoundBuffer(
+        UIText.TextTextureBuffer(capacity),
+        UIText.TextVertexBuffer(capacity)
+    )
 }

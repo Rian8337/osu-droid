@@ -4,14 +4,22 @@ import android.graphics.PointF;
 
 import androidx.annotation.NonNull;
 
+import com.rian.osu.GameMode;
+import com.rian.osu.beatmap.DroidHitWindow;
+import com.rian.osu.beatmap.IBeatmap;
+import com.rian.osu.beatmap.PreciseDroidHitWindow;
+import com.rian.osu.beatmap.hitobject.Slider;
+import com.rian.osu.beatmap.hitobject.sliderobject.*;
 import com.rian.osu.mods.LegacyModConverter;
 import com.rian.osu.mods.ModHardRock;
+import com.rian.osu.mods.ModPrecise;
 import com.rian.osu.mods.ModReplayV6;
 import com.rian.osu.utils.ModHashMap;
 import com.rian.osu.utils.ModUtils;
 
 import org.anddev.andengine.util.Debug;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -114,7 +122,7 @@ public class Replay {
         cursorMoves.get(pid).pushBack(timeMs, TouchType.UP);
     }
 
-    public void save(final String filename) {
+    public byte[] save(final String filename) {
         isSaving = true;
 
         for (int i = 0; i < cursorMoves.size(); i++)
@@ -122,57 +130,68 @@ public class Replay {
         Debug.i("Skipped " + pointsSkipped + " points");
         Debug.i("Replay contains " + objectData.length + " objects");
 
-        try (var zip = new ZipOutputStream(new FileOutputStream(filename))) {
-            zip.setMethod(ZipOutputStream.DEFLATED);
-            zip.setLevel(Deflater.DEFAULT_COMPRESSION);
-            zip.putNextEntry(new ZipEntry("data"));
+        try (var byteStream = new ByteArrayOutputStream()) {
+            try (var zip = new ZipOutputStream(byteStream)) {
+                zip.setMethod(ZipOutputStream.DEFLATED);
+                zip.setLevel(Deflater.DEFAULT_COMPRESSION);
+                zip.putNextEntry(new ZipEntry("data"));
 
-            try (var os = new ObjectOutputStream(zip)) {
-                os.writeObject(new ReplayVersion());
-                os.writeObject(beatmapsetName);
-                os.writeObject(beatmapName);
-                os.writeObject(md5);
+                try (var os = new ObjectOutputStream(zip)) {
+                    os.writeObject(new ReplayVersion());
+                    os.writeObject(beatmapsetName);
+                    os.writeObject(beatmapName);
+                    os.writeObject(md5);
 
-                if (stat != null) {
-                    os.writeLong(stat.getTime());
-                    os.writeInt(stat.getHit300k());
-                    os.writeInt(stat.getHit300());
-                    os.writeInt(stat.getHit100k());
-                    os.writeInt(stat.getHit100());
-                    os.writeInt(stat.getHit50());
-                    os.writeInt(stat.getMisses());
-                    os.writeInt(stat.getTotalScoreWithMultiplier());
-                    os.writeInt(stat.getScoreMaxCombo());
-                    os.writeObject(stat.getPlayerName());
-                    os.writeObject(stat.getMod().serializeMods().toString());
-                }
-
-                os.writeInt(cursorMoves.size());
-                //Storing all moves
-                for (final MoveArray move : cursorMoves) {
-                    move.writeTo(os);
-                }
-                os.writeInt(objectData.length);
-                for (ReplayObjectData data : objectData) {
-                    if (data == null) data = new ReplayObjectData();
-                    os.writeShort(data.accuracy);
-                    if (data.tickSet == null || data.tickSet.isEmpty()) {
-                        os.writeByte(0);
-                    } else {
-                        byte[] bytes = new byte[(data.tickSet.length() + 7) / 8];
-                        for (int i = 0; i < data.tickSet.length(); i++) {
-                            if (data.tickSet.get(i)) {
-                                bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
-                            }
-                        }
-                        os.writeByte(bytes.length);
-                        os.write(bytes);
+                    if (stat != null) {
+                        os.writeLong(stat.getTime());
+                        os.writeInt(stat.getHit300k());
+                        os.writeInt(stat.getHit300());
+                        os.writeInt(stat.getHit100k());
+                        os.writeInt(stat.getHit100());
+                        os.writeInt(stat.getHit50());
+                        os.writeInt(stat.getMisses());
+                        os.writeInt(stat.getTotalScoreWithMultiplier());
+                        os.writeInt(stat.getScoreMaxCombo());
+                        os.writeObject(stat.getPlayerName());
+                        os.writeObject(stat.getMod().serializeMods());
                     }
-                    os.writeByte(data.result);
+
+                    os.writeInt(cursorMoves.size());
+                    //Storing all moves
+                    for (final MoveArray move : cursorMoves) {
+                        move.writeTo(os);
+                    }
+                    os.writeInt(objectData.length);
+                    for (ReplayObjectData data : objectData) {
+                        if (data == null) data = new ReplayObjectData();
+                        os.writeShort(data.accuracy);
+                        if (data.tickSet == null || data.tickSet.isEmpty()) {
+                            os.writeByte(0);
+                        } else {
+                            byte[] bytes = new byte[(data.tickSet.length() + 7) / 8];
+                            for (int i = 0; i < data.tickSet.length(); i++) {
+                                if (data.tickSet.get(i)) {
+                                    bytes[bytes.length - i / 8 - 1] |= 1 << (i % 8);
+                                }
+                            }
+                            os.writeByte(bytes.length);
+                            os.write(bytes);
+                        }
+                        os.writeByte(data.result);
+                    }
                 }
             }
+
+            byte[] replayData = byteStream.toByteArray();
+
+            try (var fileStream = new FileOutputStream(filename)) {
+                fileStream.write(replayData);
+            }
+
+            return replayData;
         } catch (final IOException e) {
             Debug.e("IOException: " + e.getMessage(), e);
+            return null;
         } finally {
             isSaving = false;
         }
@@ -314,6 +333,98 @@ public class Replay {
         }
 
         return true;
+    }
+
+    /**
+     * Populates a {@link StatisticV2} based on information from this {@link Replay}.
+     *
+     * @param beatmap The {@link IBeatmap} that this {@link Replay} was played on.
+     * @param stat The {@link StatisticV2} to populate.
+     */
+    public void populateStatistics(@NonNull IBeatmap beatmap, @NonNull StatisticV2 stat) {
+        // Check for a replay that is potentially malformed or failed to be loaded.
+        if (objectData == null || beatmap.getHitObjects().objects.size() != objectData.length) {
+            return;
+        }
+
+        stat.setSliderHeadHits(0);
+        stat.setSliderTickHits(0);
+        stat.setSliderRepeatHits(0);
+        stat.setSliderEndHits(0);
+
+        var difficulty = beatmap.getDifficulty().clone();
+        ModUtils.applyModsToBeatmapDifficulty(difficulty, GameMode.Droid, stat.getMod().values());
+
+        var hitWindow = stat.getMod().contains(ModPrecise.class)
+            ? new PreciseDroidHitWindow(difficulty.od)
+            : new DroidHitWindow(difficulty.od);
+
+        var objects = beatmap.getHitObjects().objects;
+
+        for (int i = 0; i < objects.size(); ++i) {
+            var obj = objects.get(i);
+
+            if (!(obj instanceof Slider slider)) {
+                continue;
+            }
+
+            var objReplayData = objectData[i];
+
+            // Skip if the object data somehow does not have tickSet.
+            if (objReplayData.tickSet == null) {
+                continue;
+            }
+
+            // Miss result means all slider nested hit objects were missed.
+            if (objReplayData.result == ResultType.MISS.getId()) {
+                continue;
+            }
+
+            // Great result means all slider nested hit objects were hit.
+            if (objReplayData.result == ResultType.HIT300.getId()) {
+                stat.addSliderHeadHit();
+                stat.addSliderEndHit();
+
+                for (int j = 1; j < slider.getNestedHitObjects().size() - 1; ++j) {
+                    var nestedObject = slider.getNestedHitObjects().get(j);
+
+                    if (nestedObject instanceof SliderHead) {
+                        stat.addSliderHeadHit();
+                    } else if (nestedObject instanceof SliderTick) {
+                        stat.addSliderTickHit();
+                    } else if (nestedObject instanceof SliderRepeat) {
+                        stat.addSliderRepeatHit();
+                    } else {
+                        stat.addSliderEndHit();
+                    }
+                }
+
+                continue;
+            }
+
+            // For other results, we need to individually check judgement for each nested object.
+            // Slider head is unique in that the result is not stored in tickSet, but in the form of hit offset.
+            if (-hitWindow.getMehWindow() <= objReplayData.accuracy &&
+                    objReplayData.accuracy <= Math.min(hitWindow.getMehWindow(), slider.getDuration())) {
+                stat.addSliderHeadHit();
+            }
+
+            for (int j = 1; i < slider.getNestedHitObjects().size(); ++j) {
+                if (!objReplayData.tickSet.get(j - 1)) {
+                    continue;
+                }
+
+                var nestedObject = slider.getNestedHitObjects().get(j);
+
+                if (nestedObject instanceof SliderTick) {
+                    stat.addSliderHeadHit();
+                } else if (nestedObject instanceof SliderRepeat) {
+                    stat.addSliderRepeatHit();
+                } else {
+                    stat.addSliderEndHit();
+                }
+            }
+        }
     }
 
     public StatisticV2 getStat() {

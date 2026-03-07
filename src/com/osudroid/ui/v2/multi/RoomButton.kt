@@ -108,7 +108,7 @@ class RoomButton(val lobbyScene: LobbyScene, val room: Room) : UIButton() {
 
                 if (room.mods.isNotEmpty()) {
                     +ModsIndicator().apply {
-                        mods = room.mods.json
+                        mods = room.mods.values
                         iconSize = 24f
                     }
                 }
@@ -180,14 +180,14 @@ class RoomButton(val lobbyScene: LobbyScene, val room: Room) : UIButton() {
                 RoomAPI.connectToRoom(
                     roomId = room.id,
                     userId = OnlineManager.getInstance().userId,
-                    username = OnlineManager.getInstance().username,
+                    gameSessionId = OnlineManager.getInstance().sessionId,
                     roomPassword = password
                 )
             } catch (e: Exception) {
                 ToastLogger.showText("Failed to connect to the room: ${e.javaClass} - ${e.message}", true)
                 Multiplayer.log(e)
 
-                ExtendedEngine.Current.scene = lobbyScene
+                UIEngine.current.scene = lobbyScene
             }
         }
 

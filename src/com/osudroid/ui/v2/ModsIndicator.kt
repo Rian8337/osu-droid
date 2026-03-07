@@ -3,9 +3,7 @@ package com.osudroid.ui.v2
 import com.osudroid.ui.v2.modmenu.*
 import com.reco1l.andengine.component.*
 import com.reco1l.andengine.container.*
-import com.reco1l.toolkt.data.*
-import com.rian.osu.utils.*
-import org.json.JSONArray
+import com.rian.osu.mods.*
 
 class ModsIndicator : UILinearContainer() {
 
@@ -27,23 +25,18 @@ class ModsIndicator : UILinearContainer() {
     /**
      * The list of mods to display.
      */
-    var mods: JSONArray? = null
+    var mods: Iterable<Mod>? = null
         set(value) {
             if (field != value) {
                 field = value
 
                 detachChildren()
-                value?.forEach { json ->
 
-                    val modAcronym = json.optString("acronym", json.optString("a"))
-                    val mod = ModUtils.allModsInstances.find { it.acronym.equals(modAcronym, ignoreCase = true) }!!
-
+                value?.forEach { mod ->
                     if (!showNonPlayableMods && !mod.isUserPlayable) {
-                        // Skip mods that are not selectable by the user
                         return@forEach
                     }
 
-                    // Mods that come from the server have a abbreviated structure.
                     +ModIcon(mod).apply {
                         width = iconSize
                         height = iconSize
