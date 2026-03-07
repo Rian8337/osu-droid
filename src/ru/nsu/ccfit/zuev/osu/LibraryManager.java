@@ -4,6 +4,7 @@ import static com.osudroid.data.BeatmapsKt.BeatmapInfo;
 
 import android.util.Log;
 
+import com.osudroid.beatmaps.BeatmapCache;
 import com.osudroid.beatmaps.DifficultyCalculationManager;
 import com.osudroid.data.BeatmapSetInfo;
 import com.osudroid.data.DatabaseManager;
@@ -125,6 +126,7 @@ public class LibraryManager {
     public static void deleteBeatmapSet(BeatmapSetInfo beatmapSet) {
         FilesKt.deleteRecursively(new File(beatmapSet.getPath()));
         DatabaseManager.getBeatmapInfoTable().deleteBeatmapSet(beatmapSet.getDirectory());
+        BeatmapCache.invalidate(beatmapSet);
         loadLibrary();
     }
 
@@ -142,19 +144,8 @@ public class LibraryManager {
         var beatmapsFound = 0;
 
         for (var osuFile : osuFiles) {
-
-            try (var parser = new BeatmapParser(osuFile)) {
-
-                var data = parser.parse(false);
-
-                if (data == null) {
-                    if (Config.isDeleteUnimportedBeatmaps()) {
-                        //noinspection ResultOfMethodCallIgnored
-                        osuFile.delete();
-                    }
-                    continue;
-                }
-
+            try {
+                var data = new BeatmapParser(osuFile).parse(false);
                 var beatmapInfo = BeatmapInfo(data, directory.lastModified(), false);
 
                 if (data.getEvents().videoFilename != null && Config.isDeleteUnsupportedVideos()) {
@@ -172,6 +163,14 @@ public class LibraryManager {
 
                 pendingBeatmaps.add(beatmapInfo);
                 beatmapsFound++;
+            } catch (Exception e) {
+                Log.e("LibraryManager", "Failed to parse beatmap file: " + osuFile.getPath(), e);
+                if (Config.isDeleteUnimportedBeatmaps()) {
+                    try {
+                        //noinspection ResultOfMethodCallIgnored
+                        osuFile.delete();
+                    } catch (Exception ignored) {}
+                }
             }
         }
 

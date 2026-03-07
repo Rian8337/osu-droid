@@ -1,32 +1,42 @@
 package com.osudroid.ui.v2
 
+import com.edlplan.framework.easing.Easing
 import com.osudroid.ui.OsuColors
 import com.reco1l.andengine.component.UIComponent
 import com.reco1l.andengine.sprite.UISprite
 import com.reco1l.andengine.ui.Theme
 import com.reco1l.andengine.ui.UIBadge
 import com.reco1l.framework.Color4
+import com.rian.framework.RollingDoubleCounter
+import kotlin.math.abs
 import ru.nsu.ccfit.zuev.osu.ResourceManager
 
 /**
  * A [UIBadge] for displaying star ratings. Automatically adjusts its styling according to the rating.
  */
 class StarRatingBadge : UIBadge() {
-    /**
-     * The star rating value displayed by this [StarRatingBadge].
-     */
-    var rating = 0.0
-        set(value) {
-            if (field != value) {
-                field = value
-                ratingChanged = true
-            }
-        }
-
     // Badge color is determined by rating and should not be affected by themes.
     override var applyTheme: UIComponent.(Theme) -> Unit = {}
 
-    private var ratingChanged = true
+    private val counter = RollingDoubleCounter(0.0).apply {
+        rollingEasing = Easing.OutQuint
+    }
+
+    /**
+     * The star rating value displayed by this [StarRatingBadge].
+     *
+     * Visuals may not reflect this value due to rolling animation.
+     */
+    var rating
+        get() = counter.targetValue
+        set(value) {
+            val prev = counter.targetValue
+
+            if (prev != value) {
+                counter.targetValue = value
+                counter.rollingDuration = 100 + 80 * abs(value - prev).toFloat()
+            }
+        }
 
     init {
         text = "0.00"
@@ -34,21 +44,18 @@ class StarRatingBadge : UIBadge() {
     }
 
     override fun onManagedUpdate(deltaTimeSec: Float) {
-        if (ratingChanged) {
-            ratingChanged = false
+        if (counter.isRolling) {
+            counter.update(deltaTimeSec * 1000)
 
-            clearEntityModifiers()
-            background?.clearEntityModifiers()
+            text = "%.2f".format(counter.currentValue)
+            background?.color = OsuColors.getStarRatingColor(counter.currentValue)
 
-            text = "%.2f".format(rating)
-            background?.colorTo(OsuColors.getStarRatingColor(rating), 0.1f)
-
-            if (rating >= 6.5) {
-                colorTo(OsuColors.getStarRatingTextColor(rating), 0.1f)
-                fadeTo(1f, 0.1f)
+            if (counter.currentValue >= 6.5) {
+                color = OsuColors.getStarRatingTextColor(counter.currentValue)
+                alpha = 1f
             } else {
-                colorTo(Color4.Black, 0.1f)
-                fadeTo(0.75f, 0.1f)
+                color = Color4.Black
+                alpha = 0.75f
             }
         }
 

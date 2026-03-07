@@ -9,7 +9,6 @@ import com.osudroid.utils.mainThread
 import com.osudroid.utils.stopAsync
 import com.reco1l.toolkt.kotlin.fastForEach
 import com.rian.osu.beatmap.parser.BeatmapParser
-import com.rian.osu.difficulty.BeatmapDifficultyCalculator
 import com.rian.osu.difficulty.calculator.DroidDifficultyCalculator
 import com.rian.osu.difficulty.calculator.StandardDifficultyCalculator
 import java.util.concurrent.CompletableFuture
@@ -87,6 +86,8 @@ object DifficultyCalculationManager {
         job = async {
             val threadCount = ceil(Runtime.getRuntime().availableProcessors() / 2f).toInt()
             val threadPool = Executors.newFixedThreadPool(threadCount)
+            val droidCalculator = DroidDifficultyCalculator()
+            val standardCalculator = StandardDifficultyCalculator()
 
             var calculated = totalBeatmaps - pendingBeatmaps.size
 
@@ -107,19 +108,17 @@ object DifficultyCalculationManager {
                                 if (beatmapInfo.needsDifficultyCalculation) {
                                     val msStartTime = System.currentTimeMillis()
 
-                                    val beatmap = BeatmapParser(beatmapInfo.path, this).use { parser ->
-                                        parser.parse(true)!!
-                                    }
+                                    val beatmap = BeatmapParser(beatmapInfo.path, this, beatmapInfo.md5).parse(true)
 
                                     beatmapInfo.apply(beatmap, this)
 
                                     if (beatmapInfo.droidStarRating == null) {
-                                        val attributes = BeatmapDifficultyCalculator.calculateDroidDifficulty(beatmap, scope = this)
+                                        val attributes = droidCalculator.calculate(beatmap, scope = this)
                                         beatmapInfo.droidStarRating = attributes.starRating.toFloat()
                                     }
 
                                     if (beatmapInfo.standardStarRating == null) {
-                                        val attributes = BeatmapDifficultyCalculator.calculateStandardDifficulty(beatmap, scope = this)
+                                        val attributes = standardCalculator.calculate(beatmap, scope = this)
                                         beatmapInfo.standardStarRating = attributes.starRating.toFloat()
                                     }
 

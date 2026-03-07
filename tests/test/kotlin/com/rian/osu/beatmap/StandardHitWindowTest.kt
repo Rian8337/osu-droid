@@ -1,32 +1,27 @@
 package com.rian.osu.beatmap
 
-import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class StandardHitWindowTest : HitWindowTest() {
-    @Test
-    fun `Test hit window`() {
-        testHitWindowValues(10f, 20f, 60f, 100f)
-        testHitWindowValues(8.2f, 30.8f, 74.4f, 118f)
-        testHitWindowValues(6.5f, 41f, 88f, 135f)
-        testHitWindowValues(3.7f, 57.8f, 110.4f, 163f)
-        testHitWindowValues(-1.6f, 89.6f, 152.8f, 216f)
+@RunWith(Parameterized::class)
+class StandardHitWindowTest(
+    od: Double, greatWindow: Double, okWindow: Double, mehWindow: Double
+) : HitWindowTest(od, greatWindow, okWindow, mehWindow) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "OD={0}, Great={1}ms, Ok={2}ms, Meh={3}ms")
+        fun data() = listOf(
+            arrayOf(10.0, 19.5, 59.5, 99.5),
+            arrayOf(8.2, 29.5, 73.5, 117.5),
+            arrayOf(6.5, 40.5, 87.5, 134.5),
+            arrayOf(3.7, 56.5, 109.5, 162.5),
+            arrayOf(-1.6, 88.5, 151.5, 215.5)
+        )
     }
 
     @Test
-    fun `Test hit window to OD conversion`() {
-        fun testConversion(od: Float, greatWindow: Float, okWindow: Float, mehWindow: Float) {
-            Assert.assertEquals(od, StandardHitWindow.hitWindow300ToOverallDifficulty(greatWindow), 1e-2f)
-            Assert.assertEquals(od, StandardHitWindow.hitWindow100ToOverallDifficulty(okWindow), 1e-2f)
-            Assert.assertEquals(od, StandardHitWindow.hitWindow50ToOverallDifficulty(mehWindow), 1e-2f)
-        }
+    fun `Test hit window`() = testHitWindow()
 
-        testConversion(10f, 20f, 60f, 100f)
-        testConversion(8.2f, 30.8f, 74.4f, 118f)
-        testConversion(6.5f, 41f, 88f, 135f)
-        testConversion(3.7f, 57.8f, 110.4f, 163f)
-        testConversion(-1.6f, 89.6f, 152.8f, 216f)
-    }
-
-    override fun createHitWindow(od: Float) = StandardHitWindow(od)
+    override fun createHitWindow(od: Double) = StandardHitWindow(od)
 }

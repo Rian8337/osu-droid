@@ -41,6 +41,16 @@ class RoomChat : UILinearContainer() {
     val buttonHeight
         get() = button.height
 
+    /**
+     * Whether the chat is currently expanded.
+     */
+    var isExpanded = false
+        private set(value) {
+            if (field != value) {
+                field = value
+                button.updateState()
+            }
+        }
 
     private val messages = LinkedList<Message>()
     private val timestampFormat = SimpleDateFormat("HH:mm:ss")
@@ -60,74 +70,78 @@ class RoomChat : UILinearContainer() {
 
     private var messagesChanged = false
 
-    private var isExpanded = false
-        set(value) {
-            if (field != value) {
-                field = value
-                button.updateState()
-            }
-        }
-
+    private val overlay
+        get() = UIEngine.current.overlay
 
     init {
+        // At any given time, there should be only one chat instance in the overlay.
+        // Two or more instances of these can present after a player successfully reconnects.
+        overlay.detachChildren { it is RoomChat }
+
+        // Force the main container to fill the entire screen so that the chat can be closed by
+        // tapping outside of it (see onAreaTouched).
         width = FillParent
-        orientation = Orientation.Vertical
-        anchor = Anchor.BottomCenter
-        origin = Anchor.BottomCenter
-        background = UIBox().apply {
-            applyTheme = {
-                color = it.accentColor * 0.1f
-                alpha = 0.9f
-            }
-        }
+        height = FillParent
 
-        +button
-        +body.apply {
+        linearContainer {
             width = FillParent
-            height = 0f
             orientation = Orientation.Vertical
-
-            scrollableContainer {
-                width = FillParent
-                height = body_height - 84f // Input height based of button height plus padding
-                scrollAxes = Axes.Y
-                clipToBounds = true
-
-                messageContainer = linearContainer {
-                    width = FillParent
-                    orientation = Orientation.Vertical
-
-                    repeat(max_messages) {
-                        attachChild(MessageComponent())
-                    }
+            anchor = Anchor.BottomCenter
+            origin = Anchor.BottomCenter
+            background = UIBox().apply {
+                applyTheme = {
+                    color = it.accentColor * 0.1f
+                    alpha = 0.9f
                 }
             }
 
-            flexContainer {
+            +button
+            +body.apply {
                 width = FillParent
-                padding = Vec4(80f, 12f)
-                gap = 8f
+                height = 0f
+                orientation = Orientation.Vertical
 
-                +UITextInput("").apply {
-                    height = FillParent
-                    placeholder = "Type a message..."
-                    onConfirm = { sendMessage() }
-                    flexRules {
-                        grow = 1f
+                scrollableContainer {
+                    width = FillParent
+                    height = body_height - 84f // Input height based of button height plus padding
+                    scrollAxes = Axes.Y
+                    clipToBounds = true
+
+                    messageContainer = linearContainer {
+                        width = FillParent
+                        orientation = Orientation.Vertical
+
+                        repeat(max_messages) {
+                            attachChild(MessageComponent())
+                        }
                     }
-
-                    input = this
                 }
 
-                textButton {
-                    trailingIcon = UISprite(ResourceManager.getInstance().getTexture("send"))
-                    isSelected = true
-                    setText(R.string.multiplayer_room_chat_send)
-                    onActionUp = { sendMessage() }
+                flexContainer {
+                    width = FillParent
+                    padding = Vec4(80f, 12f)
+                    gap = 8f
+
+                    +UITextInput("").apply {
+                        height = FillParent
+                        placeholder = "Type a message..."
+                        onConfirm = { sendMessage() }
+                        flexRules {
+                            grow = 1f
+                        }
+
+                        input = this
+                    }
+
+                    textButton {
+                        trailingIcon = UISprite(ResourceManager.getInstance().getTexture("send"))
+                        isSelected = true
+                        setText(R.string.multiplayer_room_chat_send)
+                        onActionUp = { sendMessage() }
+                    }
                 }
             }
         }
-
     }
 
 
@@ -168,7 +182,7 @@ class RoomChat : UILinearContainer() {
 
     fun show() {
         if (!hasParent()) {
-            UIEngine.current.overlay.attachChild(this)
+            overlay.attachChild(this)
         }
     }
 
@@ -233,7 +247,7 @@ class RoomChat : UILinearContainer() {
     }
 
     override fun onAreaTouched(event: TouchEvent, localX: Float, localY: Float): Boolean {
-        if (super.onAreaTouched(event, localX, localY) || isExpanded) {
+        if (super.onAreaTouched(event, localX, localY)) {
             return true
         }
 
@@ -257,6 +271,7 @@ class RoomChat : UILinearContainer() {
 
         private lateinit var tagText: UIText
         private lateinit var messageText: UIText
+        private var isPressed = false
 
 
         init {
@@ -320,13 +335,24 @@ class RoomChat : UILinearContainer() {
 
 
         override fun onAreaTouched(event: TouchEvent, localX: Float, localY: Float): Boolean {
-            if (event.isActionUp) {
-                if (!isExpanded) {
-                    expand()
-                } else {
-                    collapse()
+            when {
+                event.isActionDown -> isPressed = true
+
+                event.isActionUp -> {
+                    if (localX <= width && localY <= height && isPressed) {
+                        if (!isExpanded) {
+                            expand()
+                        } else {
+                            collapse()
+                        }
+                    }
+
+                    isPressed = false
                 }
+
+                event.isActionOutside || event.isActionCancel || !event.isActionMove -> isPressed = false
             }
+
             return true
         }
 

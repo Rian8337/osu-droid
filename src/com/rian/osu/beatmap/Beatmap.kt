@@ -18,14 +18,16 @@ import kotlinx.coroutines.ensureActive
 
 /**
  * Represents a beatmap.
+ *
+ * @param mode The [GameMode] this [Beatmap] was parsed as.
  */
-open class Beatmap(
+open class Beatmap(mode: GameMode) : IBeatmap, Cloneable {
     /**
      * The [GameMode] this [Beatmap] was parsed as.
      */
-    @JvmField
-    val mode: GameMode
-) : IBeatmap, Cloneable {
+    var mode = mode
+        private set
+
     override var formatVersion = 14
     override val general = BeatmapGeneral()
     override val metadata = BeatmapMetadata()
@@ -86,7 +88,7 @@ open class Beatmap(
     fun createDroidPlayableBeatmap(
         mods: Iterable<Mod>? = null,
         scope: CoroutineScope? = null
-    ) = DroidPlayableBeatmap(createPlayableBeatmap(GameMode.Droid, mods, scope), mods)
+    ) = DroidPlayableBeatmap(convert(GameMode.Droid, mods, scope), mods)
 
     /**
      * Constructs a [StandardPlayableBeatmap] from this [Beatmap], where all [HitObject] and [BeatmapDifficulty]
@@ -100,14 +102,23 @@ open class Beatmap(
     fun createStandardPlayableBeatmap(
         mods: Iterable<Mod>? = null,
         scope: CoroutineScope? = null
-    ) = StandardPlayableBeatmap(createPlayableBeatmap(GameMode.Standard, mods, scope), mods)
+    ) = StandardPlayableBeatmap(convert(GameMode.Standard, mods, scope), mods)
 
-    private fun createPlayableBeatmap(mode: GameMode, mods: Iterable<Mod>?, scope: CoroutineScope?): Beatmap {
+    /**
+     * Converts this [Beatmap] to another [Beatmap] for the specified [GameMode], where all [HitObject] and
+     * [BeatmapDifficulty] [Mod]s have been applied, and [HitObject]s have been fully constructed.
+     *
+     * @param mode The [GameMode] to convert the [Beatmap] to.
+     * @param mods The [Mod]s to apply to the [Beatmap]. Defaults to No Mod.
+     * @param scope The [CoroutineScope] to use for coroutines.
+     * @return The converted [Beatmap].
+     */
+    @JvmOverloads
+    fun convert(mode: GameMode, mods: Iterable<Mod>? = null, scope: CoroutineScope? = null): Beatmap {
         if (this.mode == mode && mods?.firstOrNull() == null) {
             // Beatmap is already playable as is.
             return this
         }
-
 
         @Suppress("UNCHECKED_CAST")
         val adjustmentMods =
@@ -122,6 +133,7 @@ open class Beatmap(
 
         // Convert
         val converted = converter.convert()
+        converted.mode = mode
 
         // Apply difficulty mods
         mods?.filterIsInstance<IModApplicableToDifficulty>()?.forEach {

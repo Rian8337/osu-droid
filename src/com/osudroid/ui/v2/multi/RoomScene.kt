@@ -16,6 +16,7 @@ import com.osudroid.multiplayer.api.data.RoomPlayer
 import com.osudroid.multiplayer.api.data.RoomTeam
 import com.osudroid.multiplayer.api.data.TeamMode
 import com.osudroid.multiplayer.api.data.WinCondition
+import com.osudroid.ui.OsuColors
 import com.osudroid.ui.v1.SettingsFragment
 import com.osudroid.ui.v2.BeatmapInfoLayout
 import com.osudroid.ui.v2.GameLoaderScene
@@ -29,6 +30,7 @@ import com.reco1l.andengine.UIEngine
 import com.reco1l.andengine.UIScene
 import com.reco1l.andengine.badge
 import com.reco1l.andengine.component.UIComponent.Companion.FillParent
+import com.reco1l.andengine.component.plus
 import com.reco1l.andengine.component.setText
 import com.reco1l.andengine.container
 import com.reco1l.andengine.container.JustifyContent
@@ -39,6 +41,7 @@ import com.reco1l.andengine.flexContainer
 import com.reco1l.andengine.labeledBadge
 import com.reco1l.andengine.linearContainer
 import com.reco1l.andengine.scrollableContainer
+import com.reco1l.andengine.shape.PaintStyle
 import com.reco1l.andengine.shape.UIBox
 import com.reco1l.andengine.sprite.ScaleType
 import com.reco1l.andengine.sprite.UISprite
@@ -50,11 +53,13 @@ import com.reco1l.andengine.ui.UIBadge
 import com.reco1l.andengine.ui.UILabeledBadge
 import com.reco1l.andengine.ui.UIMessageDialog
 import com.reco1l.andengine.ui.UITextButton
+import com.reco1l.framework.Color4
 import com.reco1l.framework.math.Vec4
 import com.reco1l.osu.ui.MessageDialog
 import com.reco1l.toolkt.kotlin.runSafe
 import com.rian.osu.mods.ModScoreV2
 import org.anddev.andengine.engine.camera.SmoothCamera
+import org.anddev.andengine.input.touch.TouchEvent
 import org.json.JSONArray
 import ru.nsu.ccfit.zuev.osu.Config
 import ru.nsu.ccfit.zuev.osu.GlobalManager
@@ -271,7 +276,8 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
 
                         scrollableContainer {
                             width = FillParent
-                            height = FillParent
+                            relativeSizeAxes = Axes.Y
+                            height = 0.75f
                             scrollAxes = Axes.Y
                             clipToBounds = true
 
@@ -293,7 +299,7 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
                                 cornerRadius = 12f
                                 applyTheme = {
                                     color = it.accentColor * 0.1f
-                                    alpha = 0.5f
+                                    alpha = 0.6f
                                 }
                             }
                             isVisible = false
@@ -308,7 +314,7 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
                                 cornerRadius = 12f
                                 applyTheme = {
                                     color = it.accentColor * 0.1f
-                                    alpha = 0.5f
+                                    alpha = 0.6f
                                 }
                             }
                         }
@@ -353,12 +359,14 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
                 origin = Anchor.BottomLeft
                 anchor = Anchor.BottomLeft
                 spacing = 8f
-                padding = Vec4(0f, 12f)
 
                 textButton {
                     leadingIcon = UISprite(ResourceManager.getInstance().getTexture("logout"))
                     setText(R.string.multiplayer_room_leave)
-                    onActionUp = { back() }
+                    color = Color4(0xFFFFBFBF)
+                    background?.color = Color4(0xFF342121)
+                    applyTheme = {}
+                    onActionUp = { leaveDialog.show() }
                 }
 
                 modsButton = textButton {
@@ -433,11 +441,13 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
                                 if (room.beatmap == null) {
                                     ToastLogger.showText(R.string.multiplayer_room_cannot_ready_changing_beatmap, true)
                                     isWaitingForStatusChange = false
+                                    return@callback
                                 }
 
                                 if (room.teamMode == TeamMode.TeamVersus && Multiplayer.player!!.team == null) {
                                     ToastLogger.showText(R.string.multiplayer_room_cannot_ready_no_team, true)
                                     isWaitingForStatusChange = false
+                                    return@callback
                                 }
 
                                 RoomAPI.setPlayerStatus(PlayerStatus.Ready)
@@ -458,8 +468,6 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
             }
 
         }
-
-        Multiplayer.roomScene = this
     }
 
     // Update events
@@ -612,7 +620,10 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
                 leadingIcon = UISprite(ResourceManager.getInstance().getTexture("download"))
                 setText(R.string.multiplayer_room_download_beatmap)
                 onActionUp = {
-                    val url = BeatmapListing.mirror.download.request(roomBeatmap.parentSetID!!).toString()
+                    val url = BeatmapListing.mirror.download.request(
+                        roomBeatmap.parentSetID!!,
+                        !Config.isPreferNoVideoDownloads()
+                    ).toString()
 
                     async {
                         try {
@@ -908,6 +919,7 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
 
         if (uid == Multiplayer.player!!.id) {
             isWaitingForModsChange = false
+            updateBeatmapInfo()
         }
     }
 

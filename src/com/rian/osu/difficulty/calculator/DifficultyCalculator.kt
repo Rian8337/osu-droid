@@ -11,7 +11,6 @@ import com.rian.osu.difficulty.attributes.DifficultyAttributes
 import com.rian.osu.difficulty.attributes.TimedDifficultyAttributes
 import com.rian.osu.difficulty.skills.Skill
 import com.rian.osu.mods.*
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ensureActive
 
@@ -94,7 +93,7 @@ abstract class DifficultyCalculator<TBeatmap : PlayableBeatmap, TObject : Diffic
      */
     @JvmOverloads
     fun calculateForReplay(beatmap: TBeatmap, scope: CoroutineScope? = null): TAttributes {
-        val skills = createSkills(beatmap, false)
+        val skills = createSkills(beatmap, true)
         val objects = createDifficultyHitObjects(beatmap, scope)
 
         for (obj in objects) {
@@ -144,7 +143,7 @@ abstract class DifficultyCalculator<TBeatmap : PlayableBeatmap, TObject : Diffic
         }
 
         val attributes = arrayOfNulls<TimedDifficultyAttributes<TAttributes>>(beatmap.hitObjects.objects.size)
-        val skills = createSkills(beatmap, true)
+        val skills = createSkills(beatmap, false)
         val progressiveBeatmap = ProgressiveCalculationBeatmap(beatmap)
 
         val difficultyObjects = createDifficultyHitObjects(beatmap, scope)

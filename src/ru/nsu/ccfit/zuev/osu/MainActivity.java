@@ -37,6 +37,7 @@ import androidx.preference.PreferenceManager;
 
 import com.edlplan.ui.ActivityOverlay;
 import com.osudroid.BuildSettings;
+import com.osudroid.beatmaps.BeatmapCache;
 import com.osudroid.debug.DebugPlaygroundScene;
 import com.osudroid.ui.v2.GameLoaderScene;
 import com.osudroid.utils.Execution;
@@ -316,7 +317,6 @@ public class MainActivity extends BaseGameActivity implements
                     }
 
                     AccessibilityDetector.check(MainActivity.this);
-                    BeatmapDifficultyCalculator.invalidateExpiredCache();
                 }, 0, 100, TimeUnit.MILLISECONDS);
 
                 if (roomInviteLink != null) {
@@ -685,6 +685,34 @@ public class MainActivity extends BaseGameActivity implements
     }
 
     @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        if (this.mEngine == null) {
+            return false;
+        }
+
+        if (AccessibilityDetector.isIllegalServiceDetected()) {
+            return false;
+        }
+
+        if (GlobalManager.getInstance().getEngine() == null) {
+            return super.onKeyMultiple(keyCode, repeatCount, event);
+        }
+
+        var action = event.getAction();
+
+        // See:
+        // - https://stackoverflow.com/a/7232186
+        // - https://developer.android.com/reference/android/view/KeyEvent#ACTION_MULTIPLE
+        // For now, we are only interested in using this for input to support characters that require multiple key
+        // presses to be inputted.
+        if (action == KeyEvent.ACTION_MULTIPLE && UIEngine.getCurrent().onKeyPress(keyCode, event)) {
+            return true;
+        }
+
+        return super.onKeyMultiple(keyCode, repeatCount, event);
+    }
+
+    @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent event) {
         if (this.mEngine == null) {
             return false;
@@ -789,6 +817,20 @@ public class MainActivity extends BaseGameActivity implements
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+
+        if (level >= TRIM_MEMORY_BACKGROUND) {
+            Debug.i("onTrimMemory: Clearing resources (level=" + level + ")");
+
+            Execution.async(() -> {
+                BeatmapDifficultyCalculator.clearCache();
+                BeatmapCache.clear();
+            });
+        }
     }
 
     public void forcedExit() {

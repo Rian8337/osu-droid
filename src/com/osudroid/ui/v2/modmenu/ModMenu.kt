@@ -1,5 +1,7 @@
 package com.osudroid.ui.v2.modmenu
 
+import com.edlplan.framework.easing.Easing
+import com.osudroid.beatmaps.BeatmapCache
 import com.reco1l.andengine.*
 import com.reco1l.andengine.component.UIComponent.Companion.MatchContent
 import com.reco1l.andengine.component.UIComponent.Companion.FillParent
@@ -20,14 +22,14 @@ import com.reco1l.andengine.component.*
 import com.reco1l.andengine.ui.UITextButton
 import com.reco1l.toolkt.kotlin.*
 import com.reco1l.toolkt.kotlin.async
+import com.rian.framework.RollingFloatCounter
 import com.rian.osu.*
-import com.rian.osu.beatmap.Beatmap
-import com.rian.osu.beatmap.parser.*
 import com.rian.osu.difficulty.BeatmapDifficultyCalculator.calculateDroidDifficulty
 import com.rian.osu.difficulty.BeatmapDifficultyCalculator.calculateStandardDifficulty
 import com.rian.osu.mods.*
 import com.rian.osu.utils.*
 import com.rian.osu.utils.ModUtils
+import java.io.IOException
 import kotlinx.coroutines.*
 import ru.nsu.ccfit.zuev.osu.*
 import ru.nsu.ccfit.zuev.osu.DifficultyAlgorithm.*
@@ -65,15 +67,14 @@ object ModMenu : UIScene() {
     private val searchInput: ModMenuSearchInput
 
     private val rankedBadge: UIBadge
-    private val arBadge: UILabeledBadge
-    private val odBadge: UILabeledBadge
-    private val csBadge: UILabeledBadge
-    private val hpBadge: UILabeledBadge
-    private val bpmBadge: UILabeledBadge
+    private val arBadge: StatisticsBadge
+    private val odBadge: StatisticsBadge
+    private val csBadge: StatisticsBadge
+    private val hpBadge: StatisticsBadge
+    private val bpmBadge: StatisticsBadge
     private val starRatingBadge: StarRatingBadge
-    private val scoreMultiplierBadge: UILabeledBadge
+    private val scoreMultiplierBadge: StatisticsBadge
 
-    private var parsedBeatmap: Beatmap? = null
     private var calculationJob: Job? = null
 
 
@@ -258,30 +259,36 @@ object ModMenu : UIScene() {
                     origin = Anchor.CenterLeft
                     spacing = 10f
 
-                    arBadge = labeledBadge {
+                    arBadge = StatisticsBadge().apply {
                         label = "AR"
                         value = "0.00"
                     }
 
-                    odBadge = labeledBadge {
+                    odBadge = StatisticsBadge().apply {
                         label = "OD"
                         value = "0.00"
                     }
 
-                    csBadge = labeledBadge {
+                    csBadge = StatisticsBadge().apply {
                         label = "CS"
                         value = "0.00"
                     }
 
-                    hpBadge = labeledBadge {
+                    hpBadge = StatisticsBadge().apply {
                         label = "HP"
                         value = "0.00"
                     }
 
-                    bpmBadge = labeledBadge {
+                    bpmBadge = StatisticsBadge { it.roundToInt().toString() }.apply {
                         label = "BPM"
                         value = "0.0"
                     }
+
+                    +arBadge
+                    +odBadge
+                    +csBadge
+                    +hpBadge
+                    +bpmBadge
                 }
 
                 +UILinearContainer().apply {
@@ -300,10 +307,12 @@ object ModMenu : UIScene() {
                         applyTheme = {}
                     }
 
-                    scoreMultiplierBadge = labeledBadge {
+                    scoreMultiplierBadge = StatisticsBadge { "%.2fx".format(it) }.apply {
                         label = "Score"
                         value = "1.00x"
                     }
+
+                    +scoreMultiplierBadge
                 }
             }
         })
@@ -331,15 +340,14 @@ object ModMenu : UIScene() {
 
             val difficultyAlgorithm = Config.getDifficultyAlgorithm()
             val gameMode = if (difficultyAlgorithm == droid) GameMode.Droid else GameMode.Standard
-            val beatmap: Beatmap?
 
-            if (parsedBeatmap?.md5 != selectedBeatmap.md5 || parsedBeatmap?.mode != gameMode) {
-                BeatmapParser(selectedBeatmap.path, this@scope).use { parser ->
-                    beatmap = parser.parse(withHitObjects = true, mode = gameMode)
-                    parsedBeatmap = beatmap
+            val beatmap = try {
+                BeatmapCache.getBeatmap(selectedBeatmap, true, gameMode, this)
+            } catch (e: Exception) {
+                when (e) {
+                    is IOException, is IllegalArgumentException -> null
+                    else -> throw e
                 }
-            } else {
-                beatmap = parsedBeatmap
             }
 
             val songMenu = GlobalManager.getInstance().songMenu
@@ -365,20 +373,13 @@ object ModMenu : UIScene() {
             ensureActive()
 
             updateThread {
-                arBadge.updateStatisticBadge(selectedBeatmap.approachRate, difficulty.ar)
-                odBadge.updateStatisticBadge(selectedBeatmap.overallDifficulty, difficulty.od)
-                csBadge.updateStatisticBadge(selectedBeatmap.circleSize, difficulty.difficultyCS)
-                hpBadge.updateStatisticBadge(selectedBeatmap.hpDrainRate, difficulty.hp)
+                arBadge.updateValue(selectedBeatmap.approachRate, difficulty.ar)
+                odBadge.updateValue(selectedBeatmap.overallDifficulty, difficulty.od)
+                csBadge.updateValue(selectedBeatmap.circleSize, difficulty.difficultyCS)
+                hpBadge.updateValue(selectedBeatmap.hpDrainRate, difficulty.hp)
+                bpmBadge.updateValue(selectedBeatmap.mostCommonBPM, selectedBeatmap.mostCommonBPM * rate)
 
-                bpmBadge.updateStatisticBadge(
-                    selectedBeatmap.mostCommonBPM.roundToInt(),
-                    (selectedBeatmap.mostCommonBPM * rate).roundToInt()
-                )
-
-                scoreMultiplierBadge.updateStatisticBadge(
-                    "1.00x",
-                    "%.2fx".format(ModUtils.calculateScoreMultiplier(enabledMods))
-                )
+                scoreMultiplierBadge.updateValue(1f, ModUtils.calculateScoreMultiplier(enabledMods))
             }
 
             ensureActive()
@@ -575,10 +576,7 @@ object ModMenu : UIScene() {
                 if (!it.isSelected) enabledMods.any { m -> !it.mod.isCompatibleWith(m) } else false
         }
 
-        scoreMultiplierBadge.updateStatisticBadge(
-            "1.00x",
-            "%.2fx".format(ModUtils.calculateScoreMultiplier(enabledMods))
-        )
+        scoreMultiplierBadge.updateValue(1f, ModUtils.calculateScoreMultiplier(enabledMods))
 
         customizeButton.isEnabled = !customizationMenu.isEmpty()
 
@@ -644,21 +642,37 @@ object ModMenu : UIScene() {
 
     //region Components
 
-    private fun <T : Comparable<T>> UILabeledBadge.updateStatisticBadge(initialValue: T, finalValue: T) {
-
-        val newText = if (finalValue is Float || finalValue is Double) "%.2f".format(finalValue) else finalValue.toString()
-
-        if (valueEntity.text == newText) {
-            return
+    private class StatisticsBadge(
+        private val formatter: (Float) -> String = { "%.2f".format(it) }
+    ) : UILabeledBadge() {
+        private val counter = RollingFloatCounter(0f).apply {
+            rollingEasing = Easing.OutQuint
+            rollingDuration = 300f
         }
-        valueEntity.text = newText
 
-        valueEntity.clearEntityModifiers()
-        valueEntity.colorTo(Color4(when {
-            initialValue < finalValue -> 0xFFF78383
-            initialValue > finalValue -> 0xFF40CF5D
-            else -> 0xFFFFFFFF
-        }), 0.1f)
+        fun updateValue(initialValue: Float, finalValue: Float) {
+            if (counter.targetValue == finalValue) {
+                return
+            }
+
+            counter.targetValue = finalValue
+
+            valueEntity.clearEntityModifiers()
+            valueEntity.colorTo(Color4(when {
+                initialValue < finalValue -> 0xFFF78383
+                initialValue > finalValue -> 0xFF40CF5D
+                else -> 0xFFFFFFFF
+            }), counter.rollingDuration / 1000, counter.rollingEasing)
+        }
+
+        override fun onManagedUpdate(deltaTimeSec: Float) {
+            if (counter.isRolling) {
+                counter.update(deltaTimeSec * 1000)
+                valueEntity.text = formatter(counter.currentValue)
+            }
+
+            super.onManagedUpdate(deltaTimeSec)
+        }
     }
 
     //endregion

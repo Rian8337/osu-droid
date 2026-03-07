@@ -358,6 +358,7 @@ public class Replay {
         var hitWindow = stat.getMod().contains(ModPrecise.class)
             ? new PreciseDroidHitWindow(difficulty.od)
             : new DroidHitWindow(difficulty.od);
+        double mehWindow = hitWindow.getMehWindow();
 
         var objects = beatmap.getHitObjects().objects;
 
@@ -369,11 +370,6 @@ public class Replay {
             }
 
             var objReplayData = objectData[i];
-
-            // Skip if the object data somehow does not have tickSet.
-            if (objReplayData.tickSet == null) {
-                continue;
-            }
 
             // Miss result means all slider nested hit objects were missed.
             if (objReplayData.result == ResultType.MISS.getId()) {
@@ -404,24 +400,36 @@ public class Replay {
 
             // For other results, we need to individually check judgement for each nested object.
             // Slider head is unique in that the result is not stored in tickSet, but in the form of hit offset.
-            if (-hitWindow.getMehWindow() <= objReplayData.accuracy &&
-                    objReplayData.accuracy <= Math.min(hitWindow.getMehWindow(), slider.getDuration())) {
+            // Logic borrowed from GameplaySlider.onSliderHeadHit().
+            short accuracy = objReplayData.accuracy;
+            double sliderDuration = slider.getDuration();
+
+            if (replayVersion >= 6 || mehWindow <= sliderDuration) {
+                if (-mehWindow <= accuracy && accuracy <= Math.min(mehWindow, sliderDuration)) {
+                    stat.addSliderHeadHit();
+                }
+            } else if (accuracy <= sliderDuration) {
+                // In replays older than version 6, when the 50 hit window is longer than the duration of the slider,
+                // the slider head is considered to *not* exist if it was not hit until the slider is over.
+                // It is a very weird behavior, but that's what it actually was...
                 stat.addSliderHeadHit();
             }
 
-            for (int j = 1; i < slider.getNestedHitObjects().size(); ++j) {
-                if (!objReplayData.tickSet.get(j - 1)) {
-                    continue;
-                }
+            if (objReplayData.tickSet != null) {
+                for (int j = 1; j < slider.getNestedHitObjects().size(); ++j) {
+                    if (!objReplayData.tickSet.get(j - 1)) {
+                        continue;
+                    }
 
-                var nestedObject = slider.getNestedHitObjects().get(j);
+                    var nestedObject = slider.getNestedHitObjects().get(j);
 
-                if (nestedObject instanceof SliderTick) {
-                    stat.addSliderHeadHit();
-                } else if (nestedObject instanceof SliderRepeat) {
-                    stat.addSliderRepeatHit();
-                } else {
-                    stat.addSliderEndHit();
+                    if (nestedObject instanceof SliderTick) {
+                        stat.addSliderHeadHit();
+                    } else if (nestedObject instanceof SliderRepeat) {
+                        stat.addSliderRepeatHit();
+                    } else {
+                        stat.addSliderEndHit();
+                    }
                 }
             }
         }

@@ -2,31 +2,34 @@ package com.rian.osu.beatmap
 
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class DroidHitWindowTest : HitWindowTest() {
-    @Test
-    fun `Test hit window`() {
-        testHitWindowValues(10f, 50f, 100f, 200f)
-        testHitWindowValues(8.2f, 59f, 118f, 218f)
-        testHitWindowValues(6.5f, 67.5f, 135f, 235f)
-        testHitWindowValues(3.7f, 81.5f, 163f, 263f)
-        testHitWindowValues(-1.6f, 108f, 216f, 316f)
+@RunWith(Parameterized::class)
+class DroidHitWindowTest(
+    od: Double, greatWindow: Double, okWindow: Double, mehWindow: Double
+) : HitWindowTest(od, greatWindow, okWindow, mehWindow) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "OD={0}, Great={1}ms, Ok={2}ms, Meh={3}ms")
+        fun data() = listOf(
+            arrayOf(10.0, 50.0, 100.0, 200.0),
+            arrayOf(8.2, 59.0, 118.0, 218.0),
+            arrayOf(6.5, 67.5, 135.0, 235.0),
+            arrayOf(3.7, 81.5, 163.0, 263.0),
+            arrayOf(-1.6, 108.0, 216.0, 316.0)
+        )
     }
+
+    @Test
+    fun `Test hit window`() = testHitWindow()
 
     @Test
     fun `Test hit window to OD conversion`() {
-        fun testConversion(od: Float, greatWindow: Float, okWindow: Float, mehWindow: Float) {
-            Assert.assertEquals(od, DroidHitWindow.hitWindow300ToOverallDifficulty(greatWindow), 1e-2f)
-            Assert.assertEquals(od, DroidHitWindow.hitWindow100ToOverallDifficulty(okWindow), 1e-2f)
-            Assert.assertEquals(od, DroidHitWindow.hitWindow50ToOverallDifficulty(mehWindow), 1e-2f)
-        }
-
-        testConversion(10f, 50f, 100f, 200f)
-        testConversion(8.2f, 59f, 118f, 218f)
-        testConversion(6.5f, 67.5f, 135f, 235f)
-        testConversion(3.7f, 81.5f, 163f, 263f)
-        testConversion(-1.6f, 108f, 216f, 316f)
+        Assert.assertEquals(od, DroidHitWindow.hitWindow300ToOverallDifficulty(greatWindow), 1e-2)
+        Assert.assertEquals(od, DroidHitWindow.hitWindow100ToOverallDifficulty(okWindow), 1e-2)
+        Assert.assertEquals(od, DroidHitWindow.hitWindow50ToOverallDifficulty(mehWindow), 1e-2)
     }
 
-    override fun createHitWindow(od: Float) = DroidHitWindow(od)
+    override fun createHitWindow(od: Double) = DroidHitWindow(od)
 }

@@ -193,7 +193,7 @@ public class GameplayHitCircle extends GameObject {
             return;
         }
 
-        float mehWindow = beatmapCircle.hitWindow.getMehWindow() / 1000;
+        double mehWindow = beatmapCircle.hitWindow.getMehWindow() / 1000;
 
         // If we have clicked circle
         if (replayObjectData != null) {
@@ -209,7 +209,7 @@ public class GameplayHitCircle extends GameObject {
                 removeFromScene();
                 return;
             }
-        } else if (listener.isObjectHittable(this)) {
+        } else if (!autoPlay && listener.isObjectHittable(this)) {
             var hittingCursor = getHittingCursor(listener, beatmapCircle, passedTime - timePreempt);
 
             if (hittingCursor != null) {

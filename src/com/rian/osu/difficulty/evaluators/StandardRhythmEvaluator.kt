@@ -119,23 +119,38 @@ object StandardRhythmEvaluator {
                         effectiveRatio /= 2
                     }
 
-                    if (island in islandCounts) {
+                    var islandFound = false
+
+                    for ((otherIsland, count) in islandCounts) {
+                        if (island != otherIsland) {
+                            continue
+                        }
+
+                        islandFound = true
+                        var islandCount = count
+
                         // Only add island to island counts if they're going one after another.
                         if (previousIsland == island) {
-                            islandCounts[island] = islandCounts[island]!! + 1
+                            islandCounts[otherIsland] = ++islandCount
                         }
 
                         // Repeated island (ex: triplet -> triplet)
                         effectiveRatio *= min(
-                            3.0 / islandCounts[island]!!,
-                            (1.0 / islandCounts[island]!!).pow(2.75 / (1 + exp(14 - 0.24 * island.delta)))
+                            3.0 / islandCount,
+                            (1.0 / islandCount).pow(
+                                DifficultyCalculationUtils.logistic(island.delta.toDouble(), 58.33, 0.24, 2.75)
+                            )
                         )
-                    } else {
+
+                        break
+                    }
+
+                    if (!islandFound) {
                         islandCounts[island] = 1
                     }
 
                     // Scale down the difficulty if the object is doubletappable.
-                    effectiveRatio *= 1 - prevObject.getDoubletapness(currentObject) * 0.75
+                    effectiveRatio *= 1 - prevObject.getDoubletapness(prevObject.next(0)) * 0.75
 
                     rhythmComplexitySum += sqrt(effectiveRatio * startRatio) * currentHistoricalDecay
 
