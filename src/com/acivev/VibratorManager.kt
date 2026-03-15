@@ -15,6 +15,9 @@ import ru.nsu.ccfit.zuev.osu.Config
  */
 object VibratorManager {
 
+    private val SLIDER_VIBRATION_PATTERN = longArrayOf(0, 30, 20, 50) // Time intervals for slider vibration
+    private val SPINNER_VIBRATION_PATTERN = longArrayOf(0, 20, 10, 30) // Time intervals for spinner vibration
+
     private var vibrator: Vibrator? = null
     private var hasVibrationSupport = false
 
@@ -52,7 +55,18 @@ object VibratorManager {
         set(value) {
             field = value
             Config.setInt("seekBarVibrateIntensity", value)
+
+            sliderSpinnerAmplitudes[1] = value
+            sliderSpinnerAmplitudes[3] = value
+
+            sliderPatternAmplitudes.fill(value)
+            spinnerPatternAmplitudes.fill(value)
         }
+
+    // Amplitudes based on intensity
+    private var sliderSpinnerAmplitudes = intArrayOf(0, intensity, 0, intensity)
+    private var sliderPatternAmplitudes = IntArray(SLIDER_VIBRATION_PATTERN.size) { intensity }
+    private var spinnerPatternAmplitudes = IntArray(SPINNER_VIBRATION_PATTERN.size) { intensity }
 
     /**
      * Initializes the vibrator and checks supported vibration features.
@@ -79,7 +93,11 @@ object VibratorManager {
      */
     fun vibrateFor(milliseconds: Long) {
         if (isCircleVibrationEnabled || isSliderVibrationEnabled || isSpinnerVibrationEnabled) {
-            if (!hasVibrationSupport || vibrator == null) return
+            if (!hasVibrationSupport || vibrator == null) {
+                return
+            }
+
+            cancel()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator?.vibrate(VibrationEffect.createOneShot(milliseconds, intensity)) // Amplitudes based on intensity
@@ -87,29 +105,29 @@ object VibratorManager {
                 @Suppress("DEPRECATION")
                 vibrator?.vibrate(milliseconds)
             }
-        } else {
-            cancel()
         }
     }
 
     /**
      * Vibrates with a pattern and intensities.
      * @param pattern an array of longs of times for which to turn the vibrator on or off.
+     * @param amplitudes the amplitude values.
      * @param repeat the index into pattern at which to repeat, or -1 if you don't want to repeat.
      */
-    fun vibrateFor(pattern: LongArray, repeat: Int = -1) {
+    fun vibrateFor(pattern: LongArray, amplitudes: IntArray, repeat: Int = -1) {
         if (isCircleVibrationEnabled || isSliderVibrationEnabled || isSpinnerVibrationEnabled) {
-            if (!hasVibrationSupport || vibrator == null) return
+            if (!hasVibrationSupport || vibrator == null) {
+                return
+            }
+
+            cancel()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val amplitudes = IntArray(pattern.size) { intensity } // Apply intensity to all pattern segments
                 vibrator?.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, repeat))
             } else {
                 @Suppress("DEPRECATION")
                 vibrator?.vibrate(pattern, repeat)
             }
-        } else {
-            cancel()
         }
     }
 
@@ -119,16 +137,17 @@ object VibratorManager {
      */
     fun circleVibration() {
         if (isCircleVibrationEnabled) {
-            if (!hasVibrationSupport || vibrator == null) return
+            if (!hasVibrationSupport || vibrator == null) {
+                return
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                cancel()
                 vibrator?.vibrate(VibrationEffect.createOneShot(30, intensity)) // Amplitudes based on intensity
             } else {
                 // Fallback for older APIs
                 vibrateFor(50)
             }
-        } else {
-            cancel()
         }
     }
 
@@ -137,19 +156,21 @@ object VibratorManager {
      */
     fun sliderVibration() {
         if (isSliderVibrationEnabled) {
-            if (!hasVibrationSupport || vibrator == null) return
-
-            val pattern = longArrayOf(0, 30, 20, 50) // Time intervals
-            val amplitudes = intArrayOf(0, intensity, 0, intensity) // Amplitudes based on intensity
+            if (!hasVibrationSupport || vibrator == null) {
+                return
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, -1))
+                cancel()
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(
+                        SLIDER_VIBRATION_PATTERN, sliderSpinnerAmplitudes, -1
+                    )
+                )
             } else {
                 // Fallback for older APIs
-                vibrateFor(pattern, -1)
+                vibrateFor(SLIDER_VIBRATION_PATTERN, sliderPatternAmplitudes)
             }
-        } else {
-            cancel()
         }
     }
 
@@ -158,19 +179,21 @@ object VibratorManager {
      */
     fun spinnerVibration() {
         if (isSpinnerVibrationEnabled) {
-            if (!hasVibrationSupport || vibrator == null) return
+            if (!hasVibrationSupport || vibrator == null) {
+                return
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val pattern = longArrayOf(0, 20, 10, 30) // Time intervals
-                val amplitudes = intArrayOf(0, intensity, 0, intensity) // Amplitudes based on intensity
-
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, -1))
+                cancel()
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(
+                        SPINNER_VIBRATION_PATTERN, sliderSpinnerAmplitudes, -1
+                    )
+                )
             } else {
                 // Fallback for older APIs
-                vibrateFor(longArrayOf(0, 20, 10, 30), -1)
+                vibrateFor(SPINNER_VIBRATION_PATTERN, spinnerPatternAmplitudes)
             }
-        } else {
-            cancel()
         }
     }
 }

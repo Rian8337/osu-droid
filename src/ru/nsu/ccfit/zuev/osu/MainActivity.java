@@ -14,13 +14,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.StatFs;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -97,11 +96,14 @@ public class MainActivity extends BaseGameActivity implements
     public ServiceConnection connection;
     private String beatmapToAdd = null;
     private SaveServiceObject saveServiceObject;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private FirebaseAnalytics analytics;
+    private FirebaseCrashlytics crashlytics;
     private boolean willReplay = false;
     private static boolean activityVisible = true;
     private static final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     private Display display;
+    private DisplayManager.DisplayListener displayListener;
+    private float currentRefreshRate = 60;
     private float maxRefreshRate = 60;
 
     // Multiplayer
@@ -122,6 +124,24 @@ public class MainActivity extends BaseGameActivity implements
         final DisplayMetrics dm = new DisplayMetrics();
         display = getWindowManager().getDefaultDisplay();
         display.getMetrics(dm);
+        currentRefreshRate = display.getRefreshRate();
+
+        displayListener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId == display.getDisplayId()) {
+                    currentRefreshRate = display.getRefreshRate();
+                }
+            }
+        };
+
+        ((DisplayManager) getSystemService(DISPLAY_SERVICE)).registerDisplayListener(displayListener, null);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             for (var mode : display.getSupportedModes()) {
@@ -513,8 +533,8 @@ public class MainActivity extends BaseGameActivity implements
         }
     }
 
-    public Handler getHandler() {
-        return handler;
+    public FirebaseAnalytics getAnalytics() {
+        return analytics;
     }
 
     public static boolean isActivityVisible() {
@@ -640,6 +660,12 @@ public class MainActivity extends BaseGameActivity implements
     public void onStop() {
         super.onStop();
         activityVisible = false;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ((DisplayManager) getSystemService(DISPLAY_SERVICE)).unregisterDisplayListener(displayListener);
     }
 
     @Override
@@ -858,7 +884,7 @@ public class MainActivity extends BaseGameActivity implements
     }
 
     public float getRefreshRate() {
-        return display.getRefreshRate();
+        return currentRefreshRate;
     }
 
     private boolean checkPermissions() {

@@ -1,16 +1,21 @@
 package ru.nsu.ccfit.zuev.osu.game;
 
 import com.edlplan.framework.easing.Easing;
+import com.edlplan.framework.math.FMath;
+import com.osudroid.utils.Execution;
 import com.reco1l.andengine.sprite.UISprite;
 import com.reco1l.andengine.modifier.Modifiers;
 import com.reco1l.andengine.Anchor;
 import com.osudroid.ui.v2.game.NumberedCirclePiece;
 import com.reco1l.framework.Color4;
+import com.rian.osu.beatmap.HitWindow;
 import com.rian.osu.beatmap.hitobject.HitCircle;
 import com.rian.osu.gameplay.GameplayHitSampleInfo;
 import com.rian.osu.mods.ModHidden;
 
 import org.anddev.andengine.entity.scene.Scene;
+
+import java.util.ArrayList;
 
 import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.ResourceManager;
@@ -27,7 +32,8 @@ public class GameplayHitCircle extends GameObject {
     private float passedTime;
     private float timePreempt;
     private boolean kiai;
-    private GameplayHitSampleInfo[] hitSamples;
+    private boolean successfulHit;
+    private final ArrayList<GameplayHitSampleInfo> hitSamples = new ArrayList<>(5);
 
     /**
      * The circle piece that represents the circle body and overlay.
@@ -59,6 +65,7 @@ public class GameplayHitCircle extends GameObject {
         hitTime = (float) beatmapCircle.startTime / 1000;
         passedTime = secPassed - (hitTime - timePreempt);
         startHit = false;
+        successfulHit = false;
         kiai = GameHelper.isKiai();
         this.comboColor = comboColor;
 
@@ -97,6 +104,14 @@ public class GameplayHitCircle extends GameObject {
             ));
         } else if (circlePiece.isVisible()) {
             circlePiece.registerEntityModifier(Modifiers.fadeIn(fadeInDuration));
+
+            float okWindow = (float) beatmapCircle.hitWindow.getOkWindow() / 1000;
+            float lateMissFadeTime = (float) beatmapCircle.hitWindow.getMehWindow() / 1000 - okWindow;
+
+            circlePiece.registerEntityModifier(Modifiers.sequence(
+                Modifiers.delay(timePreempt + okWindow),
+                Modifiers.fadeOut(lateMissFadeTime)
+            ));
         }
 
         if (approachCircle.isVisible()) {
@@ -120,7 +135,7 @@ public class GameplayHitCircle extends GameObject {
         if (Config.isDimHitObjects() && circlePiece.isVisible()) {
 
             // Source: https://github.com/peppy/osu/blob/60271fb0f7e091afb754455f93180094c63fc3fb/osu.Game.Rulesets.Osu/Objects/Drawables/DrawableOsuHitObject.cs#L101
-            var dimDelaySec = timePreempt - objectHittableRange;
+            var dimDelaySec = timePreempt - (float) HitWindow.MISS_WINDOW / 1000;
             var colorDim = 195f / 255f;
 
             circlePiece.setColor(colorDim, colorDim, colorDim);
@@ -136,7 +151,7 @@ public class GameplayHitCircle extends GameObject {
 
         // Initialize samples
         var parsedSamples = beatmapCircle.getSamples();
-        hitSamples = new GameplayHitSampleInfo[parsedSamples.size()];
+        hitSamples.ensureCapacity(parsedSamples.size());
 
         for (int i = 0, size = parsedSamples.size(); i < size; i++) {
             var gameplaySample = GameplayHitSampleInfo.pool.obtain();
@@ -146,7 +161,7 @@ public class GameplayHitCircle extends GameObject {
                 gameplaySample.setFrequency(GameHelper.getSpeedMultiplier());
             }
 
-            hitSamples[i] = gameplaySample;
+            hitSamples.add(gameplaySample);
         }
 
         scene.attachChild(circlePiece, 0);
@@ -158,21 +173,30 @@ public class GameplayHitCircle extends GameObject {
             return;
         }
 
-        for (int i = 0; i < hitSamples.length; ++i) {
-            hitSamples[i].reset();
-            GameplayHitSampleInfo.pool.free(hitSamples[i]);
-        }
+        for (int i = hitSamples.size() - 1; i >= 0; --i) {
+            var sample = hitSamples.get(i);
 
-        hitSamples = null;
+            sample.reset();
+            GameplayHitSampleInfo.pool.free(sample);
+
+            hitSamples.remove(i);
+        }
 
         circlePiece.clearEntityModifiers();
         approachCircle.clearEntityModifiers();
-
-        // Detach all objects
-        circlePiece.detachSelf();
         approachCircle.detachSelf();
+
+        if (successfulHit || !circlePiece.isVisible() || circlePiece.getAlpha() == 0) {
+            circlePiece.detachSelf();
+            GameObjectPool.getInstance().putCircle(this);
+        } else {
+            circlePiece.registerEntityModifier(Modifiers.alpha(0.1f, circlePiece.getAlpha(), 0, e -> Execution.updateThread(() -> {
+                circlePiece.detachSelf();
+                GameObjectPool.getInstance().putCircle(this);
+            })));
+        }
+
         listener.removeObject(this);
-        GameObjectPool.getInstance().putCircle(this);
         scene = null;
     }
 
@@ -200,10 +224,11 @@ public class GameplayHitCircle extends GameObject {
             if (passedTime - timePreempt + dt / 2 > replayObjectData.accuracy / 1000f) {
                 listener.registerAccuracy(replayObjectData.accuracy / 1000f);
                 startHit = true;
+                successfulHit = Math.abs(replayObjectData.accuracy / 1000f) <= mehWindow;
                 passedTime = -1;
                 // Remove circle and register hit in update thread
                 listener.onCircleHit(id, replayObjectData.accuracy / 1000f, position,endsCombo, replayObjectData.result, comboColor);
-                if (Math.abs(replayObjectData.accuracy / 1000f) <= mehWindow) {
+                if (successfulHit) {
                     playHitSamples();
                 }
                 removeFromScene();
@@ -216,10 +241,11 @@ public class GameplayHitCircle extends GameObject {
                 double hitOffset = (hittingCursor.getHitTime() - beatmapCircle.startTime) / 1000;
                 listener.registerAccuracy(hitOffset);
                 startHit = true;
+                successfulHit = Math.abs(hitOffset) <= mehWindow;
                 passedTime = -1;
                 // Remove circle and register hit in update thread
                 listener.onCircleHit(id, (float) hitOffset, position, endsCombo, (byte) 0, comboColor);
-                if (Math.abs(hitOffset) <= mehWindow) {
+                if (successfulHit) {
                     playHitSamples();
                 }
                 removeFromScene();
@@ -256,7 +282,7 @@ public class GameplayHitCircle extends GameObject {
             removeFromScene();
         } else {
             approachCircle.clearEntityModifiers();
-            approachCircle.setAlpha(0);
+            approachCircle.setAlpha(1 - FMath.clamp((passedTime - timePreempt) / 0.05f, 0, 1));
 
             // If passed too much time, counting it as miss
             if (passedTime > timePreempt + mehWindow) {

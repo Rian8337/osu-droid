@@ -68,6 +68,9 @@ import com.rian.osu.difficulty.BeatmapDifficultyCalculator;
 import com.rian.osu.difficulty.attributes.DroidDifficultyAttributes;
 import com.rian.osu.difficulty.attributes.StandardDifficultyAttributes;
 import com.rian.osu.difficulty.attributes.TimedDifficultyAttributes;
+import com.rian.osu.difficulty.calculator.DroidPerformanceCalculationParameters;
+import com.rian.osu.difficulty.calculator.PerformanceCalculationParameters;
+import com.rian.osu.difficulty.calculator.StandardPerformanceCalculationParameters;
 import com.rian.osu.gameplay.GameplayHitSampleInfo;
 import com.rian.osu.math.Interpolation;
 import com.rian.osu.mods.*;
@@ -202,6 +205,8 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
 
     private Job gameLoadingJob;
     private ModHashMap lastMods;
+
+    private PerformanceCalculationParameters performanceCalculationParameters;
     private TimedDifficultyAttributes<DroidDifficultyAttributes>[] droidTimedDifficultyAttributes;
     private TimedDifficultyAttributes<StandardDifficultyAttributes>[] standardTimedDifficultyAttributes;
     private SpectatorDataManager spectatorDataManager;
@@ -854,12 +859,16 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             // Calculate timed difficulty attributes
             switch (Config.getDifficultyAlgorithm()) {
                 case droid -> {
+                    performanceCalculationParameters = new DroidPerformanceCalculationParameters();
+
                     if (droidTimedDifficultyAttributes == null || mods != lastMods) {
                         droidTimedDifficultyAttributes = BeatmapDifficultyCalculator.calculateDroidTimedDifficulty(playableBeatmap, scope);
                     }
                 }
 
                 case standard -> {
+                    performanceCalculationParameters = new StandardPerformanceCalculationParameters();
+
                     if (standardTimedDifficultyAttributes == null || mods != lastMods) {
                         standardTimedDifficultyAttributes = BeatmapDifficultyCalculator.calculateStandardTimedDifficulty(
                             parsedBeatmap, mods.values(), scope
@@ -1824,6 +1833,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             breakPeriods = null;
             cursorSprites = null;
             this.playableBeatmap = null;
+            performanceCalculationParameters = null;
             droidTimedDifficultyAttributes = null;
             standardTimedDifficultyAttributes = null;
             sliderPaths = null;
@@ -2049,6 +2059,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             playableBeatmap = null;
             cursorSprites = null;
             lastMods = null;
+            performanceCalculationParameters = null;
             droidTimedDifficultyAttributes = null;
             standardTimedDifficultyAttributes = null;
             sliderPaths = null;
@@ -2455,7 +2466,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
     }
 
     @Override
-    public void playHitSamples(GameplayHitSampleInfo[] samples) {
+    public void playHitSamples(List<GameplayHitSampleInfo> samples) {
         float volume = 1;
         var muted = GameHelper.getMuted();
 
@@ -2463,8 +2474,8 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             volume = muted.volumeAt(stat.getCombo());
         }
 
-        for (int i = 0; i < samples.length; ++i) {
-            var sample = samples[i];
+        for (int i = 0, size = samples.size(); i < size; ++i) {
+            var sample = samples.get(i);
             sample.setVolume(volume);
             sample.play();
         }
@@ -3202,25 +3213,37 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
     private double getDroidPPAt(int objectId) {
         var playableBeatmap = this.playableBeatmap;
 
-        if (playableBeatmap == null || droidTimedDifficultyAttributes == null || objectId < 0 || objectId >= droidTimedDifficultyAttributes.length) {
+        if (playableBeatmap == null || droidTimedDifficultyAttributes == null ||
+                performanceCalculationParameters == null || objectId < 0 ||
+                objectId >= droidTimedDifficultyAttributes.length) {
             return 0;
         }
 
         var timedAttributes = droidTimedDifficultyAttributes[objectId];
 
-        return BeatmapDifficultyCalculator.calculateDroidPerformance(playableBeatmap, timedAttributes.attributes, stat).total;
+        performanceCalculationParameters.populate(playableBeatmap, stat);
+
+        return BeatmapDifficultyCalculator.calculateDroidPerformance(
+            timedAttributes.attributes, (DroidPerformanceCalculationParameters) performanceCalculationParameters
+        ).total;
     }
 
     private double getStandardPPAt(int objectId) {
         var playableBeatmap = this.playableBeatmap;
 
-        if (playableBeatmap == null || standardTimedDifficultyAttributes == null || objectId < 0 || objectId >= standardTimedDifficultyAttributes.length) {
+        if (playableBeatmap == null || standardTimedDifficultyAttributes == null ||
+                performanceCalculationParameters == null || objectId < 0 ||
+                objectId >= standardTimedDifficultyAttributes.length) {
             return 0;
         }
 
         var timedAttributes = standardTimedDifficultyAttributes[objectId];
 
-        return BeatmapDifficultyCalculator.calculateStandardPerformance(playableBeatmap, timedAttributes.attributes, stat).total;
+        performanceCalculationParameters.populate(playableBeatmap, stat);
+
+        return BeatmapDifficultyCalculator.calculateStandardPerformance(
+            timedAttributes.attributes, (StandardPerformanceCalculationParameters) performanceCalculationParameters
+        ).total;
     }
 
     private UIScene createMainScene() {
