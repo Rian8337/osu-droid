@@ -1,7 +1,6 @@
 package com.osudroid.multiplayer
 
 import android.net.*
-import android.text.format.DateFormat
 import android.util.Log
 import com.osudroid.multiplayer.api.RoomAPI
 import com.osudroid.multiplayer.api.data.Room
@@ -14,14 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import ru.nsu.ccfit.zuev.osu.Config
 import ru.nsu.ccfit.zuev.osu.GlobalManager
-import ru.nsu.ccfit.zuev.osu.MainActivity
 import ru.nsu.ccfit.zuev.osu.ToastLogger
 import ru.nsu.ccfit.zuev.osu.menu.*
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2
-import java.io.File
 
 object Multiplayer {
 
@@ -79,15 +75,7 @@ object Multiplayer {
     val isConnected
         get() = room != null
 
-
-    private val LOG_FILE = File("${Config.getDefaultCorePath()}/Log", "multi_log.txt").apply {
-
-        parentFile?.mkdirs()
-
-        if (!exists()) {
-            createNewFile()
-        }
-    }
+    private val logger = MultiplayerLogger()
 
     private val reconnectionScope by lazy { CoroutineScope(Dispatchers.Default) }
 
@@ -99,11 +87,6 @@ object Multiplayer {
     private var lastAttemptResponseTimeMS = 0L
 
     private var isWaitingAttemptResponse = false
-
-
-    init {
-        LOG_FILE.writeText("[${"yyyy/MM/dd hh:mm:ss".fromDate()}] Client ${MainActivity.versionName} started.")
-    }
 
 
     //region Connection
@@ -295,19 +278,16 @@ object Multiplayer {
 
     @JvmStatic
     fun log(text: String) {
-        val timestamp = DateFormat.format("hh:mm:ss", System.currentTimeMillis())
-
-        LOG_FILE.appendText("\n[$timestamp] $text")
-        Log.i("Multiplayer", text)
+        logger.log(text)
     }
 
     @JvmStatic
     fun log(e: Throwable) {
-        val time = "hh:mm:ss".formatTimeMilliseconds(System.currentTimeMillis())
-        val stacktrace = Log.getStackTraceString(e)
+        logger.log(e)
+    }
 
-        LOG_FILE.appendText("\n[$time] EXCEPTION: ${e.javaClass.simpleName}\n$stacktrace")
-
-        Log.e("Multiplayer", "An exception has been thrown.", e)
+    @JvmStatic
+    fun flushLog() {
+        logger.flush()
     }
 }

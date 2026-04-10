@@ -47,6 +47,7 @@ import com.osudroid.utils.async
 import com.osudroid.utils.mainThread
 import com.reco1l.framework.asTimeInterpolator
 import com.osudroid.multiplayer.Multiplayer
+import com.osudroid.ui.v2.CalibrationScene
 import com.reco1l.osu.ui.InputPreference
 import com.reco1l.osu.ui.Option
 import com.reco1l.osu.ui.SelectPreference
@@ -241,6 +242,7 @@ class SettingsFragment : SettingsFragment() {
     override fun onBindPreferences() = when(section) {
 
         Section.General -> handleGeneralSectionPreferences()
+        Section.Graphics -> handleGraphicsSectionPreferences()
         Section.Gameplay -> handleGameplaySectionPreferences()
         Section.Audio -> handleAudioSectionPreferences()
         Section.Library -> handleLibrarySectionPreferences()
@@ -248,9 +250,6 @@ class SettingsFragment : SettingsFragment() {
         Section.Input -> handleInputSectionPreferences()
         Section.Player -> handlePlayerSectionPreferences()
         Section.Room -> handleRoomSectionPreferences()
-
-        else -> Unit
-
     }
 
 
@@ -374,7 +373,7 @@ class SettingsFragment : SettingsFragment() {
     }
 
 
-    private fun handleGameplaySectionPreferences() {
+    private fun handleGraphicsSectionPreferences() {
         findPreference<SelectPreference>("skinPath")!!.apply {
 
             val skinMain = File(Config.getSkinTopPath())
@@ -415,7 +414,10 @@ class SettingsFragment : SettingsFragment() {
                 true
             }
         }
+    }
 
+
+    private fun handleGameplaySectionPreferences() {
         val playfieldAreaDisplay = PlayfieldAreaDisplay()
 
         findPreference<SeekBarPreference>("playfieldSize")!!.apply {
@@ -471,6 +473,20 @@ class SettingsFragment : SettingsFragment() {
 
                 true
             }
+        }
+
+        val offsetPreference = findPreference<SeekBarPreference>("offset")!!
+
+        findPreference<Preference>("offset_calibration")!!.setOnPreferenceClickListener {
+            CalibrationScene.settingsFragment = this
+            CalibrationScene.OFFSET_MIN = offsetPreference.min
+            CalibrationScene.OFFSET_MAX = offsetPreference.max
+            CalibrationScene.show()
+
+            // We only want to dismiss the fragment, not reapply preferences (which is what the override does).
+            super.dismiss()
+
+            true
         }
     }
 

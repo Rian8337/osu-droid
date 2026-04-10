@@ -16,7 +16,6 @@ import com.osudroid.multiplayer.api.data.RoomPlayer
 import com.osudroid.multiplayer.api.data.RoomTeam
 import com.osudroid.multiplayer.api.data.TeamMode
 import com.osudroid.multiplayer.api.data.WinCondition
-import com.osudroid.ui.OsuColors
 import com.osudroid.ui.v1.SettingsFragment
 import com.osudroid.ui.v2.BeatmapInfoLayout
 import com.osudroid.ui.v2.GameLoaderScene
@@ -30,7 +29,6 @@ import com.reco1l.andengine.UIEngine
 import com.reco1l.andengine.UIScene
 import com.reco1l.andengine.badge
 import com.reco1l.andengine.component.UIComponent.Companion.FillParent
-import com.reco1l.andengine.component.plus
 import com.reco1l.andengine.component.setText
 import com.reco1l.andengine.container
 import com.reco1l.andengine.container.JustifyContent
@@ -41,7 +39,6 @@ import com.reco1l.andengine.flexContainer
 import com.reco1l.andengine.labeledBadge
 import com.reco1l.andengine.linearContainer
 import com.reco1l.andengine.scrollableContainer
-import com.reco1l.andengine.shape.PaintStyle
 import com.reco1l.andengine.shape.UIBox
 import com.reco1l.andengine.sprite.ScaleType
 import com.reco1l.andengine.sprite.UISprite
@@ -58,8 +55,6 @@ import com.reco1l.framework.math.Vec4
 import com.reco1l.osu.ui.MessageDialog
 import com.reco1l.toolkt.kotlin.runSafe
 import com.rian.osu.mods.ModScoreV2
-import org.anddev.andengine.engine.camera.SmoothCamera
-import org.anddev.andengine.input.touch.TouchEvent
 import org.json.JSONArray
 import ru.nsu.ccfit.zuev.osu.Config
 import ru.nsu.ccfit.zuev.osu.GlobalManager
@@ -601,10 +596,10 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
         beatmapInfoLayout.isVisible = true
         beatmapInfoAlert.isVisible = false
 
-        val beatmapInfo = GlobalManager.getInstance().selectedBeatmap
-        beatmapInfoLayout.setBeatmapInfo(beatmapInfo)
+        updateBeatmapInfo(roomBeatmap)
 
         downloadBeatmapButton.apply {
+            val beatmapInfo = GlobalManager.getInstance().selectedBeatmap
 
             if (beatmapInfo == null) {
                 isVisible = true
@@ -642,8 +637,15 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
         }
     }
 
-    fun updateBeatmapInfo() {
-        beatmapInfoLayout.setBeatmapInfo(GlobalManager.getInstance().selectedBeatmap)
+    @JvmOverloads
+    fun updateBeatmapInfo(roomBeatmap: RoomBeatmap? = room.beatmap) {
+        val beatmapInfo = GlobalManager.getInstance().selectedBeatmap
+
+        if (beatmapInfo != null) {
+            beatmapInfoLayout.setBeatmapInfo(beatmapInfo)
+        } else {
+            beatmapInfoLayout.setBeatmapInfo(roomBeatmap)
+        }
     }
 
 
@@ -688,12 +690,6 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
     }
 
     override fun show() {
-
-        (GlobalManager.getInstance().camera as SmoothCamera).apply {
-            setZoomFactorDirect(1f)
-            setCenterDirect(Config.getRES_WIDTH() / 2f, Config.getRES_HEIGHT() / 2f)
-        }
-
         if (!Multiplayer.isConnected) {
             back()
             return
@@ -824,9 +820,8 @@ class RoomScene(val room: Room) : UIScene(), IRoomEventListener, IPlayerEventLis
 
         GlobalManager.getInstance().selectedBeatmap = LibraryManager.findBeatmapByMD5(beatmap?.md5)
 
-        beatmapInfoLayout.setBeatmapInfo(GlobalManager.getInstance().selectedBeatmap)
-
         if (GlobalManager.getInstance().engine.scene != this) {
+            updateBeatmapInfo()
             isWaitingForBeatmapChange = false
             return
         }

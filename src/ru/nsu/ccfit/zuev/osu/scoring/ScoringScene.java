@@ -468,8 +468,7 @@ public class ScoringScene {
                                 difficultyAttributes = BeatmapDifficultyCalculator.calculateDroidDifficultyForReplay(playableBeatmap);
 
                                 performanceAttributes = BeatmapDifficultyCalculator.calculateDroidPerformanceWithReplayStat(
-                                    playableBeatmap, (DroidDifficultyAttributes) difficultyAttributes, replay.cursorMoves,
-                                    replay.objectData, stat
+                                    playableBeatmap, (DroidDifficultyAttributes) difficultyAttributes, replay, stat
                                 );
                             }
 
@@ -479,7 +478,7 @@ public class ScoringScene {
                                 difficultyAttributes = BeatmapDifficultyCalculator.calculateStandardDifficulty(playableBeatmap);
 
                                 performanceAttributes = BeatmapDifficultyCalculator.calculateStandardPerformanceWithReplayStat(
-                                    playableBeatmap, (StandardDifficultyAttributes) difficultyAttributes, replay.cursorMoves,
+                                    playableBeatmap, (StandardDifficultyAttributes) difficultyAttributes,
                                     replay.objectData, stat
                                 );
                             }

@@ -2,6 +2,7 @@ package com.rian.osu.math
 
 import android.graphics.PointF
 import kotlin.math.hypot
+import kotlin.math.sqrt
 
 /**
  * Represents a two-dimensional vector.
@@ -56,13 +57,48 @@ data class Vector2(
     fun getDistance(vec: Vector2) = hypot(vec.x - x, vec.y - y)
 
     /**
+     * Gets the square of distance between this vector and another vector.
+     *
+     * This avoids square root calculation and is suitable for distance comparisons.
+     *
+     * @param vec The other vector.
+     * @return The square of distance between this vector and the other vector.
+     */
+    fun getDistanceSquared(vec: Vector2): Float {
+        val dx = vec.x - x
+        val dy = vec.y - y
+
+        return dx * dx + dy * dy
+    }
+
+    /**
+     * Gets the square of distance between this vector and a point.
+     *
+     * @param x The X coordinate of the point.
+     * @param y The Y coordinate of the point.
+     * @return The square of distance between this vector and the point.
+     */
+    fun getDistanceSquared(x: Float, y: Float): Float {
+        val dx = x - this.x
+        val dy = y - this.y
+
+        return dx * dx + dy * dy
+    }
+
+    /**
      * Normalizes the vector.
      */
     fun normalize() {
-        val length = length
+        val lengthSquared = lengthSquared
 
-        x /= length
-        y /= length
+        if (lengthSquared == 0f) {
+            return
+        }
+
+        val inverseLength = 1f / sqrt(lengthSquared)
+
+        x *= inverseLength
+        y *= inverseLength
     }
 
     /**
@@ -221,4 +257,17 @@ data class Vector2(
      * @return The negated vector.
      */
     operator fun unaryMinus() = Vector2(-x, -y)
+
+    companion object {
+        /**
+         * Gets the square of distance between two points.
+         */
+        @JvmStatic
+        fun distanceSquared(x1: Float, y1: Float, x2: Float, y2: Float): Float {
+            val dx = x2 - x1
+            val dy = y2 - y1
+
+            return dx * dx + dy * dy
+        }
+    }
 }
