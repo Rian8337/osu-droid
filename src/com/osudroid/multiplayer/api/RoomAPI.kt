@@ -45,6 +45,7 @@ object RoomAPI {
     var roomEventListener: IRoomEventListener? = null
 
 
+    @Volatile
     private var socket: Socket? = null
 
 
@@ -288,6 +289,11 @@ object RoomAPI {
 
         val reason = it.getOrNull(0) as? String
 
+        // Clear the socket reference immediately so no further emits are attempted
+        // against this now-dead connection.
+        socket?.off()
+        socket = null
+
         roomEventListener?.onRoomDisconnect(
             reason = reason,
             // Socket was manually disconnected by either server or client.
@@ -429,7 +435,10 @@ object RoomAPI {
      * Notify all clients to start loading beatmap.
      */
     fun notifyMatchPlay() {
-        socket!!.emit("playBeatmap")
+        socket?.emit("playBeatmap") ?: run {
+            Multiplayer.log("WARNING: Tried to emit event 'playBeatmap' while socket is null.")
+            return
+        }
         Multiplayer.log("EMITTED: playBeatmap")
     }
 
@@ -587,7 +596,10 @@ object RoomAPI {
      * Notify beatmap finish load.
      */
     fun notifyBeatmapLoaded() {
-        socket!!.emit("beatmapLoadComplete")
+        socket?.emit("beatmapLoadComplete") ?: run {
+            Multiplayer.log("WARNING: Tried to emit event 'beatmapLoadComplete' while socket is null.")
+            return
+        }
         Multiplayer.log("EMITTED: beatmapLoadComplete")
     }
 
@@ -595,7 +607,10 @@ object RoomAPI {
      * Request skip.
      */
     fun requestSkip() {
-        socket!!.emit("skipRequested")
+        socket?.emit("skipRequested") ?: run {
+            Multiplayer.log("WARNING: Tried to emit event 'skipRequested' while socket is null.")
+            return
+        }
         Multiplayer.log("EMITTED: skipRequested")
     }
 

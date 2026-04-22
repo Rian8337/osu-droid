@@ -1629,41 +1629,6 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         GameHelper.setKiai(activeEffectPoint.isKiai);
         GameHelper.setCurrentBeatTime(Math.max(0, elapsedTime - activeTimingPoint.time / 1000) % GameHelper.getBeatLength());
 
-        if (!isGameOver) {
-
-            if (breakPeriodIndex < breakPeriods.length) {
-                if (!breakAnimator.isBreak() && breakPeriods[breakPeriodIndex].startTime / 1000 <= elapsedTime) {
-                    var period = breakPeriods[breakPeriodIndex++];
-
-                    gameStarted = false;
-                    breakAnimator.init(period.getDuration() / 1000);
-                    if(GameHelper.isFlashlight()){
-                        flashlightSprite.onBreak(true);
-                    }
-
-                    if (Multiplayer.isConnected())
-                        Multiplayer.roomScene.getChat().show();
-
-                    hud.onBreakStateChange(true);
-                }
-            }
-
-            if (breakAnimator.isOver()) {
-
-                // Ensure the chat is dismissed if it's still shown
-                if (Multiplayer.isConnected()) {
-                    Multiplayer.roomScene.getChat().hide();
-                }
-
-                gameStarted = true;
-                hud.onBreakStateChange(false);
-
-                if(GameHelper.isFlashlight()){
-                    flashlightSprite.onBreak(false);
-                }
-            }
-        }
-
         if (objectIndex >= objects.length && activeObjects.isEmpty() && GameHelper.isFlashlight()) {
             flashlightSprite.onBreak(true);
         }
@@ -1711,6 +1676,49 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         }
 
         updatePassiveObjects(dt);
+
+        // Step 1: React to the current break ending - must run before the break-start check below.
+        // If these two checks were in the opposite order, breakAnimator.init() for the new break
+        // would reset over=false before isOver() could read it, causing the break-end cleanup
+        // (chat hide, gameStarted=true, HUD/Flashlight state) to be silently skipped. The chat
+        // would then remain visible all the way until the next break's 1-second warning arrow trigger.
+        if (!isGameOver && breakAnimator.isOver()) {
+
+            // Ensure the chat is dismissed if it's still shown
+            if (Multiplayer.isConnected()) {
+                Multiplayer.roomScene.getChat().hide();
+            }
+
+            gameStarted = true;
+            hud.onBreakStateChange(false);
+
+            if (GameHelper.isFlashlight()) {
+                flashlightSprite.onBreak(false);
+            }
+        }
+
+        // Step 2: Only after the previous break is fully cleaned up, check whether a new break should start.
+        if (!isGameOver) {
+
+            if (breakPeriodIndex < breakPeriods.length) {
+                if (!breakAnimator.isBreak() && breakPeriods[breakPeriodIndex].startTime / 1000 <= elapsedTime) {
+                    var period = breakPeriods[breakPeriodIndex++];
+
+                    gameStarted = false;
+                    breakAnimator.init(period.getDuration() / 1000);
+                    if(GameHelper.isFlashlight()){
+                        flashlightSprite.onBreak(true);
+                    }
+
+                    if (Multiplayer.isConnected())
+                        Multiplayer.roomScene.getChat().show();
+
+                    hud.onBreakStateChange(true);
+                }
+            }
+
+        }
+
         updateActiveObjects(dt);
 
         if (GameHelper.isAutoplay() || GameHelper.isAutopilot()) {

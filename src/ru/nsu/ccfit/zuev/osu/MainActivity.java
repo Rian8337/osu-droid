@@ -100,8 +100,6 @@ public class MainActivity extends BaseGameActivity implements
     public ServiceConnection connection;
     private String beatmapToAdd = null;
     private SaveServiceObject saveServiceObject;
-    private FirebaseAnalytics analytics;
-    private FirebaseCrashlytics crashlytics;
     private boolean willReplay = false;
     private static boolean activityVisible = true;
     private static final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -539,10 +537,6 @@ public class MainActivity extends BaseGameActivity implements
                 }
             }
         }
-    }
-
-    public FirebaseAnalytics getAnalytics() {
-        return analytics;
     }
 
     public static boolean isActivityVisible() {

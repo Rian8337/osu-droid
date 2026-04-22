@@ -11,6 +11,8 @@ import com.reco1l.andengine.*
 import com.reco1l.toolkt.kotlin.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import ru.nsu.ccfit.zuev.osu.GlobalManager
@@ -49,6 +51,7 @@ object Multiplayer {
      * Indicates if the client is waiting for a reconnection.
      */
     @JvmField
+    @Volatile
     var isReconnecting = false
 
     /**
@@ -79,13 +82,14 @@ object Multiplayer {
 
     private val reconnectionScope by lazy { CoroutineScope(Dispatchers.Default) }
 
-
-    private var attemptCount = 0
+    private var reconnectionJob: Job? = null
 
     private var reconnectionStartTimeMS = 0L
 
+    @Volatile
     private var lastAttemptResponseTimeMS = 0L
 
+    @Volatile
     private var isWaitingAttemptResponse = false
 
 
@@ -210,20 +214,8 @@ object Multiplayer {
             isReconnecting = false
 
             roomScene?.chat?.onSystemChatMessage("Connection was successfully restored.", "#459FFF")
-        } else if (attemptCount < 5) {
-            attemptCount++
-
-            roomScene?.chat?.onSystemChatMessage("Failed to reconnect, trying again in 5 seconds...", "#FFBFBF")
         } else {
-            isReconnecting = false
-
-            ToastLogger.showText("The connection to server has been lost, please check your internet connection.", true)
-
-            val gameScene = GlobalManager.getInstance().gameScene
-
-            if (gameScene != null && GlobalManager.getInstance().engine.scene != gameScene.scene) {
-                roomScene?.back()
-            }
+            roomScene?.chat?.onSystemChatMessage("Failed to reconnect, trying again in 5 seconds...", "#FFBFBF")
         }
 
         isWaitingAttemptResponse = false
@@ -236,22 +228,28 @@ object Multiplayer {
         }
         isReconnecting = true
 
-        attemptCount = 0
         reconnectionStartTimeMS = System.currentTimeMillis()
+        lastAttemptResponseTimeMS = 0L
 
-        reconnectionScope.launch {
+        // Cancel any stale job before launching a new one.
+        reconnectionJob?.cancel()
+        reconnectionJob = reconnectionScope.launch {
 
             while (isReconnecting) {
                 val currentTime = System.currentTimeMillis()
 
-                // Timeout to reconnect was exceed.
+                // Timeout to reconnect was exceeded.
                 if (currentTime - reconnectionStartTimeMS >= 30000) {
                     ToastLogger.showText("The connection to server has been lost, please check your internet connection.", true)
                     roomScene?.back()
                     return@launch
                 }
 
-                if (currentTime - lastAttemptResponseTimeMS < 5000 || isWaitingAttemptResponse) continue
+                if (isWaitingAttemptResponse || (lastAttemptResponseTimeMS != 0L && currentTime - lastAttemptResponseTimeMS < 5000)) {
+                    // Yield the thread instead of busy-spinning.
+                    delay(250)
+                    continue
+                }
 
                 try {
                     RoomAPI.connectToRoom(
@@ -269,6 +267,8 @@ object Multiplayer {
                     onReconnectAttempt(false)
                 }
 
+                // Always yield after each iteration to avoid busy-spinning.
+                delay(250)
             }
         }
     }
