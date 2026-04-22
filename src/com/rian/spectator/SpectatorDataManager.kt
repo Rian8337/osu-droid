@@ -166,8 +166,14 @@ class SpectatorDataManager(
      * @param objectId The ID of the object.
      */
     fun addObjectData(objectId: Int) {
+        val replayObjectData = replay.objectData ?: return
+
+        if (objectId < 0 || objectId >= replayObjectData.size) {
+            return
+        }
+
         val obj = gameScene.playableBeatmap!!.hitObjects.objects[objectId]
-        val replayData = replay.objectData[objectId]
+        val replayData = replayObjectData[objectId]
         var time = obj.endTime
         val hitWindow = if (obj is Slider) obj.head.hitWindow else obj.hitWindow
 

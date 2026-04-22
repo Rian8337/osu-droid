@@ -500,7 +500,7 @@ public class Replay {
 
     public static class MoveArray {
         public ReplayMovement[] movements;
-        public int size;
+        public volatile int size;
         public int allocated;
 
         public MoveArray(int startSize) {
@@ -568,31 +568,36 @@ public class Replay {
 
         public void pushBack(Replay replay, int time, float x, float y, TouchType touchType) {
             int idx = size;
+            boolean isNewEntry;
             if (touchType == TouchType.MOVE && checkNewPoint(x, y)) {
                 idx = size - 1;
+                isNewEntry = false;
                 replay.pointsSkipped++;
             } else {
                 if (size + 1 >= allocated) {
                     reallocate((allocated * 3) / 2);
                 }
-                size++;
+                isNewEntry = true;
             }
             ReplayMovement movement = new ReplayMovement();
-            movements[idx] = movement;
             movement.time = time;
             movement.x = x;
             movement.y = y;
             movement.touchType = touchType;
+            movements[idx] = movement;
+            if (isNewEntry) {
+                size++;
+            }
         }
 
         public void pushBack(int time, TouchType touchType) {
             if (size >= allocated) {
                 reallocate((allocated * 3) / 2);
             }
-            movements[size] = new ReplayMovement();
-            ReplayMovement movement = movements[size];
+            ReplayMovement movement = new ReplayMovement();
             movement.time = time;
             movement.touchType = touchType;
+            movements[size] = movement;
             size++;
         }
 

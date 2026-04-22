@@ -22,13 +22,13 @@ class MultiplayerLogger : AutoCloseable {
     @Volatile
     private var isClosed = false
 
-    private val writer = File("${Config.getDefaultCorePath()}/Log", "multi_log.txt").apply {
+    private val writer = File("${Config.getDefaultCorePath()}/Log", "multi_log_tour.txt").apply {
         parentFile?.mkdirs()
 
         if (!exists()) {
             createNewFile()
         }
-    }.bufferedWriter()
+    }.bufferedWriter(append = true)
 
     private val timestampFormat = SimpleDateFormat("HH:mm:ss").apply {
         timeZone = TimeZone.getTimeZone("GMT+0")
