@@ -33,13 +33,10 @@ class MultiplayerLogger : AutoCloseable {
      * Initializes the logger by creating the log file and writing the initial log entry.
      */
     fun init() {
-        writer = File("${Config.getDefaultCorePath()}/Log", "multi_log_tour.txt").apply {
-            parentFile?.mkdirs()
-
-            if (!exists()) {
-                createNewFile()
-            }
-        }.bufferedWriter()
+        writer = File("${Config.getDefaultCorePath()}/Log", "multi_log_tour.txt").let { file ->
+            file.parentFile?.mkdirs()
+            java.io.FileWriter(file, true).buffered()
+        }
 
         write("[${"yyyy/MM/dd hh:mm:ss".fromDate()}] Client ${MainActivity.versionName} started.")
     }
