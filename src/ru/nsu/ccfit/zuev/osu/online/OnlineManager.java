@@ -47,7 +47,7 @@ public class OnlineManager {
      */
     public static final String attestationChallengeEndpoint = endpoint + "getAttestationChallenge";
 
-    private static final String onlineVersion = "48";
+    private static final String onlineVersion = "49";
 
     public static final OkHttpClient client = new OkHttpClient();
 

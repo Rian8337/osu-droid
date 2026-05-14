@@ -149,7 +149,13 @@ public class StatisticV2 implements Serializable {
             return forcedScore;
 
         if (GameHelper.isScoreV2()) {
-            return (int) (v2Score * modScoreMultiplier);
+            // PR's 1.15 multiplier is already baked into the accuracy portion of the v2Score
+            // formula, so exclude it from modScoreMultiplier to avoid double-counting.
+            float effectiveMultiplier = modScoreMultiplier;
+            if (GameHelper.isPrecise()) {
+                effectiveMultiplier /= GameHelper.getPrecise().getScoreMultiplier();
+            }
+            return (int) (v2Score * effectiveMultiplier);
         } else {
             return (int) (v1Score * modScoreMultiplier);
         }
@@ -262,7 +268,7 @@ public class StatisticV2 implements Serializable {
         // Calculate ScoreV2
         if (GameHelper.isScoreV2()) {
             if (amount == 1000) {
-                bonusScore += amount;
+                bonusScore += 100;
 
                 // Undo the ScoreV1 addition above.
                 v1Score = Math.max(0, v1Score - amount);
@@ -271,12 +277,12 @@ public class StatisticV2 implements Serializable {
             double scorePortion;
             double accuracyPortion;
 
+            scorePortion = 0.3f * Math.sqrt((double) v1Score / v1MaxScore);
+
             if (GameHelper.isPrecise()) {
-                scorePortion = 0.3f * Math.sqrt((double) v1Score / v1MaxScore);
-                accuracyPortion = 0.7f * Math.pow(getAccuracy(), 4);
+                accuracyPortion = 0.7f * 1.15f * Math.pow(getAccuracy(), 4);
             } else {
-                scorePortion = 0.4f * Math.sqrt((double) v1Score / v1MaxScore);
-                accuracyPortion = 0.6f * Math.pow(getAccuracy(), 8);
+                accuracyPortion = 0.7f * Math.pow(getAccuracy(), 8);
             }
 
             float progress = getNotesHit() / (float) beatmapNoteCount;

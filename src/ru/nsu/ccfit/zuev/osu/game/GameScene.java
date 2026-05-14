@@ -1136,6 +1136,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         GameHelper.setPerfect(lastMods.ofType(ModPerfect.class));
         GameHelper.setSynesthesia(lastMods.ofType(ModSynesthesia.class));
         GameHelper.setScoreV2(lastMods.ofType(ModScoreV2.class));
+        GameHelper.setPrecise(lastMods.ofType(ModPrecise.class));
         GameHelper.setEasy(lastMods.ofType(ModEasy.class));
         GameHelper.setMuted(lastMods.ofType(ModMuted.class));
         GameHelper.setFreezeFrame(lastMods.ofType(ModFreezeFrame.class));
