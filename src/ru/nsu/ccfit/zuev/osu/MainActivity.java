@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.media.AudioManager;
 import android.hardware.display.DisplayManager;
 import android.net.Uri;
 import android.os.Build;
@@ -114,6 +115,24 @@ public class MainActivity extends BaseGameActivity implements
     private float currentRefreshRate = 60;
     private float maxRefreshRate = 60;
     private MessageDialog multiWindowAlert;
+    private AudioManager audioManager;
+    private boolean audioFocusLost;
+
+    private final AudioManager.OnAudioFocusChangeListener audioFocusListener = focusChange -> {
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            audioFocusLost = true;
+            var gameScene = GlobalManager.getInstance().getGameScene();
+
+            if (gameScene != null && getEngine() != null
+                    && getEngine().getScene() == gameScene.getScene()
+                    && !gameScene.isPaused() && !Multiplayer.isMultiplayer) {
+                Execution.updateThread(gameScene::pause);
+            }
+        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+            audioFocusLost = false;
+        }
+    };
 
     // Multiplayer
     private Uri roomInviteLink;
@@ -559,6 +578,10 @@ public class MainActivity extends BaseGameActivity implements
         return activityVisible;
     }
 
+    public boolean isAudioFocusLost() {
+        return audioFocusLost;
+    }
+
     @Override
     protected void onCreate(Bundle pSavedInstanceState) {
         // Some components may already start using this class when onCreate is called. An example
@@ -571,6 +594,8 @@ public class MainActivity extends BaseGameActivity implements
             versionName = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_ACTIVITIES).versionName;
         } catch (Exception ignored) {
         }
+
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         if (this.mEngine == null) {
             return;
@@ -635,6 +660,11 @@ public class MainActivity extends BaseGameActivity implements
     @Override
     public void onResume() {
         super.onResume();
+        if (audioManager != null) {
+            //noinspection deprecation
+            audioManager.requestAudioFocus(audioFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        }
+        audioFocusLost = false;
         activityVisible = true;
 
         logFlushFuture = scheduledExecutor.scheduleAtFixedRate(Multiplayer::flushLog, 0, 5, TimeUnit.SECONDS);
@@ -658,6 +688,10 @@ public class MainActivity extends BaseGameActivity implements
     @Override
     public void onPause() {
         super.onPause();
+        if (audioManager != null) {
+            //noinspection deprecation
+            audioManager.abandonAudioFocus(audioFocusListener);
+        }
         activityVisible = false;
 
         if (logFlushFuture != null && !logFlushFuture.isCancelled()) {

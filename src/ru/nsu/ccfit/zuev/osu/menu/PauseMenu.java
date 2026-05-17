@@ -140,6 +140,10 @@ public class PauseMenu implements IOnMenuItemClickListener {
                 if (fail) {
                     return false;
                 }
+                if (GlobalManager.getInstance().getMainActivity().isAudioFocusLost()) {
+                    ToastLogger.showText("Please dismiss the active alarm before resuming.", true);
+                    return true;
+                }
                 playSnd = ResourceManager.getInstance().getSound("menuback");
                 if (playSnd != null) {
                     playSnd.play();
