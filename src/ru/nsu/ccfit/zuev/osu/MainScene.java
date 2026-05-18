@@ -1,8 +1,6 @@
 package ru.nsu.ccfit.zuev.osu;
 
-import static com.acivev.ui.EffectKt.addFireworks;
 import static com.acivev.ui.EffectKt.addFireworksWithPeriod;
-import static com.acivev.ui.EffectKt.addSnowfall;
 import static com.acivev.ui.EffectKt.addSnowfallWithPeriod;
 
 import android.content.Context;
@@ -16,6 +14,7 @@ import com.edlplan.framework.easing.Easing;
 import com.osudroid.beatmaps.BeatmapCache;
 import com.osudroid.utils.Execution;
 import com.reco1l.andengine.Anchor;
+import com.reco1l.andengine.UIScene;
 import com.reco1l.andengine.shape.UIBox;
 import com.reco1l.andengine.sprite.UISprite;
 import com.osudroid.ui.BannerManager;
@@ -27,8 +26,8 @@ import com.osudroid.beatmaplisting.BeatmapListing;
 import com.reco1l.andengine.ui.UIConfirmDialog;
 import com.reco1l.framework.Color4;
 import com.reco1l.osu.ui.HorizontalMessageDialog;
-import com.rian.osu.beatmap.timings.EffectControlPoint;
-import com.rian.osu.beatmap.timings.TimingControlPoint;
+import com.osudroid.beatmaps.timings.EffectControlPoint;
+import com.osudroid.beatmaps.timings.TimingControlPoint;
 
 import org.anddev.andengine.engine.handler.IUpdateHandler;
 import org.anddev.andengine.entity.IEntity;
@@ -46,7 +45,6 @@ import org.anddev.andengine.entity.particle.modifier.AlphaModifier;
 import org.anddev.andengine.entity.particle.modifier.ExpireModifier;
 import org.anddev.andengine.entity.particle.modifier.ScaleModifier;
 import org.anddev.andengine.entity.primitive.Rectangle;
-import org.anddev.andengine.entity.scene.Scene;
 import org.anddev.andengine.entity.scene.background.ColorBackground;
 import org.anddev.andengine.entity.scene.background.SpriteBackground;
 import org.anddev.andengine.entity.sprite.Sprite;
@@ -70,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import kotlin.Unit;
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.game.LinearSongProgress;
@@ -90,7 +89,7 @@ public class MainScene implements IUpdateHandler {
     private Context context;
     private Sprite logo, logoOverlay, background, lastBackground;
     private Sprite music_nowplay;
-    private Scene scene;
+    private UIScene scene;
     private ChangeableText musicInfoText;
     private final Rectangle[] spectrum = new Rectangle[120];
     private final float[] peakLevel = new float[120];
@@ -128,8 +127,7 @@ public class MainScene implements IUpdateHandler {
         this.context = context;
         Debug.i("Load: mainMenuLoaded()");
         VibratorManager.INSTANCE.init(context);
-        scene = new Scene();
-        scene.setOnAreaTouchTraversalFrontToBack();
+        scene = new UIScene();
 
         final TextureRegion tex = ResourceManager.getInstance().getTexture("menu-background");
 
@@ -519,7 +517,7 @@ public class MainScene implements IUpdateHandler {
         }
     }
 
-    private void createOnlinePanel(Scene scene) {
+    private void createOnlinePanel(UIScene scene) {
         Config.loadOnlineConfig(context);
         OnlineManager.getInstance().init();
 
@@ -649,11 +647,11 @@ public class MainScene implements IUpdateHandler {
                 button.setX(menuBarX - 100);
                 button.setAlpha(0f);
 
-                button.beginParallel((modifier) -> {
-                    modifier.moveToX(menuBarX, 0.5f, Easing.OutElastic);
-                    modifier.fadeTo(0.9f, 0.5f, Easing.OutCubic);
-                    //noinspection DataFlowIssue
-                    return null;
+                button.beginModifierSequence(sequence -> {
+                    sequence.moveToX(menuBarX, 0.5f, Easing.OutElastic)
+                            .fadeTo(0.9f, 0.5f, Easing.OutCubic);
+
+                    return Unit.INSTANCE;
                 });
             }
 
@@ -673,12 +671,13 @@ public class MainScene implements IUpdateHandler {
                     button.setX(menuBarX);
                     button.setAlpha(0.9f);
 
-                    button.beginParallel((modifier) -> {
-                        modifier.moveToX(menuBarX - 50, 1f, Easing.OutExpo);
-                        modifier.fadeOut(1f, Easing.OutExpo);
-                        //noinspection DataFlowIssue
-                        return null;
-                    }).after(IEntity::detachSelf);
+                    button.beginModifierSequence(sequence -> {
+                        sequence.moveToX(menuBarX - 50, 1f, Easing.OutExpo)
+                                .fadeOut(1f, Easing.OutExpo)
+                                .after(IEntity::detachSelf);
+
+                        return Unit.INSTANCE;
+                    });
                 }
 
                 logo.registerEntityModifier(new MoveXModifier(1f, (float) Config.getRES_WIDTH() / 3 - logo.getWidth() / 2, (float) Config.getRES_WIDTH() / 2 - logo.getWidth() / 2,
@@ -991,7 +990,7 @@ public class MainScene implements IUpdateHandler {
         }, 3000, TimeUnit.MILLISECONDS);
     }
 
-    public Scene getScene() {
+    public UIScene getScene() {
         return scene;
     }
 

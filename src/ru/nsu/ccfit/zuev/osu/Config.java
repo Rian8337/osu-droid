@@ -84,7 +84,6 @@ public class Config {
         RES_HEIGHT,
         spinnerStyle,
         metronomeSwitch,
-        minimumGameplaySynchronizationTime,
         backButtonPressTime;
 
     private static float soundVolume,
@@ -226,7 +225,6 @@ public class Config {
         hideInGameUI = prefs.getBoolean("hideInGameUI", false);
         safeBeatmapBg = prefs.getBoolean("safebeatmapbg", false);
         shiftPitchInRateChange = prefs.getBoolean("shiftPitchInRateChange", false);
-        minimumGameplaySynchronizationTime = prefs.getInt("gameAudioSynchronizationThreshold", 20);
         backButtonPressTime = Config.getInt("back_button_press_time", 300);
 
         // Multiplayer
@@ -763,10 +761,6 @@ public class Config {
 
     public static boolean isDisplayPlayfieldBorder() {
         return getBoolean("displayPlayfieldBorder", false);
-    }
-
-    public static int getMinimumGameplaySynchronizationTime() {
-        return minimumGameplaySynchronizationTime;
     }
 
     public static int getBackButtonPressTime() {

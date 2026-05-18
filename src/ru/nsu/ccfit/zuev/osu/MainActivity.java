@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.provider.OpenableColumns;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -40,6 +41,7 @@ import com.edlplan.ui.ActivityOverlay;
 import com.osudroid.BuildSettings;
 import com.osudroid.beatmaps.BeatmapCache;
 import com.osudroid.debug.DebugPlaygroundScene;
+import com.osudroid.ui.FPSCounter;
 import com.osudroid.ui.v2.GameLoaderScene;
 import com.osudroid.utils.Execution;
 import com.reco1l.andengine.UIEngine;
@@ -52,7 +54,7 @@ import com.osudroid.ui.v2.multi.LobbyScene;
 
 import com.osudroid.ui.v2.modmenu.ModMenu;
 import com.reco1l.osu.ui.MessageDialog;
-import com.rian.osu.difficulty.BeatmapDifficultyCalculator;
+import com.osudroid.difficulty.BeatmapDifficultyCalculator;
 import net.lingala.zip4j.ZipFile;
 
 import org.anddev.andengine.engine.Engine;
@@ -82,6 +84,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import okio.Okio;
 import ru.nsu.ccfit.zuev.audio.serviceAudio.SaveServiceObject;
 import ru.nsu.ccfit.zuev.audio.serviceAudio.SongService;
 import ru.nsu.ccfit.zuev.osu.helper.FileUtils;
@@ -98,7 +101,8 @@ public class MainActivity extends BaseGameActivity implements
     public static String versionName;
     public static SongService songService;
     public ServiceConnection connection;
-    private String beatmapToAdd = null;
+    private String fileToAdd = null;
+    private Uri contentUriToAdd = null;
     private SaveServiceObject saveServiceObject;
     private boolean willReplay = false;
     private static boolean activityVisible = true;
@@ -302,6 +306,7 @@ public class MainActivity extends BaseGameActivity implements
         if (BuildSettings.DEBUG_PLAYGROUND) {
             return DebugPlaygroundScene.INSTANCE;
         }
+
         return SplashScene.INSTANCE.getScene();
     }
 
@@ -309,6 +314,8 @@ public class MainActivity extends BaseGameActivity implements
     public void onLoadComplete() {
         Execution.async(() -> {
             GlobalManager.getInstance().init();
+            Execution.updateThread(() -> UIEngine.getCurrent().getOverlay().attachChild(new FPSCounter()));
+            analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null);
             GlobalManager.getInstance().setLoadingProgress(50);
             checkNewSkins();
             Config.loadSkins();
@@ -349,7 +356,8 @@ public class MainActivity extends BaseGameActivity implements
                 if (roomInviteLink != null) {
                     Multiplayer.connectFromLink(roomInviteLink);
                 } else if (willReplay) {
-                    GlobalManager.getInstance().getMainScene().watchReplay(beatmapToAdd);
+                    GlobalManager.getInstance().getMainScene().watchReplay(fileToAdd);
+                    fileToAdd = null;
                     willReplay = false;
                 }
 
@@ -406,20 +414,31 @@ public class MainActivity extends BaseGameActivity implements
 
     public void loadBeatmapLibrary() {
         GlobalManager.getInstance().setInfo("Checking for new maps...");
+        if (contentUriToAdd != null) {
+            fileToAdd = copyContentUriToCache(contentUriToAdd);
+            contentUriToAdd = null;
+        }
         final File mainDir = new File(Config.getCorePath());
         final HashSet<String> forceImportedBeatmaps = new HashSet<>();
-        if (beatmapToAdd != null) {
-            File file = new File(beatmapToAdd);
+        if (fileToAdd != null) {
+            File file = new File(fileToAdd);
             if (file.getName().toLowerCase().endsWith(".osz")) {
                 ToastLogger.showText(
                         StringTable.get(com.osudroid.resources.R.string.library_importing),
                         false);
 
-                FileUtils.extractZip(beatmapToAdd, Config.getBeatmapPath());
+                FileUtils.extractZip(fileToAdd, Config.getBeatmapPath());
                 forceImportedBeatmaps.add(file.getName().substring(0, file.getName().length() - 4));
                 // LibraryManager.INSTANCE.sort();
-            } else if (file.getName().endsWith(".odr")) {
+                fileToAdd = null;
+            } else if (file.getName().toLowerCase().endsWith(".osk")) {
+                ToastLogger.showText(StringTable.get(R.string.library_skin_importing), false);
+                FileUtils.extractZip(fileToAdd, Config.getSkinTopPath());
+                fileToAdd = null;
+            } else if (file.getName().toLowerCase().endsWith(".odr")) {
                 willReplay = true;
+            } else {
+                fileToAdd = null;
             }
         } else if (mainDir.exists() && mainDir.isDirectory()) {
             File[] filelist = FileUtils.listFiles(mainDir, ".osz");
@@ -610,11 +629,81 @@ public class MainActivity extends BaseGameActivity implements
                 if (data.toString().startsWith(LobbyAPI.INVITE_HOST))
                     roomInviteLink = data;
 
-                if (ContentResolver.SCHEME_FILE.equals(getIntent().getData().getScheme()))
-                    beatmapToAdd = getIntent().getData().getPath();
+                String scheme = data.getScheme();
+
+                if (ContentResolver.SCHEME_FILE.equals(scheme)) {
+                    fileToAdd = data.getPath();
+                } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+                    contentUriToAdd = data;
+                }
             }
         }
         super.onStart();
+    }
+
+    private String copyContentUriToCache(Uri uri) {
+        String displayName = null;
+        String fileName;
+
+        try (var cursor = getContentResolver().query(uri, new String[]{ OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                displayName = cursor.getString(0);
+            }
+        } catch (IllegalArgumentException | SecurityException e) {
+            Debug.e("MainActivity.copyContentUriToCache: cannot query display name: " + e.getMessage(), e);
+        }
+
+        if (displayName != null && !displayName.isEmpty()) {
+            // Strip any directory components a malicious provider might include.
+            fileName = new File(displayName).getName();
+        } else {
+            String mimeType = null;
+
+            try {
+                mimeType = getContentResolver().getType(uri);
+            } catch (SecurityException e) {
+                Debug.e("MainActivity.copyContentUriToCache: cannot query MIME type: " + e.getMessage(), e);
+            }
+
+            String ext;
+
+            if ("application/x-osu-beatmap-archive".equals(mimeType)) {
+                ext = ".osz";
+            } else if ("application/x-osu-skin-archive".equals(mimeType)) {
+                ext = ".osk";
+            } else {
+                ext = ".zip";
+            }
+
+            fileName = "import_" + System.currentTimeMillis() + ext;
+        }
+
+        var tempFile = new File(getCacheDir(), fileName);
+
+        try {
+            if (!tempFile.getCanonicalPath().startsWith(getCacheDir().getCanonicalPath() + File.separator)) {
+                Debug.e("MainActivity.copyContentUriToCache: rejected unsafe display name: " + displayName);
+                return null;
+            }
+        } catch (IOException e) {
+            Debug.e("MainActivity.copyContentUriToCache: " + e.getMessage(), e);
+            return null;
+        }
+
+        try (var in = getContentResolver().openInputStream(uri);
+             var sink = Okio.buffer(Okio.sink(tempFile))) {
+            if (in == null) {
+                ToastLogger.showText(StringTable.get(R.string.import_failed_open_file), false);
+                return null;
+            }
+
+            sink.writeAll(Okio.source(in));
+            return tempFile.getAbsolutePath();
+        } catch (IOException | SecurityException e) {
+            Debug.e("MainActivity.copyContentUriToCache: " + e.getMessage(), e);
+            ToastLogger.showText(StringTable.get(R.string.import_failed_open_file), false);
+            return null;
+        }
     }
 
     @Override

@@ -1,7 +1,10 @@
 package com.osudroid.ui.v2.modmenu
 
 import com.edlplan.framework.easing.Easing
+import com.osudroid.GameMode
 import com.osudroid.beatmaps.BeatmapCache
+import com.osudroid.data.BeatmapInfo
+import com.osudroid.data.DatabaseManager
 import com.reco1l.andengine.*
 import com.reco1l.andengine.component.UIComponent.Companion.MatchContent
 import com.reco1l.andengine.component.UIComponent.Companion.FillParent
@@ -17,18 +20,17 @@ import com.osudroid.multiplayer.api.data.RoomMods
 import com.osudroid.multiplayer.Multiplayer
 import com.osudroid.ui.v2.ModsIndicator
 import com.osudroid.ui.v2.StarRatingBadge
+import com.osudroid.utils.ModHashMap
 import com.osudroid.utils.updateThread
 import com.reco1l.andengine.component.*
 import com.reco1l.andengine.ui.UITextButton
 import com.reco1l.toolkt.kotlin.*
 import com.reco1l.toolkt.kotlin.async
 import com.rian.framework.RollingFloatCounter
-import com.rian.osu.*
-import com.rian.osu.difficulty.BeatmapDifficultyCalculator.calculateDroidDifficulty
-import com.rian.osu.difficulty.BeatmapDifficultyCalculator.calculateStandardDifficulty
-import com.rian.osu.mods.*
-import com.rian.osu.utils.*
-import com.rian.osu.utils.ModUtils
+import com.osudroid.difficulty.BeatmapDifficultyCalculator.calculateDroidDifficulty
+import com.osudroid.difficulty.BeatmapDifficultyCalculator.calculateStandardDifficulty
+import com.osudroid.mods.*
+import com.osudroid.utils.ModUtils
 import java.io.IOException
 import kotlinx.coroutines.*
 import ru.nsu.ccfit.zuev.osu.*
@@ -357,6 +359,12 @@ object ModMenu : UIScene() {
                 return@scope
             }
 
+            if (selectedBeatmap.needsDifficultyCalculation) {
+                val newInfo = BeatmapInfo(beatmap, selectedBeatmap.dateImported, true)
+                selectedBeatmap.apply(newInfo)
+                DatabaseManager.beatmapInfoTable.update(newInfo)
+            }
+
             enabledMods.values.filterIsInstance<IModRequiresOriginalBeatmap>().fastForEach { mod ->
                 ensureActive()
                 mod.applyFromBeatmap(beatmap)
@@ -432,7 +440,7 @@ object ModMenu : UIScene() {
 
         if (Multiplayer.isConnected) {
             Multiplayer.roomScene?.chat?.show()
-            Multiplayer.roomScene?.isWaitingForModsChange = true
+            Multiplayer.roomScene?.isWaitingForModsChange?.set(true)
 
             // The room mods are the same as the host mods
             if (Multiplayer.isRoomHost) {
@@ -440,7 +448,7 @@ object ModMenu : UIScene() {
             } else if (updatePlayerMods) {
                 setPlayerMods(enabledMods.serializeMods())
             } else {
-                Multiplayer.roomScene?.isWaitingForModsChange = false
+                Multiplayer.roomScene?.isWaitingForModsChange?.set(false)
             }
         }
 
@@ -647,7 +655,11 @@ object ModMenu : UIScene() {
     ) : UILabeledBadge() {
         private val counter = RollingFloatCounter(0f).apply {
             rollingEasing = Easing.OutQuint
-            rollingDuration = 300f
+            rollingDuration = 0.3f
+        }
+
+        init {
+            registerUpdateHandler(counter)
         }
 
         fun updateValue(initialValue: Float, finalValue: Float) {
@@ -662,12 +674,11 @@ object ModMenu : UIScene() {
                 initialValue < finalValue -> 0xFFF78383
                 initialValue > finalValue -> 0xFF40CF5D
                 else -> 0xFFFFFFFF
-            }), counter.rollingDuration / 1000, counter.rollingEasing)
+            }), counter.rollingDuration, counter.rollingEasing)
         }
 
         override fun onManagedUpdate(deltaTimeSec: Float) {
             if (counter.isRolling) {
-                counter.update(deltaTimeSec * 1000)
                 valueEntity.text = formatter(counter.currentValue)
             }
 
