@@ -643,6 +643,7 @@ public class StatisticV2 implements Serializable {
      */
     public ScoreInfo toScoreInfo() {
         return new ScoreInfo(
+            0L,
             beatmapMD5,
             playerName,
             replayFilename,
@@ -660,7 +661,12 @@ public class StatisticV2 implements Serializable {
             sliderHeadHits >= 0 ? sliderHeadHits : null,
             sliderTickHits >= 0 ? sliderTickHits : null,
             sliderRepeatHits >= 0 ? sliderRepeatHits : null,
-            sliderEndHits >= 0 ? sliderEndHits : null
+            sliderEndHits >= 0 ? sliderEndHits : null,
+            false,
+            originalDifficulty != null ? originalDifficulty.difficultyCS : null,
+            originalDifficulty != null ? originalDifficulty.getAR() : null,
+            originalDifficulty != null ? originalDifficulty.od : null,
+            originalDifficulty != null ? originalDifficulty.hp : null
         );
     }
 
