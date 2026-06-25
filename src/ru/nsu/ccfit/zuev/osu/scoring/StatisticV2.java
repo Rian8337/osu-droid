@@ -87,6 +87,12 @@ public class StatisticV2 implements Serializable {
     private float modScoreMultiplier = 1;
 
     /**
+     * The beatmap difficulty before any mods were applied, set by {@link #calculateModScoreMultiplier}.
+     */
+    @Nullable
+    private BeatmapDifficulty originalDifficulty = null;
+
+    /**
      * The MD5 hash of the beatmap.
      */
     private String beatmapMD5 = "";
@@ -637,6 +643,7 @@ public class StatisticV2 implements Serializable {
      */
     public ScoreInfo toScoreInfo() {
         return new ScoreInfo(
+            0L,
             beatmapMD5,
             playerName,
             replayFilename,
@@ -654,11 +661,17 @@ public class StatisticV2 implements Serializable {
             sliderHeadHits >= 0 ? sliderHeadHits : null,
             sliderTickHits >= 0 ? sliderTickHits : null,
             sliderRepeatHits >= 0 ? sliderRepeatHits : null,
-            sliderEndHits >= 0 ? sliderEndHits : null
+            sliderEndHits >= 0 ? sliderEndHits : null,
+            false,
+            originalDifficulty != null ? originalDifficulty.difficultyCS : null,
+            originalDifficulty != null ? originalDifficulty.getAR() : null,
+            originalDifficulty != null ? originalDifficulty.od : null,
+            originalDifficulty != null ? originalDifficulty.hp : null
         );
     }
 
     public void calculateModScoreMultiplier(@Nullable final BeatmapDifficulty difficulty) {
+        originalDifficulty = difficulty;
         modScoreMultiplier = (float) new ScoreMultiplierCalculator(difficulty).calculateFor(mod.values());
     }
 

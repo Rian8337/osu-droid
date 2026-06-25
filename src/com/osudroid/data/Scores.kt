@@ -4,6 +4,7 @@ package com.osudroid.data
 
 import androidx.room.Dao
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -133,7 +134,39 @@ data class ScoreInfo @JvmOverloads constructor(
      * [ModDifficultyAdjust]) and the beatmap was not present in the library at migration time. Call
      * [IScoreInfoDAO.migrateScores] whenever the beatmap becomes available to complete the conversion.
      */
-    var needsScoreMigration: Boolean = false
+    var needsScoreMigration: Boolean = false,
+
+    /**
+     * The circle size of the beatmap before any mods were applied.
+     *
+     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     */
+    @Ignore
+    val originalCS: Float? = null,
+
+    /**
+     * The approach rate of the beatmap before any mods were applied.
+     *
+     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     */
+    @Ignore
+    val originalAR: Float? = null,
+
+    /**
+     * The overall difficulty of the beatmap before any mods were applied.
+     *
+     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     */
+    @Ignore
+    val originalOD: Float? = null,
+
+    /**
+     * The health drain rate of the beatmap before any mods were applied.
+     *
+     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     */
+    @Ignore
+    val originalHP: Float? = null
 ) {
 
     /**
