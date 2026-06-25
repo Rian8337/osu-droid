@@ -4,7 +4,6 @@ package com.osudroid.data
 
 import androidx.room.Dao
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -139,33 +138,29 @@ data class ScoreInfo @JvmOverloads constructor(
     /**
      * The circle size of the beatmap before any mods were applied.
      *
-     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     * Null for scores submitted before this field was introduced.
      */
-    @Ignore
     val originalCS: Float? = null,
 
     /**
      * The approach rate of the beatmap before any mods were applied.
      *
-     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     * Null for scores submitted before this field was introduced.
      */
-    @Ignore
     val originalAR: Float? = null,
 
     /**
      * The overall difficulty of the beatmap before any mods were applied.
      *
-     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     * Null for scores submitted before this field was introduced.
      */
-    @Ignore
     val originalOD: Float? = null,
 
     /**
      * The health drain rate of the beatmap before any mods were applied.
      *
-     * Null for scores submitted before this field was introduced. Back-populated by MIGRATION_6 from [BeatmapInfo].
+     * Null for scores submitted before this field was introduced.
      */
-    @Ignore
     val originalHP: Float? = null
 ) {
 
