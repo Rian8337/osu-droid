@@ -340,9 +340,9 @@ class MigrationTest {
         // DA mod already in plain-scalar form.
         val newDaModsJson = """[{"acronym":"DA","settings":{"cs":7.0}}]"""
 
-        helper.createDatabase(testDb, 5).apply {
+        helper.createDatabase(testDb, 5).use {
             fun insertScore(mods: String) {
-                execSQL(
+                it.execSQL(
                     "INSERT INTO ScoreInfo (beatmapMD5, playerName, replayFilename, mods, score, maxCombo, mark, " +
                     "hit300k, hit300, hit100k, hit100, hit50, misses, time, sliderHeadHits, sliderTickHits, " +
                     "sliderRepeatHits, sliderEndHits, needsScoreMigration) VALUES " +
@@ -356,8 +356,6 @@ class MigrationTest {
             insertScore(oldDaModsJson)
             // DA already in plain-scalar form
             insertScore(newDaModsJson)
-
-            close()
         }
 
         val db = helper.runMigrationsAndValidate(testDb, 6, true, MIGRATION_5_6)
