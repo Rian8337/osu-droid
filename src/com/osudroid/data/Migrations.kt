@@ -17,6 +17,8 @@ import java.io.File
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
+import org.json.JSONArray
+import org.json.JSONObject
 import ru.nsu.ccfit.zuev.osu.ToastLogger
 import ru.nsu.ccfit.zuev.osu.scoring.StatisticV2
 
@@ -349,4 +351,90 @@ val MIGRATION_4_5 = object : BackedUpMigration(4, 5) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+/**
+ * Migration from version 5 to 6.
+ *
+ * Contains the following changes:
+ * - Adds the `originalCS`, `originalAR`, `originalOD`, and `originalHP` columns to `ScoreInfo`.
+ * - For existing [ModDifficultyAdjust] scores, back-populates these columns from the `original` value
+ *   stored in the legacy `{"adjusted":…,"original":…}` JSON format, then normalizes those settings to
+ *   plain scalar form so the old format is no longer present in the database.
+ */
+val MIGRATION_5_6 = object : BackedUpMigration(5, 6) {
+    override fun performMigration(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE ScoreInfo ADD COLUMN originalCS REAL")
+        db.execSQL("ALTER TABLE ScoreInfo ADD COLUMN originalAR REAL")
+        db.execSQL("ALTER TABLE ScoreInfo ADD COLUMN originalOD REAL")
+        db.execSQL("ALTER TABLE ScoreInfo ADD COLUMN originalHP REAL")
+
+        db.query("SELECT id, mods FROM ScoreInfo WHERE mods LIKE '%\"acronym\":\"DA\"%'").use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+
+                val modsArray = try {
+                    JSONArray(cursor.getString(1))
+                } catch (_: Exception) {
+                    continue
+                }
+
+                var originalCS: Float? = null
+                var originalAR: Float? = null
+                var originalOD: Float? = null
+                var originalHP: Float? = null
+
+                for (i in 0 until modsArray.length()) {
+                    val mod = modsArray.optJSONObject(i) ?: continue
+
+                    if (mod.optString("acronym") != "DA") {
+                        continue
+                    }
+
+                    val settings = mod.optJSONObject("settings") ?: break
+
+                    originalCS = settings.extractOriginal("cs")
+                    originalAR = settings.extractOriginal("ar")
+                    originalOD = settings.extractOriginal("od")
+                    originalHP = settings.extractOriginal("hp")
+
+                    // Normalize: rewrite each object-format setting to plain scalar.
+                    val normalized = JSONObject()
+
+                    for (key in settings.keys()) {
+                        val v = settings.get(key)
+
+                        if (v is JSONObject) {
+                            val adjusted = v.opt("adjusted")
+
+                            if (adjusted != null && adjusted != JSONObject.NULL) {
+                                normalized.put(key, adjusted)
+                            }
+                        } else {
+                            normalized.put(key, v)
+                        }
+                    }
+
+                    mod.put("settings", normalized)
+                    break
+                }
+
+                db.execSQL(
+                    "UPDATE ScoreInfo SET mods = ?, originalCS = ?, originalAR = ?, originalOD = ?, originalHP = ? WHERE id = ?",
+                    arrayOf<Any?>(modsArray.toString(), originalCS, originalAR, originalOD, originalHP, id)
+                )
+            }
+        }
+    }
+
+    private fun JSONObject.extractOriginal(key: String): Float? {
+        val element = opt(key) as? JSONObject ?: return null
+        val original = element.opt("original")
+
+        if (original == null || original == JSONObject.NULL) {
+            return null
+        }
+
+        return (original as? Number)?.toFloat()
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
