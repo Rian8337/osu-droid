@@ -8,6 +8,8 @@ import com.osudroid.mods.*
 import com.osudroid.utils.ModHashMap
 import com.osudroid.utils.ModUtils
 import java.io.IOException
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -328,6 +330,85 @@ class MigrationTest {
                         Assert.assertEquals("DA score without beatmap kept as-is", 1039, score)
                         Assert.assertTrue("DA score without beatmap flagged for migration", needsScoreMigration)
                     }
+                    else -> throw IllegalStateException("Unknown score ID: $id")
+                }
+            }
+        }
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun `Test migration from version 5 to 6`() {
+        // DA mod in the old {"adjusted":x,"original":y} per-setting format.
+        val oldDaModsJson = """[{"acronym":"DA","settings":{"cs":{"adjusted":7.0,"original":4.0},"ar":{"adjusted":9.5,"original":9.0}}}]"""
+        // DA mod already in plain-scalar form.
+        val newDaModsJson = """[{"acronym":"DA","settings":{"cs":7.0}}]"""
+
+        helper.createDatabase(testDb, 5).apply {
+            fun insertScore(mods: String) {
+                execSQL(
+                    "INSERT INTO ScoreInfo (beatmapMD5, playerName, replayFilename, mods, score, maxCombo, mark, " +
+                    "hit300k, hit300, hit100k, hit100, hit50, misses, time, sliderHeadHits, sliderTickHits, " +
+                    "sliderRepeatHits, sliderEndHits, needsScoreMigration) VALUES " +
+                    "('md5', '', '', '$mods', 1000, 0, '', 0, 0, 0, 0, 0, 0, 0, null, null, null, null, 0)"
+                )
+            }
+
+            // No DA mod
+            insertScore("[]")
+            // DA with old {"adjusted","original"} format
+            insertScore(oldDaModsJson)
+            // DA already in plain-scalar form
+            insertScore(newDaModsJson)
+
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT id, mods, originalCS, originalAR, originalOD, originalHP FROM ScoreInfo").use {
+            while (it.moveToNext()) {
+                val id = it.getLong(0)
+                val mods = it.getString(1)
+
+                val originalCS = if (it.isNull(2)) null else it.getFloat(2)
+                val originalAR = if (it.isNull(3)) null else it.getFloat(3)
+                val originalOD = if (it.isNull(4)) null else it.getFloat(4)
+                val originalHP = if (it.isNull(5)) null else it.getFloat(5)
+
+                when (id) {
+                    1L -> {
+                        Assert.assertNull("no-DA: originalCS", originalCS)
+                        Assert.assertNull("no-DA: originalAR", originalAR)
+                        Assert.assertNull("no-DA: originalOD", originalOD)
+                        Assert.assertNull("no-DA: originalHP", originalHP)
+                    }
+
+                    2L -> {
+                        Assert.assertEquals("old-DA: originalCS", 4.0f, originalCS)
+                        Assert.assertEquals("old-DA: originalAR", 9.0f, originalAR)
+                        Assert.assertNull("old-DA: originalOD not set", originalOD)
+                        Assert.assertNull("old-DA: originalHP not set", originalHP)
+
+                        // Settings should be normalized to plain scalars.
+                        val daSettings = JSONArray(mods)
+                            .let { arr -> (0 until arr.length()).map { i -> arr.getJSONObject(i) } }
+                            .first { serialized -> serialized.getString("acronym") == "DA" }
+                            .getJSONObject("settings")
+
+                        Assert.assertFalse("old-DA: cs is plain scalar", daSettings.opt("cs") is JSONObject)
+                        Assert.assertFalse("old-DA: ar is plain scalar", daSettings.opt("ar") is JSONObject)
+                        Assert.assertEquals("old-DA: cs adjusted value", 7.0, daSettings.getDouble("cs"), 0.001)
+                        Assert.assertEquals("old-DA: ar adjusted value", 9.5, daSettings.getDouble("ar"), 0.001)
+                    }
+
+                    3L -> {
+                        Assert.assertNull("new-DA: originalCS", originalCS)
+                        Assert.assertNull("new-DA: originalAR", originalAR)
+                        Assert.assertNull("new-DA: originalOD", originalOD)
+                        Assert.assertNull("new-DA: originalHP", originalHP)
+                    }
+
                     else -> throw IllegalStateException("Unknown score ID: $id")
                 }
             }
