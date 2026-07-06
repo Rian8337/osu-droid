@@ -365,9 +365,9 @@ object ModMenu : UIScene() {
                 DatabaseManager.beatmapInfoTable.update(newInfo)
             }
 
-            enabledMods.values.filterIsInstance<IModRequiresOriginalBeatmap>().fastForEach { mod ->
+            enabledMods.values.filterIsInstance<IModRequiresBeatmapDifficulty>().fastForEach { mod ->
                 ensureActive()
-                mod.applyFromBeatmap(beatmap)
+                mod.applyFromBeatmapDifficulty(beatmap.difficulty)
             }
             customizationMenu.updateComponents()
 
@@ -439,16 +439,22 @@ object ModMenu : UIScene() {
     fun back(updatePlayerMods: Boolean) {
 
         if (Multiplayer.isConnected) {
-            Multiplayer.roomScene?.chat?.show()
-            Multiplayer.roomScene?.isWaitingForModsChange?.set(true)
+            val gameScene = GlobalManager.getInstance().gameScene
+            val isInGameplay = gameScene != null &&
+                GlobalManager.getInstance().engine.scene == gameScene.scene
 
-            // The room mods are the same as the host mods
-            if (Multiplayer.isRoomHost) {
-                setRoomMods(enabledMods.serializeMods())
-            } else if (updatePlayerMods) {
-                setPlayerMods(enabledMods.serializeMods())
-            } else {
-                Multiplayer.roomScene?.isWaitingForModsChange?.set(false)
+            if (!isInGameplay) {
+                Multiplayer.roomScene?.chat?.show()
+                Multiplayer.roomScene?.isWaitingForModsChange?.set(true)
+
+                // The room mods are the same as the host mods
+                if (Multiplayer.isRoomHost) {
+                    setRoomMods(enabledMods.serializeMods())
+                } else if (updatePlayerMods) {
+                    setPlayerMods(enabledMods.serializeMods())
+                } else {
+                    Multiplayer.roomScene?.isWaitingForModsChange?.set(false)
+                }
             }
         }
 

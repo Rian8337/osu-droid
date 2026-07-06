@@ -24,6 +24,7 @@ import org.anddev.andengine.input.touch.*
 import org.anddev.andengine.opengl.util.*
 import org.anddev.andengine.util.*
 import org.anddev.andengine.util.constants.Constants.*
+import java.util.function.Consumer
 import javax.microedition.khronos.opengles.*
 import kotlin.math.*
 
@@ -1231,17 +1232,32 @@ abstract class UIComponent : Entity(0f, 0f),
     /**
      * Starts a sequence of [UniversalModifier]s. The block will be provided with a [UniversalModifierSequence] that can
      * be used to add [UniversalModifier]s.
+     *
+     * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
      */
+    @JvmSynthetic
     inline fun beginModifierSequence(crossinline block: UniversalModifierSequence.() -> Unit) =
         UniversalModifierSequence.obtain(this).use { it.block() }
+
+    /**
+     * Starts a sequence of [UniversalModifier]s. The block will be provided with a [UniversalModifierSequence] that can
+     * be used to add [UniversalModifier]s.
+     *
+     * This is a Java-friendly overload of [beginModifierSequence] that accepts a [Consumer].
+     *
+     * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
+     */
+    fun beginModifierSequence(block: Consumer<UniversalModifierSequence>) =
+        beginModifierSequence { block.accept(this) }
 
     /**
      * Starts a sequence of [UniversalModifier]s from an absolute time value (adjusts [modifierStartTime]).
      *
      * @param newModifierStartTime The new value for [modifierStartTime].
      * @param propagateChildren Whether this should be applied to children. `true` by default.
+     * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
      */
-    @JvmOverloads
+    @JvmSynthetic
     inline fun beginAbsoluteSequence(
         newModifierStartTime: Float,
         propagateChildren: Boolean = true,
@@ -1257,6 +1273,22 @@ abstract class UIComponent : Entity(0f, 0f),
             restoreAbsoluteSequenceTime(prevModifierStartTime, propagateChildren)
         }
     }
+
+    /**
+     * Starts a sequence of [UniversalModifier]s from an absolute time value (adjusts [modifierStartTime]).
+     *
+     * This is a Java-friendly overload of [beginAbsoluteSequence] that accepts a [Consumer].
+     *
+     * @param newModifierStartTime The new value for [modifierStartTime].
+     * @param propagateChildren Whether this should be applied to children. `true` by default.
+     * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
+     */
+    @JvmOverloads
+    fun beginAbsoluteSequence(
+        newModifierStartTime: Float,
+        propagateChildren: Boolean = true,
+        block: Consumer<UniversalModifierSequence>
+    ) = beginAbsoluteSequence(newModifierStartTime, propagateChildren) { block.accept(this) }
 
     /**
      * Adjusts [modifierStartTime] to a new absolute time value. **This is used internally for [beginAbsoluteSequence]
@@ -1306,28 +1338,44 @@ abstract class UIComponent : Entity(0f, 0f),
      * @param propagateChildren Whether this should be applied to children. `true` by default.
      * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
      */
-    @JvmOverloads
+    @JvmSynthetic
     inline fun beginDelayedSequence(
         delay: Float,
         propagateChildren: Boolean = true,
         crossinline block: UniversalModifierSequence.() -> Unit
     ) {
-        addDelay(delay, propagateChildren)
         val oldDelay = modifierDelay
+        addDelay(delay, propagateChildren)
 
         try {
             beginModifierSequence(block)
+        } finally {
+            addDelay(-delay, propagateChildren)
 
             val newDelay = modifierDelay
 
             if (!Precision.almostEquals(oldDelay, newDelay)) {
                 throw IllegalStateException("${this::class.simpleName}'s modifierDelay at the end of delayed sequence " +
-                        "is not the same as at the beginning (begin=$oldDelay end=$newDelay)")
+                    "is not the same as at the beginning (begin=$oldDelay end=$newDelay)")
             }
-        } finally {
-            addDelay(-delay, propagateChildren)
         }
     }
+
+    /**
+     * Starts a sequence of [UniversalModifier]s with a (cumulative) relative delay applied.
+     *
+     * This is a Java-friendly overload of [beginDelayedSequence] that accepts a [Consumer].
+     *
+     * @param delay The offset in seconds from current time. Note that this stacks with other nested sequences.
+     * @param propagateChildren Whether this should be applied to children. `true` by default.
+     * @param block The block to execute with the [UniversalModifierSequence] to add [UniversalModifier]s to.
+     */
+    @JvmOverloads
+    fun beginDelayedSequence(
+        delay: Float,
+        propagateChildren: Boolean = true,
+        block: Consumer<UniversalModifierSequence>
+    ) = beginDelayedSequence(delay, propagateChildren) { block.accept(this) }
 
     //endregion
 
@@ -1736,6 +1784,7 @@ abstract class UIComponent : Entity(0f, 0f),
      * Whether [IFrameBasedClock.processFrame] should be automatically invoked on this [UIComponent]'s [customClock] in
      * [onUpdate]. This should only be set to false in scenarios where the clock is updated elsewhere.
      */
+    @get:JvmName("isProcessCustomClock")
     var processCustomClock = true
 
     private var customClock: IFrameBasedClock? = null

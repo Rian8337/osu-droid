@@ -68,7 +68,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import kotlin.Unit;
 import ru.nsu.ccfit.zuev.audio.BassSoundProvider;
 import ru.nsu.ccfit.zuev.audio.Status;
 import ru.nsu.ccfit.zuev.osu.game.LinearSongProgress;
@@ -473,7 +472,6 @@ public class MainScene implements IUpdateHandler {
         scene.registerTouchArea(music_pause);
         scene.registerTouchArea(music_stop);
         scene.registerTouchArea(music_next);
-        scene.setTouchAreaBindingEnabled(true);
 
         ResourceManager.getInstance().loadHighQualityAsset("dev-build-overlay", "dev-build-overlay.png");
 
@@ -647,12 +645,9 @@ public class MainScene implements IUpdateHandler {
                 button.setX(menuBarX - 100);
                 button.setAlpha(0f);
 
-                button.beginModifierSequence(sequence -> {
-                    sequence.moveToX(menuBarX, 0.5f, Easing.OutElastic)
-                            .fadeTo(0.9f, 0.5f, Easing.OutCubic);
-
-                    return Unit.INSTANCE;
-                });
+                button.beginModifierSequence(sequence -> sequence
+                        .moveToX(menuBarX, 0.5f, Easing.OutElastic)
+                        .fadeTo(0.9f, 0.5f, Easing.OutCubic));
             }
 
             isMenuShowed = true;
@@ -671,13 +666,10 @@ public class MainScene implements IUpdateHandler {
                     button.setX(menuBarX);
                     button.setAlpha(0.9f);
 
-                    button.beginModifierSequence(sequence -> {
-                        sequence.moveToX(menuBarX - 50, 1f, Easing.OutExpo)
-                                .fadeOut(1f, Easing.OutExpo)
-                                .after(IEntity::detachSelf);
-
-                        return Unit.INSTANCE;
-                    });
+                    button.beginModifierSequence(sequence -> sequence
+                            .moveToX(menuBarX - 50, 1f, Easing.OutExpo)
+                            .fadeOut(1f, Easing.OutExpo)
+                            .after(IEntity::detachSelf));
                 }
 
                 logo.registerEntityModifier(new MoveXModifier(1f, (float) Config.getRES_WIDTH() / 3 - logo.getWidth() / 2, (float) Config.getRES_WIDTH() / 2 - logo.getWidth() / 2,
@@ -1024,6 +1016,7 @@ public class MainScene implements IUpdateHandler {
         GlobalManager.getInstance().getMainScene().setBeatmap(beatmap);
         StatisticV2 stat = replay.getStat();
         stat.migrateLegacyMods(beatmap.getBeatmapDifficulty());
+        stat.calculateModScoreMultiplier(beatmap.getBeatmapDifficulty());
 
         GlobalManager.getInstance().getSongMenu().select();
         ResourceManager.getInstance().loadBackground(beatmap.getBackgroundPath());

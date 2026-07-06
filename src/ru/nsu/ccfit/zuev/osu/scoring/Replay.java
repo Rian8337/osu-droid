@@ -246,7 +246,11 @@ public class Replay {
                     stat.setHit100(os.readInt());
                     stat.setHit50(os.readInt());
                     stat.setMisses(os.readInt());
-                    stat.setForcedScore(os.readInt());
+                    if (version >= 8) {
+                        stat.setTotalScore(os.readInt());
+                    } else {
+                        stat.setForcedScore(os.readInt());
+                    }
                     stat.setScoreMaxCombo(os.readInt());
 
                     if (version < 6) {
@@ -465,7 +469,8 @@ public class Replay {
         Version 6: Removed accuracy and perfect, slider ends no longer give combo when not hit
         Version 7: Reworked mod storage to not serialize GameMod, object stacking behavior overhaul, device-independent
                    object scaling
-        Version 8: Slider head hit window is extended to its 50 hit window
+        Version 8: Slider head hit window is extended to its 50 hit window;
+                   score stored as raw totalScore instead of totalScoreWithMultiplier
      */
     public static class ReplayVersion implements Serializable {
         private static final long serialVersionUID = 4643121693566795335L;

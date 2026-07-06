@@ -446,6 +446,10 @@ public class OnlineManager {
         post.addParam("hash", beatmap.getMD5());
         post.addParam("data", scoreData);
         post.addParam("version", onlineVersion);
+        post.addParam("cs", String.valueOf(beatmap.getCircleSize()));
+        post.addParam("ar", String.valueOf(beatmap.getApproachRate()));
+        post.addParam("od", String.valueOf(beatmap.getOverallDifficulty()));
+        post.addParam("hp", String.valueOf(beatmap.getHpDrainRate()));
 
         // --- Hardware Attestation: sign the score submission ---
         // The payload signed is "userID|beatmapHash|scoreData" — a canonical string that

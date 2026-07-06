@@ -54,6 +54,7 @@ import org.anddev.andengine.util.Debug;
 import org.anddev.andengine.util.HorizontalAlign;
 import org.anddev.andengine.util.MathUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -186,7 +187,6 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
         frontLayer = new UIContainer();
         backLayer = new Entity();
         scene.unregisterUpdateHandler(this);
-        scene.setTouchAreaBindingEnabled(false);
         load();
         GlobalManager.getInstance().getGameScene().setOldScene(scene);
     }
@@ -1198,12 +1198,15 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
                     String scorePack = OnlineManager.getInstance().getScorePack(id, hash);
                     String[] params = scorePack.split("\\s+");
 
-                    if (params.length < 11) return;
+                    if (params.length < 11) {
+                        return;
+                    }
 
+                    boolean hasReplay = params[10].equals("1");
                     StatisticV2 stat = new StatisticV2(params, difficulty);
 
                     stat.setPlayerName(playerName);
-                    scoreScene.load(stat, null, null, OnlineManager.getReplayURL(id, hash), null, selectedBeatmap);
+                    scoreScene.load(stat, null, null, hasReplay ? OnlineManager.getReplayURL(id) : null, null, selectedBeatmap);
                     engine.setScene(scoreScene.getScene());
                 } catch (Exception e) {
                     Debug.e("Cannot load play info: " + e.getMessage(), e);
@@ -1252,7 +1255,9 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
             stat.getSliderRepeatHits() == -1 ||
             stat.getSliderEndHits() == -1;
 
-        scoreScene.load(stat, null, null, Config.getScorePath() + stat.getReplayFilename(), null, selectedBeatmap);
+        var replayFile = new File(Config.getScorePath() + stat.getReplayFilename());
+
+        scoreScene.load(stat, null, null, replayFile.exists() ? replayFile.getAbsolutePath() : null, null, selectedBeatmap);
 
         if (scoreNeedsUpdate) {
             score.setSliderHeadHits(stat.getSliderHeadHits() == -1 ? null : stat.getSliderHeadHits());
@@ -1653,6 +1658,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
             scoringSwitcher.setTextureRegion(ResourceManager.getInstance().getTextureIfLoaded(
                 "selection-" + switch (cachedStatus) {
                     case ranked, approved, loved -> cachedStatus.name().toLowerCase();
+                    case qualified -> "approved";
                     default -> "question";
                 }
             ));
