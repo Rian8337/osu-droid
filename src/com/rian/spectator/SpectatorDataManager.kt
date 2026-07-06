@@ -2,8 +2,8 @@ package com.rian.spectator
 
 import android.util.Log
 import com.osudroid.multiplayer.api.RoomAPI
-import com.rian.osu.beatmap.hitobject.HitCircle
-import com.rian.osu.beatmap.hitobject.Slider
+import com.osudroid.beatmaps.hitobjects.HitCircle
+import com.osudroid.beatmaps.hitobjects.Slider
 import ru.nsu.ccfit.zuev.osu.Config
 import ru.nsu.ccfit.zuev.osu.game.GameScene
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager.OnlineManagerException

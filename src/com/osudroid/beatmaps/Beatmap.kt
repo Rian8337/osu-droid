@@ -3,6 +3,10 @@ package com.osudroid.beatmaps
 import com.osudroid.GameMode
 import com.osudroid.beatmaps.hitobjects.HitObject
 import com.osudroid.beatmaps.hitobjects.Slider
+import com.osudroid.beatmaps.hitobjects.sliderobject.SliderHead
+import com.osudroid.beatmaps.hitobjects.sliderobject.SliderRepeat
+import com.osudroid.beatmaps.hitobjects.sliderobject.SliderTail
+import com.osudroid.beatmaps.hitobjects.sliderobject.SliderTick
 import com.osudroid.beatmaps.sections.BeatmapColor
 import com.osudroid.beatmaps.sections.BeatmapControlPoints
 import com.osudroid.beatmaps.sections.BeatmapDifficulty

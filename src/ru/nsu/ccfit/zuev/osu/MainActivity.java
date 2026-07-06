@@ -315,7 +315,6 @@ public class MainActivity extends BaseGameActivity implements
         Execution.async(() -> {
             GlobalManager.getInstance().init();
             Execution.updateThread(() -> UIEngine.getCurrent().getOverlay().attachChild(new FPSCounter()));
-            analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null);
             GlobalManager.getInstance().setLoadingProgress(50);
             checkNewSkins();
             Config.loadSkins();

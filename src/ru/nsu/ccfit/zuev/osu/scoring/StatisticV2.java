@@ -704,7 +704,6 @@ public class StatisticV2 implements Serializable {
         currentCombo = 0;
         v1Score = 0;
         v2Score = 0;
-        totalScore = 0;
         scoreHash = SecurityUtils.getHigh16Bits(0);
         hp = 1;
         life = 1;

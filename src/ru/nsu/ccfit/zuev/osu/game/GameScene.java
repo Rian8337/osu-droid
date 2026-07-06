@@ -81,6 +81,7 @@ import com.osudroid.math.Interpolation;
 import com.osudroid.mods.*;
 import com.osudroid.utils.ModHashMap;
 import com.osudroid.utils.ModUtils;
+import com.rian.spectator.SpectatorDataManager;
 
 import org.anddev.andengine.engine.camera.Camera;
 import org.anddev.andengine.engine.camera.SmoothCamera;
@@ -176,6 +177,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
     private float scale;
     public StatisticV2 stat;
     private boolean gameStarted;
+    private int failcount;
     private final FramedBeatmapClock beatmapClock;
     private float initialStartTime;
     private int totalLength = Integer.MAX_VALUE;
