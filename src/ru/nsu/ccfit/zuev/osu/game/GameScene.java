@@ -983,10 +983,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         stat.setMod(lastMods);
         stat.migrateLegacyMods(parsedBeatmap.getDifficulty());
         stat.calculateModScoreMultiplier(parsedBeatmap.getDifficulty());
-        stat.canFail = !stat.getMod().contains(ModNoFail.class)
-                && !stat.getMod().contains(ModRelax.class)
-                && !stat.getMod().contains(ModAutopilot.class)
-                && !stat.getMod().contains(ModAutoplay.class);
+        stat.canFail = false;
 
         var rawDifficulty = parsedBeatmap.getDifficulty();
         float multiplier = 1 + Math.min(rawDifficulty.od, 10) / 10f + Math.min(rawDifficulty.hp, 10) / 10f;
@@ -1183,10 +1180,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         stat.setMod(lastMods);
         stat.migrateLegacyMods(parsedBeatmap.getDifficulty());
         stat.calculateModScoreMultiplier(parsedBeatmap.getDifficulty());
-        stat.canFail = !stat.getMod().contains(ModNoFail.class)
-                && !stat.getMod().contains(ModRelax.class)
-                && !stat.getMod().contains(ModAutopilot.class)
-                && !stat.getMod().contains(ModAutoplay.class);
+        stat.canFail = false;
 
         float difficultyScoreMultiplier = 1 + Math.min(parsedBeatmap.getDifficulty().od, 10) / 10f +
                 Math.min(parsedBeatmap.getDifficulty().hp, 10) / 10f;
@@ -1770,54 +1764,6 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
         GameHelper.setBeatLength(activeTimingPoint.msPerBeat / 1000);
         GameHelper.setKiai(activeEffectPoint.isKiai);
         GameHelper.setCurrentBeatTime(Math.max(0, gameplayClock.getCurrentTime() - activeTimingPoint.time / 1000) % GameHelper.getBeatLength());
-
-        if (objectIndex >= objects.length && activeObjects.isEmpty() && GameHelper.isFlashlight()) {
-            flashlightSprite.onBreak(true);
-        }
-
-        if (gameStarted) {
-            double rate = 0.375;
-            if (playableBeatmap.getDifficulty().hp > 0 && distToNextObject > 0) {
-                rate = 1 + playableBeatmap.getDifficulty().hp / (2 * distToNextObject);
-            }
-            stat.changeHp((float) -rate * 0.01f * dt);
-
-            boolean isDeath = Multiplayer.isMultiplayer
-                && stat.getHp() <= 0
-                && !stat.getMod().contains(ModNoFail.class)
-                && !stat.getMod().contains(ModRelax.class)
-                && !stat.getMod().contains(ModAutopilot.class)
-                && !stat.getMod().contains(ModAutoplay.class);
-
-            stat.isAlive = stat.isAlive
-                    // Player is alive - they will only die if HP reaches 0.
-                    ? !isDeath
-                    // Player is not alive - they will only recover if HP reaches 1.
-                    : stat.getHp() == 1f;
-
-            if (isDeath) {
-                if (!hasFailed)
-                    ToastLogger.showText("You have failed, but you can continue playing.", false);
-
-                hasFailed = true;
-            }
-        }
-
-        if (comboBurst != null) {
-            if (stat.getCombo() == 0) {
-                comboBurst.breakCombo();
-            } else {
-                comboBurst.checkAndShow(stat.getCombo());
-            }
-        }
-
-        // Clearing expired objects.
-        if (!expiredObjects.isEmpty()) {
-            activeObjects.removeAll(expiredObjects);
-            expiredObjects.clear();
-        }
-
-        updatePassiveObjects(dt);
 
         // Step 1: React to the current break ending - must run before the break-start check below.
         // If these two checks were in the opposite order, breakAnimator.init() for the new break

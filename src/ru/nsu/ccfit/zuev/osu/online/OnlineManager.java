@@ -734,4 +734,19 @@ public class OnlineManager {
         }
     }
 
+    private String escapeHTMLSpecialCharacters(String str) {
+        return str
+                .replace("&", "&amp;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+    }
+
+    private String addSlashes(String str) {
+        return str
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\\", "\\\\");
+    }
 }

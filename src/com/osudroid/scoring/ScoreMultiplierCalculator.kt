@@ -98,7 +98,7 @@ class ScoreMultiplierCalculator @JvmOverloads constructor(difficulty: BeatmapDif
         return multiplier
     }
 
-    private fun preciseMultiplier(): Double {
+    fun preciseMultiplier(): Double {
         // Keep original multiplier if applied difficulty is not present.
         val appliedDifficulty = appliedDifficulty ?: return 1.06
 

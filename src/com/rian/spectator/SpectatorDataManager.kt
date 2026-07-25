@@ -106,7 +106,7 @@ class SpectatorDataManager(
                         val event = events[i]
 
                         writeFloat(event.time)
-                        writeInt(event.score)
+                        writeLong(event.score)
                         writeInt(event.combo)
                         writeFloat(event.accuracy)
                     }

@@ -3,7 +3,6 @@ package com.osudroid.data
 import android.util.Log
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.osudroid.beatmaps.sections.BeatmapDifficulty
 import com.osudroid.mods.LegacyModConverter
 import com.osudroid.mods.ModDifficultyAdjust

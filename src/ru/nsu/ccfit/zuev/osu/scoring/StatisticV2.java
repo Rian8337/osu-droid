@@ -8,6 +8,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Random;
 
+import com.osudroid.mods.ModPrecise;
 import com.osudroid.multiplayer.api.data.RoomTeam;
 import com.osudroid.multiplayer.api.data.WinCondition;
 import com.osudroid.data.ScoreInfo;
@@ -54,7 +55,7 @@ public class StatisticV2 implements Serializable {
     private int beatmapNoteCount = 0;
     private int bonusScore = 0;
     private int v2Score = 0;
-    private int v1MaxScore = 0;
+    private long v1MaxScore = 0;
     private int positiveHitOffsetCount;
     private double positiveHitOffsetSum;
     private int negativeHitOffsetCount;
@@ -83,6 +84,12 @@ public class StatisticV2 implements Serializable {
      * The score multiplier from mods.
      */
     private double modScoreMultiplier = 1;
+
+    /**
+     * The score multiplier from the Precise mod alone, stored separately so it can be divided
+     * out for ScoreV2 where the 1.15x accuracy factor is already baked into the ScoreV2 formula.
+     */
+    private double preciseModMultiplier = 1.0;
 
     /**
      * The MD5 hash of the beatmap.
@@ -160,15 +167,15 @@ public class StatisticV2 implements Serializable {
             return forcedScore;
 
         if (GameHelper.isScoreV2()) {
-            // PR's 1.15 multiplier is already baked into the accuracy portion of the v2Score
+            // PR multiplier is already baked into the accuracy portion of the ScoreV2
             // formula, so exclude it from modScoreMultiplier to avoid double-counting.
-            float effectiveMultiplier = modScoreMultiplier;
+            double effectiveMultiplier = modScoreMultiplier;
             if (GameHelper.isPrecise()) {
-                effectiveMultiplier /= GameHelper.getPrecise().getScoreMultiplier();
+                effectiveMultiplier /= preciseModMultiplier;
             }
-            return (int) (v2Score * effectiveMultiplier);
+            return (long) (v2Score * effectiveMultiplier);
         } else {
-            return (int) (totalScore * modScoreMultiplier);
+            return (long) (totalScore * modScoreMultiplier);
         }
     }
 
@@ -262,22 +269,19 @@ public class StatisticV2 implements Serializable {
 
         int addition = amount + (int) (amount * currentCombo * diffModifier / 25);
 
-        // It is possible for score addition to be a negative number due to
-        // difficulty modifier, hence the prior check.
-        //
-        // In that case, just skip score addition to ensure score is always positive.
-        if (addition > 0) {
-            totalScore += amount;
-
-            if (combo) {
-                totalScore += (int) ((amount * currentCombo * diffModifier) / 25);
-            }
-
-            totalScore = Math.max(0, totalScore);
-        }
-
         // Calculate ScoreV2
         if (GameHelper.isScoreV2()) {
+            // Accumulate ScoreV1 value for ScoreV2 score portion.
+            if (addition > 0) {
+                totalScore += amount;
+
+                if (combo) {
+                    totalScore += (int) ((amount * currentCombo * diffModifier) / 25);
+                }
+
+                totalScore = Math.max(0, totalScore);
+            }
+
             if (amount == 1000) {
                 bonusScore += 100;
 
@@ -300,7 +304,8 @@ public class StatisticV2 implements Serializable {
             // double comboPortion = scoreV2ComboPortion * currentMaxCombo / beatmapMaxCombo;
             // double accuracyPortion = scoreV2AccPortion * Math.pow(getAccuracy(), 10) * getNotesHit() / beatmapNoteCount;
 
-            totalScore = (long) (scoreV2MaxScore * (scorePortion + accuracyPortion)) + bonusScore;
+            float progress = getNotesHit() / (float) beatmapNoteCount;
+            v2Score = (int) (scoreV2MaxScore * (scorePortion + accuracyPortion * progress)) + bonusScore;
         } else if (amount + amount * currentCombo * diffModifier / 25 > 0) {
             // It is possible for score addition to be a negative number due to
             // difficulty modifier, hence the prior check.
@@ -539,7 +544,7 @@ public class StatisticV2 implements Serializable {
         this.scoreHash = SecurityUtils.getHigh16Bits(totalScore);
     }
 
-    public void setV1MaxScore(int v1MaxScore) {
+    public void setV1MaxScore(long v1MaxScore) {
         this.v1MaxScore = v1MaxScore;
     }
 
@@ -697,7 +702,9 @@ public class StatisticV2 implements Serializable {
     }
 
     public void calculateModScoreMultiplier(@Nullable final BeatmapDifficulty difficulty) {
-        modScoreMultiplier = new ScoreMultiplierCalculator(difficulty).calculateFor(mod.values());
+        final ScoreMultiplierCalculator calculator = new ScoreMultiplierCalculator(difficulty);
+        modScoreMultiplier = calculator.calculateFor(mod.values());
+        preciseModMultiplier = calculator.preciseMultiplier();
     }
     
     public void migrateLegacyMods(final BeatmapDifficulty originalDifficulty) {

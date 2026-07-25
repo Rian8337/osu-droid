@@ -153,7 +153,7 @@ public class Replay {
                         os.writeInt(stat.getHit100());
                         os.writeInt(stat.getHit50());
                         os.writeInt(stat.getMisses());
-                        os.writeInt(stat.getTotalScoreWithMultiplier());
+                        os.writeLong(stat.getTotalScoreWithMultiplier());
                         os.writeInt(stat.getScoreMaxCombo());
                         os.writeObject(stat.getPlayerName());
                         os.writeObject(stat.getMod().serializeMods());

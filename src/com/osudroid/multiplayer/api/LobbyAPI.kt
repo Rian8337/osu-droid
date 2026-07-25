@@ -12,7 +12,6 @@ import com.osudroid.multiplayer.api.data.WinCondition
 import com.osudroid.multiplayer.api.data.parseGameplaySettings
 import com.reco1l.framework.net.JsonArrayRequest
 import com.reco1l.framework.net.JsonObjectRequest
-import com.reco1l.toolkt.data.putObject
 import ru.nsu.ccfit.zuev.osu.security.AttestationState
 import ru.nsu.ccfit.zuev.osu.security.HardwareAttestationManager
 import org.json.JSONObject

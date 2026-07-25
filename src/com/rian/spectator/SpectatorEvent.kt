@@ -14,7 +14,7 @@ data class SpectatorEvent(
      * The score of the player after this event.
      */
     @JvmField
-    val score: Int,
+    val score: Long,
 
     /**
      * The combo of the player after this event.
