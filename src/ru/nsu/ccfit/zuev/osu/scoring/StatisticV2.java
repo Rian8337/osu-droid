@@ -8,7 +8,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Random;
 
-import com.osudroid.mods.IModRequiresBeatmapDifficulty;
 import com.osudroid.multiplayer.api.data.RoomTeam;
 import com.osudroid.multiplayer.api.data.WinCondition;
 import com.osudroid.data.ScoreInfo;
@@ -17,6 +16,7 @@ import com.osudroid.beatmaps.sections.BeatmapDifficulty;
 import com.osudroid.mods.IMigratableMod;
 import com.osudroid.mods.ModFlashlight;
 import com.osudroid.mods.ModHidden;
+import com.osudroid.scoring.ScoreMultiplierCalculator;
 import com.osudroid.utils.ModHashMap;
 import com.osudroid.utils.ModUtils;
 
@@ -43,16 +43,16 @@ public class StatisticV2 implements Serializable {
     private long time = 0;
     private int currentCombo = 0;
     private int scoreHash = 0;
+    private long totalScore;
     private float hp = 1;
     private float diffModifier = 1;
     private ModHashMap mod = new ModHashMap();
     private String playerName = Config.getOnlineUsername();
     private String replayFilename = "";
-    private int forcedScore = -1;
+    private long forcedScore = -1;
     private String mark = null;
     private int beatmapNoteCount = 0;
     private int bonusScore = 0;
-    private int totalScore;
     private int v2Score = 0;
     private int v1MaxScore = 0;
     private int positiveHitOffsetCount;
@@ -82,7 +82,7 @@ public class StatisticV2 implements Serializable {
     /**
      * The score multiplier from mods.
      */
-    private float modScoreMultiplier = 1;
+    private double modScoreMultiplier = 1;
 
     /**
      * The MD5 hash of the beatmap.
@@ -106,7 +106,7 @@ public class StatisticV2 implements Serializable {
         if (params.length < 6) return;
 
         mod = ModUtils.deserializeMods(params[0]);
-        setForcedScore(Integer.parseInt(params[1]));
+        setForcedScore(Long.parseLong(params[1]));
         scoreMaxCombo = Integer.parseInt(params[2]);
         mark = params[3];
         hit300k = Integer.parseInt(params[4]);
@@ -151,11 +151,11 @@ public class StatisticV2 implements Serializable {
         }
     }
 
-    public int getTotalScore() {
+    public long getTotalScore() {
         return totalScore;
     }
 
-    public int getTotalScoreWithMultiplier() {
+    public long getTotalScoreWithMultiplier() {
         if (forcedScore > 0)
             return forcedScore;
 
@@ -296,8 +296,27 @@ public class StatisticV2 implements Serializable {
                 accuracyPortion = 0.7f * Math.pow(getAccuracy(), 8);
             }
 
-            float progress = getNotesHit() / (float) beatmapNoteCount;
-            v2Score = (int) (scoreV2MaxScore * (scorePortion + accuracyPortion * progress)) + bonusScore;
+            // upstream scorev2 calculation (not used)
+            // double comboPortion = scoreV2ComboPortion * currentMaxCombo / beatmapMaxCombo;
+            // double accuracyPortion = scoreV2AccPortion * Math.pow(getAccuracy(), 10) * getNotesHit() / beatmapNoteCount;
+
+            totalScore = (long) (scoreV2MaxScore * (scorePortion + accuracyPortion)) + bonusScore;
+        } else if (amount + amount * currentCombo * diffModifier / 25 > 0) {
+            // It is possible for score addition to be a negative number due to
+            // difficulty modifier, hence the prior check.
+            //
+            // In that case, just skip score addition to ensure score is always positive.
+
+            //如果分数溢出或分数满了
+            if (totalScore + (amount * currentCombo * diffModifier) / 25 + amount < 0 || totalScore == Long.MAX_VALUE){
+                totalScore = Long.MAX_VALUE;
+            }
+            else{
+                totalScore += amount;
+                if (combo) {
+                    totalScore += (long) ((amount * currentCombo * diffModifier) / 25);
+                }
+            }
         }
 
         scoreHash = SecurityUtils.getHigh16Bits(totalScore);
@@ -340,6 +359,10 @@ public class StatisticV2 implements Serializable {
 
     public void setMark(String mark) {
         this.mark = mark;
+    }
+
+    public void setTotalScore(long totalScore) {
+        this.totalScore = totalScore;
     }
 
     public int getScoreMaxCombo() {
@@ -506,7 +529,7 @@ public class StatisticV2 implements Serializable {
         this.replayFilename = replayName;
     }
 
-    public void setForcedScore(int forcedScore) {
+    public void setForcedScore(long forcedScore) {
         this.forcedScore = forcedScore;
         totalScore = forcedScore;
     }
@@ -674,17 +697,9 @@ public class StatisticV2 implements Serializable {
     }
 
     public void calculateModScoreMultiplier(@Nullable final BeatmapDifficulty difficulty) {
-        if (difficulty != null) {
-            for (var m : mod.values()) {
-                if (m instanceof IModRequiresBeatmapDifficulty requiresBeatmapDifficulty) {
-                    requiresBeatmapDifficulty.applyFromBeatmapDifficulty(difficulty);
-                }
-            }
-        }
-
-        modScoreMultiplier = ModUtils.calculateScoreMultiplier(mod);
+        modScoreMultiplier = new ScoreMultiplierCalculator(difficulty).calculateFor(mod.values());
     }
-
+    
     public void migrateLegacyMods(final BeatmapDifficulty originalDifficulty) {
         for (var m : mod.values()) {
             if (m instanceof IMigratableMod migratableMod) {

@@ -246,11 +246,15 @@ public class Replay {
                     stat.setHit100(os.readInt());
                     stat.setHit50(os.readInt());
                     stat.setMisses(os.readInt());
-                    if (version >= 8) {
+
+                    if (version >= 9) {
+                        stat.setTotalScore(os.readLong());
+                    } else if (version == 8) {
                         stat.setTotalScore(os.readInt());
                     } else {
                         stat.setForcedScore(os.readInt());
                     }
+
                     stat.setScoreMaxCombo(os.readInt());
 
                     if (version < 6) {
@@ -471,10 +475,11 @@ public class Replay {
                    object scaling
         Version 8: Slider head hit window is extended to its 50 hit window;
                    score stored as raw totalScore instead of totalScoreWithMultiplier
+        Version 9: score stored as long
      */
     public static class ReplayVersion implements Serializable {
         private static final long serialVersionUID = 4643121693566795335L;
-        int version = 8;
+        int version = 9;
     }
 
     public static class ReplayObjectData {
