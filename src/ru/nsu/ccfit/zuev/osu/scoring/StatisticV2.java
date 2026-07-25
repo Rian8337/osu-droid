@@ -52,7 +52,7 @@ public class StatisticV2 implements Serializable {
     private String mark = null;
     private int beatmapNoteCount = 0;
     private int bonusScore = 0;
-    private int v1Score = 0;
+    private int totalScore;
     private int v2Score = 0;
     private int v1MaxScore = 0;
     private int positiveHitOffsetCount;
@@ -152,7 +152,7 @@ public class StatisticV2 implements Serializable {
     }
 
     public int getTotalScore() {
-        return v1Score;
+        return totalScore;
     }
 
     public int getTotalScoreWithMultiplier() {
@@ -168,7 +168,7 @@ public class StatisticV2 implements Serializable {
             }
             return (int) (v2Score * effectiveMultiplier);
         } else {
-            return (int) (v1Score * modScoreMultiplier);
+            return (int) (totalScore * modScoreMultiplier);
         }
     }
 
@@ -267,13 +267,13 @@ public class StatisticV2 implements Serializable {
         //
         // In that case, just skip score addition to ensure score is always positive.
         if (addition > 0) {
-            v1Score += amount;
+            totalScore += amount;
 
             if (combo) {
-                v1Score += (int) ((amount * currentCombo * diffModifier) / 25);
+                totalScore += (int) ((amount * currentCombo * diffModifier) / 25);
             }
 
-            v1Score = Math.max(0, v1Score);
+            totalScore = Math.max(0, totalScore);
         }
 
         // Calculate ScoreV2
@@ -282,13 +282,13 @@ public class StatisticV2 implements Serializable {
                 bonusScore += 100;
 
                 // Undo the ScoreV1 addition above.
-                v1Score = Math.max(0, v1Score - amount);
+                totalScore = Math.max(0, totalScore - amount);
             }
 
             double scorePortion;
             double accuracyPortion;
 
-            scorePortion = 0.3f * Math.sqrt((double) v1Score / v1MaxScore);
+            scorePortion = 0.3f * Math.sqrt((double) totalScore / v1MaxScore);
 
             if (GameHelper.isPrecise()) {
                 accuracyPortion = 0.7f * 1.15f * Math.pow(getAccuracy(), 4);
@@ -300,7 +300,7 @@ public class StatisticV2 implements Serializable {
             v2Score = (int) (scoreV2MaxScore * (scorePortion + accuracyPortion * progress)) + bonusScore;
         }
 
-        scoreHash = SecurityUtils.getHigh16Bits(v1Score);
+        scoreHash = SecurityUtils.getHigh16Bits(totalScore);
     }
 
     public String getMark() {
@@ -508,7 +508,12 @@ public class StatisticV2 implements Serializable {
 
     public void setForcedScore(int forcedScore) {
         this.forcedScore = forcedScore;
-        v1Score = forcedScore;
+        totalScore = forcedScore;
+    }
+
+    public void setTotalScore(int totalScore) {
+        this.totalScore = totalScore;
+        this.scoreHash = SecurityUtils.getHigh16Bits(totalScore);
     }
 
     public void setV1MaxScore(int v1MaxScore) {
@@ -520,7 +525,7 @@ public class StatisticV2 implements Serializable {
     }
 
     public final boolean isScoreValid() {
-        return SecurityUtils.getHigh16Bits(v1Score) == scoreHash;
+        return SecurityUtils.getHigh16Bits(totalScore) == scoreHash;
     }
 
     public String compile() {
@@ -720,7 +725,7 @@ public class StatisticV2 implements Serializable {
         sliderEndHits = 0;
         scoreMaxCombo = 0;
         currentCombo = 0;
-        v1Score = 0;
+        totalScore = 0;
         v2Score = 0;
         scoreHash = SecurityUtils.getHigh16Bits(0);
         hp = 1;

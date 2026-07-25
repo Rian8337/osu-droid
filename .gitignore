@@ -46,3 +46,5 @@ release.jks
 .claude/cache/
 .claude/worktrees/
 CLAUDE.local.md
+bug-fix-knowledge-base/
+.github/instructions/

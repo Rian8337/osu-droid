@@ -195,7 +195,7 @@ abstract class VariableLengthStrainSkill<TObject : DifficultyHitObject>(mods: It
 
             // If we have queued strains, use those until the object falls into the new section.
             if (queuedStrains.isNotEmpty()) {
-                val (strainValue, startTime) = queuedStrains.removeFirst()
+                val (strainValue, startTime) = queuedStrains.removeAt(0)
 
                 // We want the section to end `maxSectionLength` after the strain we are using as an influence.
                 // This means the queued strain will exist in its own section if the gap between it and the object is large enough.
@@ -229,7 +229,7 @@ abstract class VariableLengthStrainSkill<TObject : DifficultyHitObject>(mods: It
         val maxTotalLength = maxStoredSections * maxSectionLength
 
         while (totalLength > maxTotalLength) {
-            totalLength -= strainPeaks.removeFirst().sectionLength
+            totalLength -= strainPeaks.removeAt(0).sectionLength
         }
     }
 

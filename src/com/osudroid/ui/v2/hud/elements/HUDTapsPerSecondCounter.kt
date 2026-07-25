@@ -21,7 +21,7 @@ class HUDTapsPerSecondCounter : HUDStatisticCounter("Taps/sec") {
         val earliestElapsedTime = gameScene.elapsedTime - GameHelper.getSpeedMultiplier()
 
         while (timestamps.isNotEmpty() && timestamps.first() < earliestElapsedTime) {
-            timestamps.removeFirst()
+            timestamps.removeAt(0)
         }
 
         valueText.text = timestamps.size.toString()

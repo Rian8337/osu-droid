@@ -1206,7 +1206,7 @@ public class SongMenu implements IUpdateHandler, MenuItemListener,
                     StatisticV2 stat = new StatisticV2(params, difficulty);
 
                     stat.setPlayerName(playerName);
-                    scoreScene.load(stat, null, null, hasReplay ? OnlineManager.getReplayURL(id) : null, null, selectedBeatmap);
+                    scoreScene.load(stat, null, null, hasReplay ? OnlineManager.getReplayURL(id, hash) : null, null, selectedBeatmap);
                     engine.setScene(scoreScene.getScene());
                 } catch (Exception e) {
                     Debug.e("Cannot load play info: " + e.getMessage(), e);
