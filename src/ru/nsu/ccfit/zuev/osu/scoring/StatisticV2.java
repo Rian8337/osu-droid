@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.Random;
 
 import com.osudroid.mods.ModPrecise;
+import com.osudroid.mods.ModScoreV2;
 import com.osudroid.multiplayer.api.data.RoomTeam;
 import com.osudroid.multiplayer.api.data.WinCondition;
 import com.osudroid.data.ScoreInfo;
@@ -159,6 +160,14 @@ public class StatisticV2 implements Serializable {
     }
 
     public long getTotalScore() {
+        // This fork accumulates the raw ScoreV1 value in `totalScore` and keeps the capped ScoreV2
+        // value in `v2Score` (upstream folds the cap directly into `totalScore`). To keep persistence
+        // (`toScoreInfo`, `compile`) consistent with upstream, expose the capped value for ScoreV2 scores.
+        if (mod.contains(ModScoreV2.class)) {
+            // `v2Score` is only populated during live gameplay; when a ScoreV2 score is loaded from
+            // storage, `totalScore` already holds the capped value that was persisted.
+            return v2Score > 0 ? v2Score : totalScore;
+        }
         return totalScore;
     }
 
@@ -166,14 +175,17 @@ public class StatisticV2 implements Serializable {
         if (forcedScore > 0)
             return forcedScore;
 
-        if (GameHelper.isScoreV2()) {
+        if (mod.contains(ModScoreV2.class)) {
             // PR multiplier is already baked into the accuracy portion of the ScoreV2
             // formula, so exclude it from modScoreMultiplier to avoid double-counting.
             double effectiveMultiplier = modScoreMultiplier;
-            if (GameHelper.isPrecise()) {
+            if (mod.contains(ModPrecise.class)) {
                 effectiveMultiplier /= preciseModMultiplier;
             }
-            return (long) (v2Score * effectiveMultiplier);
+            // `v2Score` is only populated during live gameplay; when a ScoreV2 score is loaded from
+            // storage or a replay, `totalScore` already holds the capped value that was persisted.
+            long score = v2Score > 0 ? v2Score : totalScore;
+            return (long) (score * effectiveMultiplier);
         } else {
             return (long) (totalScore * modScoreMultiplier);
         }
