@@ -3,6 +3,7 @@ package com.osudroid.scoring
 import com.osudroid.GameMode
 import com.osudroid.beatmaps.sections.BeatmapDifficulty
 import com.osudroid.mods.*
+import com.osudroid.mods.settings.IntegerModSetting
 import com.osudroid.utils.ModUtils
 import kotlin.math.exp
 import kotlin.math.max
@@ -20,7 +21,7 @@ class ScoreMultiplierCalculator @JvmOverloads constructor(difficulty: BeatmapDif
     init {
         // region Difficulty Reduction
 
-        single<ModEasy>(0.8)
+        single<ModEasy> { easyMultiplier() }
         single<ModNoFail>(0.5)
         single<ModReallyEasy>(0.3)
 
@@ -106,6 +107,16 @@ class ScoreMultiplierCalculator @JvmOverloads constructor(difficulty: BeatmapDif
     }
 
     companion object {
+        private fun ModEasy.easyMultiplier(): Double {
+            val retries = getModSettingDelegate<IntegerModSetting>(::retries)
+
+            // 0.8x base multiplier
+            // Reduce by 0.1x per extra life
+            val value = 0.8 - max(0.0, 0.1 * (retries.value - retries.defaultValue))
+
+            return max(0.4, value)
+        }
+
         private fun ModHidden.hiddenMultiplier(): Double {
             var value = 1.06
 
