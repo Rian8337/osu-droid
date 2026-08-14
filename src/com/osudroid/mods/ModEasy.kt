@@ -2,6 +2,7 @@ package com.osudroid.mods
 
 import com.osudroid.GameMode
 import com.osudroid.beatmaps.sections.BeatmapDifficulty
+import com.osudroid.mods.settings.IntegerModSetting
 import com.osudroid.utils.CircleSizeCalculator
 
 /**
@@ -10,10 +11,23 @@ import com.osudroid.utils.CircleSizeCalculator
 class ModEasy : Mod(), IModApplicableToDifficulty {
     override val name = "Easy"
     override val acronym = "EZ"
-    override val description = "Larger circles, more forgiving HP drain, less accuracy required, and three lives!"
+    override val description = "Larger circles, more forgiving HP drain, less accuracy required, and extra lives!"
     override val type = ModType.DifficultyReduction
-    override val isRanked = true
     override val incompatibleMods = super.incompatibleMods + ModHardRock::class
+
+    override val isRanked
+        get() = usesDefaultSettings
+
+    /**
+     * Number of extra lives.
+     */
+    var retries by IntegerModSetting(
+        name = "Extra Lives",
+        key = "retries",
+        defaultValue = 3,
+        minValue = 0,
+        maxValue = 10
+    )
 
     override fun isCompatibleWith(other: Mod): Boolean {
         if (other is ModDifficultyAdjust) {
