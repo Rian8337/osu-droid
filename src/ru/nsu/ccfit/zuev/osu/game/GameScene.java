@@ -1772,7 +1772,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
             stat.changeHp((float) -rate * 0.01f * dt);
 
             if (stat.getHp() <= 0 && stat.canFail) {
-                if (GameHelper.isEasy() && failcount < 3) {
+                if (GameHelper.isEasy() && failcount < GameHelper.getEasy().getRetries()) {
                     failcount++;
                     stat.changeHp(1f);
                 } else {
@@ -3827,7 +3827,7 @@ public class GameScene implements GameObjectListener, IOnSceneTouchListener {
                         break;
                     }
 
-                    if (GameHelper.isEasy() && failcount < 3) {
+                    if (GameHelper.isEasy() && failcount < GameHelper.getEasy().getRetries()) {
                         failcount++;
                         stat.changeHp(1f);
                     } else {
