@@ -108,7 +108,10 @@ class SpectatorDataManager(
                         writeFloat(event.time)
                         writeLong(event.score)
                         writeInt(event.combo)
-                        writeFloat(event.accuracy)
+                        writeInt(event.hit300)
+                        writeInt(event.hit100)
+                        writeInt(event.hit50)
+                        writeInt(event.misses)
                     }
 
                     flush()
@@ -210,7 +213,15 @@ class SpectatorDataManager(
      * Adds a spectator event.
      */
     fun addEvent() =
-        events.add(SpectatorEvent(gameScene.elapsedTime * 1000, stat.totalScoreWithMultiplier, stat.combo, stat.accuracy))
+        events.add(SpectatorEvent(
+            gameScene.elapsedTime * 1000,
+            stat.totalScoreWithMultiplier,
+            stat.combo,
+            stat.hit300,
+            stat.hit100,
+            stat.hit50,
+            stat.misses
+        ))
 
     /**
      * Pauses the timer.

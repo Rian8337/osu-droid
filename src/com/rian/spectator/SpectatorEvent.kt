@@ -23,8 +23,26 @@ data class SpectatorEvent(
     val combo: Int,
 
     /**
-     * The accuracy of the player after this event, from 0 to 1.
+     * The amount of 300s achieved after this event.
      */
     @JvmField
-    val accuracy: Float,
+    val hit300: Int,
+
+    /**
+     * The amount of 100s achieved after this event.
+     */
+    @JvmField
+    val hit100: Int,
+
+    /**
+     * The amount of 50s achieved after this event.
+     */
+    @JvmField
+    val hit50: Int,
+
+    /**
+     * The number of misses after this event.
+     */
+    @JvmField
+    val misses: Int
 )
