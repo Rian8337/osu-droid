@@ -389,7 +389,7 @@ public class GameplaySpinner extends GameObject {
                 rotations -= 1 * Math.signum(rotations);
                 if (replayObjectData == null || replayObjectData.accuracy / 4 > fullRotations) {
                     fullRotations++;
-                    stat.registerSpinnerHit();
+                    listener.onSpinnerRequiredSpin(id);
                     float rate = 0.375f;
                     if (GameHelper.getHealthDrain() > 0) {
                         rate = 1 + (GameHelper.getHealthDrain() / 2f);
@@ -460,7 +460,7 @@ public class GameplaySpinner extends GameObject {
 
             for (int i = 0; i < preClear; i++) {
                 fullRotations++;
-                stat.registerSpinnerHit();
+                listener.onSpinnerRequiredSpin(id);
                 float rate = 0.375f;
 
                 if (GameHelper.getHealthDrain() > 0) {

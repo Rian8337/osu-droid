@@ -25,6 +25,8 @@ public interface GameObjectListener {
 
     void onSpinnerHit(int id, int score, boolean endCombo, int totalScore);
 
+    void onSpinnerRequiredSpin(int id);
+
     void addObject(GameObject object);
 
     boolean isObjectHittable(GameObject object);
