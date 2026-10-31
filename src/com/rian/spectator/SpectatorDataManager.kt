@@ -32,78 +32,84 @@ class SpectatorDataManager(
     private var beginningEventIndex = 0
     private var endEventIndex = 0
 
-    private var beginningCursorMoveIndexes = IntArray(GameScene.CursorCount)
+    private val beginningCursorMoveIndexes = IntArray(GameScene.CursorCount)
     private val endCursorMoveIndexes = IntArray(GameScene.CursorCount)
 
     private val submissionTimer = Timer()
     private val submissionPeriod = 5000L
     private var gameEnded = false
 
+    // Reused by every submission, so the buffer keeps its capacity between chunks. Both streams only hold memory, so
+    // there is nothing to release by closing them.
+    private val chunkBuffer = ByteArrayOutputStream(8192)
+    private val chunkOutput = DataOutputStream(chunkBuffer)
+
     private val task = object : TimerTask() {
         override fun run() {
             val secPassed = gameScene.elapsedTime
             val gameHasEnded = gameEnded
 
-            // Copy this chunk's slices under their locks, so the game thread can keep appending while they are written.
-            val cursorMoveChunks = Array(endCursorMoveIndexes.size) { i ->
-                val move = replay.cursorMoves[i]
-
-                synchronized(move) {
-                    endCursorMoveIndexes[i] = move.size
-                    move.movements.copyOfRange(beginningCursorMoveIndexes[i], endCursorMoveIndexes[i])
-                }
-            }
-
-            val objectDataChunk = synchronized(objectData) {
-                endObjectDataIndex = objectData.size
-                objectData.subList(beginningObjectDataIndex, endObjectDataIndex).toList()
-            }
-
-            val eventChunk = synchronized(events) {
-                endEventIndex = events.size
-                events.subList(beginningEventIndex, endEventIndex).toList()
-            }
-
             try {
-                val byteArrayOutputStream = ByteArrayOutputStream()
+                chunkBuffer.reset()
 
-                DataOutputStream(byteArrayOutputStream).use {
-                    it.writeFloat(secPassed)
-                    it.writeInt(cursorMoveChunks.size)
+                chunkOutput.writeFloat(secPassed)
+                chunkOutput.writeInt(endCursorMoveIndexes.size)
 
-                    for (movements in cursorMoveChunks) {
-                        it.writeInt(movements.size)
+                // Each slice is written while holding its lock rather than copied out first. The game thread only
+                // waits for that one slice's writes into memory.
+                for (i in endCursorMoveIndexes.indices) {
+                    val move = replay.cursorMoves[i]
 
-                        for (movement in movements) {
-                            it.writeInt((movement.time shl 2) + movement.touchType.id)
+                    synchronized(move) {
+                        val begin = beginningCursorMoveIndexes[i]
+                        val end = move.size
+
+                        endCursorMoveIndexes[i] = end
+                        chunkOutput.writeInt(end - begin)
+
+                        for (j in begin until end) {
+                            val movement = move.movements[j]
+
+                            chunkOutput.writeInt((movement.time shl 2) + movement.touchType.id)
 
                             if (movement.touchType != TouchType.UP) {
-                                it.writeFloat(movement.x)
-                                it.writeFloat(movement.y)
+                                chunkOutput.writeFloat(movement.x)
+                                chunkOutput.writeFloat(movement.y)
                             }
                         }
                     }
+                }
 
-                    it.writeInt(objectDataChunk.size)
-                    for (data in objectDataChunk) {
-                        data.writeTo(it)
-                    }
+                synchronized(objectData) {
+                    endObjectDataIndex = objectData.size
+                    chunkOutput.writeInt(endObjectDataIndex - beginningObjectDataIndex)
 
-                    it.writeInt(eventChunk.size)
-                    for (event in eventChunk) {
-                        it.writeFloat(event.time)
-                        it.writeLong(event.score)
-                        it.writeInt(event.combo)
-                        it.writeInt(event.hit300)
-                        it.writeInt(event.hit100)
-                        it.writeInt(event.hit50)
-                        it.writeInt(event.misses)
+                    for (j in beginningObjectDataIndex until endObjectDataIndex) {
+                        objectData[j].writeTo(chunkOutput)
                     }
                 }
 
-                // Closing the DataOutputStream flushes it into (and closes) the ByteArrayOutputStream, whose bytes stay
-                // readable after closing.
-                val submitted = RoomAPI.submitSpectatorData(byteArrayOutputStream.toByteArray())
+                synchronized(events) {
+                    endEventIndex = events.size
+                    chunkOutput.writeInt(endEventIndex - beginningEventIndex)
+
+                    for (j in beginningEventIndex until endEventIndex) {
+                        val event = events[j]
+
+                        chunkOutput.writeFloat(event.time)
+                        chunkOutput.writeLong(event.score)
+                        chunkOutput.writeInt(event.combo)
+                        chunkOutput.writeInt(event.hit300)
+                        chunkOutput.writeInt(event.hit100)
+                        chunkOutput.writeInt(event.hit50)
+                        chunkOutput.writeInt(event.misses)
+                    }
+                }
+
+                chunkOutput.flush()
+
+                // The socket keeps the payload until it is sent, so it gets its own copy rather than the reused buffer.
+                val submitted = RoomAPI.submitSpectatorData(chunkBuffer.toByteArray())
 
                 postDataSend(submitted, gameHasEnded)
             } catch (e: IOException) {
@@ -123,7 +129,7 @@ class SpectatorDataManager(
             }
 
             if (submitSuccess) {
-                beginningCursorMoveIndexes = endCursorMoveIndexes.clone()
+                endCursorMoveIndexes.copyInto(beginningCursorMoveIndexes)
                 beginningObjectDataIndex = endObjectDataIndex
                 beginningEventIndex = endEventIndex
             }
