@@ -579,7 +579,8 @@ public class Replay {
             return (Utils.sqr(previousMovement.x - tx) + Utils.sqr(previousMovement.y - ty)) <= 25;
         }
 
-        public void pushBack(Replay replay, int time, float x, float y, TouchType touchType) {
+        // Synchronized as the spectator data submission timer copies movements from another thread.
+        public synchronized void pushBack(Replay replay, int time, float x, float y, TouchType touchType) {
             int idx = size;
             boolean isNewEntry;
             if (touchType == TouchType.MOVE && checkNewPoint(x, y)) {
@@ -603,7 +604,7 @@ public class Replay {
             }
         }
 
-        public void pushBack(int time, TouchType touchType) {
+        public synchronized void pushBack(int time, TouchType touchType) {
             if (size >= allocated) {
                 reallocate((allocated * 3) / 2);
             }

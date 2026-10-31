@@ -648,6 +648,8 @@ public class GameplaySlider extends GameObject {
                 tickSet.set(replayTickIndex++, false);
             }
 
+            listener.onSliderPartJudged(id, firstHitAccuracy, tickSet, 1 + replayTickIndex);
+
             if (stillHasSpan) {
                 listener.onSliderHit(id, isTracking ? 30 : -1, spanEndJudgementPosition, false,
                         bodyColor, GameObjectListener.SLIDER_REPEAT, isTracking);
@@ -1092,6 +1094,9 @@ public class GameplaySlider extends GameObject {
         updateSlidingSamplesVolume();
         currentNestedObjectIndex++;
 
+        // The head is judged at this point. Send it before the catch-up loop below judges any other nested object.
+        listener.onSliderPartJudged(id, firstHitAccuracy, tickSet, 1 + replayTickIndex);
+
         // When the head is hit late:
         // - If the cursor has at all times been within range of the expanded follow area, hit all nested objects that have been passed through.
         // - If the cursor has at some point left the expanded follow area, miss those nested objects instead.
@@ -1173,6 +1178,8 @@ public class GameplaySlider extends GameObject {
                 tickSet.set(replayTickIndex++, false);
                 listener.onSliderHit(id, -1, tmpPoint, false, bodyColor, type, false);
             }
+
+            listener.onSliderPartJudged(id, firstHitAccuracy, tickSet, 1 + replayTickIndex);
 
             if (!isSliderTick) {
                 // When a repeat is encountered, one span has passed.
@@ -1261,6 +1268,8 @@ public class GameplaySlider extends GameObject {
             } else {
                 tickSet.set(replayTickIndex++, false);
             }
+
+            listener.onSliderPartJudged(id, firstHitAccuracy, tickSet, 1 + replayTickIndex);
 
             var tickPosition = nestedObjectToJudge.getScreenSpaceGameplayStackedPosition();
             tmpPoint.set(tickPosition.x, tickPosition.y);

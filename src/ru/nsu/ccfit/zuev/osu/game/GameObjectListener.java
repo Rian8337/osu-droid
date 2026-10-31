@@ -21,6 +21,16 @@ public interface GameObjectListener {
 
     void onSliderEnd(int id, int accuracy, BitSet tickSet);
 
+    /**
+     * Called after a part of a slider (its head, a tick, a repeat or its tail) has been judged.
+     *
+     * @param id The ID of the slider.
+     * @param firstHitAccuracy The accuracy of the slider head's hit, in milliseconds.
+     * @param tickSet The slider's tick set. This is mutated by the slider afterwards, so implementors must copy it.
+     * @param judgedCount The number of parts of the slider that have been judged, including the head.
+     */
+    void onSliderPartJudged(int id, int firstHitAccuracy, BitSet tickSet, int judgedCount);
+
     void onSpinnerStart(int id);
 
     void onSpinnerHit(int id, int score, boolean endCombo, int totalScore);
